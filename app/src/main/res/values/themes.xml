@@ -1,0 +1,8 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Base.Theme.DAC_Collector" parent="Theme.Material3.Light.NoActionBar">
+
+    </style>
+
+    <style name="Theme.DAC_Collector" parent="Base.Theme.DAC_Collector" />
+</resources>

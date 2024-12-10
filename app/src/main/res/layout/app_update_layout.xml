@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/update_layout_dialog"
+
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    >
+
+    <ImageView
+        android:id="@+id/rocket_image"
+        android:layout_width="250dp"
+        android:layout_height="250dp"
+        android:layout_centerHorizontal="true"
+        android:elevation="3dp"
+        android:src="@drawable/update_rocket" />
+    <androidx.cardview.widget.CardView
+        app:cardBackgroundColor="@color/white"
+        android:layout_below="@+id/rocket_image"
+        android:layout_marginTop="-65dp"
+        android:layout_centerHorizontal="true"
+        android:layout_width="300dp"
+        android:layout_height="350dp"
+        android:padding="10dp"
+        app:cardCornerRadius="15dp">
+
+        <RelativeLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAlignment="center"
+            android:layout_marginTop="50dp"
+            android:layout_gravity="center_horizontal"
+            >
+
+            <ImageView
+                android:id="@+id/app_ico"
+                android:layout_width="65dp"
+                android:layout_height="65dp"
+                android:src="@mipmap/ic_launcher"
+                android:layout_centerHorizontal="true"
+                />
+            <TextView
+                android:layout_marginTop="5dp"
+                android:id="@+id/application_name"
+                android:layout_centerHorizontal="true"
+                android:layout_below="@+id/app_ico"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/poppins_regular"
+                android:textSize="20dp"
+                android:text="Aemm Gas Service"
+                android:textColor="@color/black"
+                />
+            <TextView
+                android:layout_below="@+id/application_name"
+                android:layout_centerHorizontal="true"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/li_sohid_unicode"
+                android:textSize="18dp"
+                android:textColor="@color/black"
+                android:text="নতুন আপডেট এসেছে"/>
+
+            <RelativeLayout
+                android:id="@+id/update_rl_button"
+                android:layout_alignParentBottom="true"
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:gravity="center_horizontal"
+                android:background="@color/purple_accent">
+                <TextView
+                    android:id="@+id/update_btn_text"
+                    android:visibility="visible"
+                    android:layout_centerInParent="true"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/white"
+                    android:textSize="18dp"
+                    android:fontFamily="@font/li_sohid_unicode"
+                    android:text="এখনিয় আপডেট দিন"/>
+
+                <TextView
+                    android:visibility="gone"
+                    android:layout_alignParentTop="true"
+                    android:layout_centerHorizontal="true"
+                    android:id="@+id/tvProgressText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0%"
+                    android:textSize="18sp"
+                    android:textColor="@color/white"
+                    android:layout_marginBottom="16dp"
+                    android:gravity="center" />
+
+                <!-- Horizontal Progress Bar -->
+                <ProgressBar
+                    android:layout_alignParentBottom="true"
+                    android:visibility="gone"
+                    android:id="@+id/progressBar"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:progress="0"
+                    android:max="100"
+                    android:indeterminate="false"
+                    android:progressTint="@color/white"
+                    style="@android:style/Widget.DeviceDefault.Light.ProgressBar.Horizontal" />
+            </RelativeLayout>
+
+
+        </RelativeLayout>
+
+    </androidx.cardview.widget.CardView>
+
+
+
+</RelativeLayout>

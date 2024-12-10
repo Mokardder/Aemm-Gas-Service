@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#ffffff</color>
+    <color name="semi_trans">#94000000</color>
+    <color name="primary_color">#89CFF0</color>
+    <color name="grey">#E5E4E2</color>
+    <color name="purple_accent">#67219E</color>
+</resources>

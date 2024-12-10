@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/black"
+    android:padding="10dp">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/white"
+        android:padding="10sp">
+
+        <ImageView
+            android:id="@+id/cyl_svg"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:src="@drawable/gas_cylinder_icon"
+            android:layout_marginRight="10dp"/>
+
+        <RelativeLayout
+
+            android:layout_toRightOf="@+id/cyl_svg"
+            android:layout_alignBaseline="@+id/cyl_svg"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+            <RelativeLayout
+                android:id="@+id/layout_english_dac"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" >
+            <TextView
+                android:id="@+id/tv_DAC"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/poppins_regular"
+                android:text="DAC : "
+                android:textColor="@color/black"
+                android:textStyle="bold"
+                android:textSize="20sp"/>
+            <TextView
+                android:id="@+id/dac_val_eng"
+                android:layout_toRightOf="@+id/tv_DAC"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/poppins_regular"
+                android:text="2511"
+                android:textStyle="bold"
+                android:textColor="@color/design_default_color_error"
+                android:textSize="20sp"/>
+            </RelativeLayout>
+            <RelativeLayout
+                android:layout_below="@+id/layout_english_dac"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content">
+                <TextView
+
+                    android:id="@+id/tv_dac_bangla"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="গ্যাসের কোড : "
+                    android:fontFamily="@font/li_sohid_unicode"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/black"/>
+                <TextView
+                    android:id="@+id/dac_val_beng"
+                    android:layout_toRightOf="@+id/tv_dac_bangla"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/li_sohid_unicode"
+                    android:text="2511"
+                    android:textStyle="bold"
+                    android:textSize="20sp"
+                    android:textColor="@color/design_default_color_error"/>
+            </RelativeLayout>
+
+        </RelativeLayout>
+
+<TextView
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="Aemm Gas Service, Padmalavpur"
+    android:layout_alignParentRight="true"
+    android:textStyle="bold"
+    android:textColor="@color/black"
+    android:textSize="6dp"
+    android:layout_alignParentTop="true"/>
+    </RelativeLayout>
+
+
+
+
+</RelativeLayout>

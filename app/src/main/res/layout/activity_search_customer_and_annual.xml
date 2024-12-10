@@ -1,0 +1,294 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white"
+    tools:context="android.iocl.dac_collector.Ui.SearchCustomerAndAnnual">
+
+    <com.google.android.material.appbar.AppBarLayout
+
+        android:id="@+id/top_bar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <com.google.android.material.appbar.MaterialToolbar
+
+            android:layout_width="match_parent"
+            android:layout_height="55dp"
+            app:navigationIcon="@drawable/twotone_account_circle_24"
+            android:background="@drawable/top_bar_background"
+            app:title="Search Customer"
+            app:titleTextColor="@color/white"
+
+            />
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <RelativeLayout
+
+        android:layout_below="@+id/top_bar"
+
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" >
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/layout_search_bar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="5dp"
+            android:hint="Consumer ID / Mobile No"
+            >
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/search_term"
+                android:textColor="@color/black"
+                android:fontFamily="@font/poppins_regular"
+                android:singleLine="true"
+                android:imeOptions="actionDone"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+
+        <RelativeLayout
+            android:id="@+id/nav_menu"
+            android:layout_below="@+id/layout_search_bar"
+            android:background="@color/white"
+            android:layout_width="match_parent"
+            android:layout_marginTop="20sp"
+            android:layout_height="wrap_content">
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@color/white"
+                android:layout_alignParentTop="true"
+                android:layout_margin="10dp"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="12dp">
+
+                <RelativeLayout
+                    android:id="@+id/userDetailsRL"
+                    android:visibility="gone"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent">
+                    <TextView
+                        android:id="@+id/user_common_name_TV"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentLeft="true"
+                        android:layout_marginStart="10dp"
+                        android:textStyle="bold"
+                        android:layout_marginTop="10dp"
+                        android:textColor="@color/black"
+                        android:fontFamily="@font/poppins_regular"
+                        android:text="Hi, User"
+                        android:textSize="20sp" />
+                    <LinearLayout
+                        android:id="@+id/sub_detailsLY"
+                        android:layout_below="@+id/user_common_name_TV"
+                        android:layout_marginStart="10dp"
+
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+                        <TextView
+                            android:id="@+id/userCons"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Cons: 7210203040"/>
+                        <TextView
+                            android:id="@+id/subscription"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="10sp"
+                            android:text="Booking: 10"/>
+
+
+
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/user_point_searchTV"
+                        android:layout_width="wrap_content"
+                        android:layout_below="@+id/user_common_name_TV"
+                        android:layout_alignParentTop="true"
+                        android:layout_alignParentRight="true"
+                        android:layout_marginRight="10sp"
+                        android:layout_marginTop="5sp"
+                        android:layout_height="wrap_content"
+                        android:drawableLeft="@drawable/trophy_32"
+                        android:drawablePadding="5sp"
+                        android:text="0"
+                        android:textColor="@color/black"
+                        android:textSize="30sp"
+                        android:textStyle="bold"/>
+                    <TextView
+                        android:id="@+id/convertedAnnual"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_below="@+id/user_point_searchTV"
+                        android:text="~0 (Require 200)"
+                        android:textColor="@color/black"
+                        android:textStyle="italic"
+                        android:layout_marginRight="10sp"
+                        android:textSize="16sp"
+                        android:layout_alignParentRight="true" />
+
+
+                    <RelativeLayout
+                        android:id="@+id/annualCompleteRL"
+                        android:visibility="gone"
+                        android:layout_width="wrap_content"
+                        android:layout_below="@+id/sub_detailsLY"
+                        android:layout_centerHorizontal="true"
+                        android:layout_height="wrap_content" >
+
+                        <ImageView
+                            android:id="@+id/svg_image"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_centerHorizontal="true"
+                            android:layout_margin="10dp"
+                            android:src="@drawable/success" />
+                        <LinearLayout
+                            android:id="@+id/success_text"
+                            android:layout_below="@+id/svg_image"
+                            android:layout_centerHorizontal="true"
+                            android:textAlignment="center"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:textStyle="italic"
+                                android:textColor="@color/black"
+                                android:text="Your Annual Registered Successfully !" />
+                            <TextView
+                                android:id="@+id/afterCompleteAnnualMonth"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:textAlignment="center"
+                                android:textStyle="italic"
+                                android:textColor="@color/black"
+                                android:text="" />
+
+                        </LinearLayout>
+
+                    </RelativeLayout>
+
+
+
+                    <Button
+                        android:id="@+id/redeem_point"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                       android:layout_below="@+id/annualCompleteRL"
+                        android:layout_marginLeft="10dp"
+                        android:layout_marginTop="5sp"
+                        android:layout_centerInParent="true"
+                        android:text="Redeem Points" />
+
+
+
+
+                </RelativeLayout>
+            </androidx.cardview.widget.CardView>
+        </RelativeLayout>
+
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:id="@+id/button_group"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="20dp"
+        android:padding="5dp"
+        >
+
+        <RadioGroup
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:layout_centerInParent="true"
+            android:orientation="horizontal">
+
+            <RadioButton
+                android:id="@+id/go_back"
+                android:layout_width="wrap_content"
+                android:layout_height="30dp"
+                android:layout_weight="1"
+                android:padding="5dp"
+                android:textStyle="bold"
+                android:textColor="@color/white"
+                android:button="@android:color/transparent"
+                android:fontFamily="@font/poppins_regular"
+                android:text="Go back"
+                android:background="@drawable/radio_left_checked"
+                android:textSize="12sp"
+                android:gravity="center"
+
+
+
+                />
+
+            <RadioButton
+                android:id="@+id/search_customer"
+                android:layout_width="wrap_content"
+                android:layout_height="30dp"
+                android:layout_weight="1"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:enabled="true"
+                android:padding="5dp"
+                android:button="@android:color/transparent"
+                android:fontFamily="@font/poppins_regular"
+                android:background="@drawable/radio_right_checked"
+                android:gravity="center"
+                android:text="Search Customer" />
+
+        </RadioGroup>
+
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:id="@+id/ProgressView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_centerInParent="true"
+        android:background="@color/semi_trans"
+        android:visibility="gone">
+
+        <ProgressBar
+            android:id="@+id/progressBar"
+            style="?android:attr/progressBarStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+
+            android:layout_marginLeft="200px"
+            android:layout_marginRight="50px"
+            android:indeterminateDrawable="@drawable/loading_bar"
+            android:outlineAmbientShadowColor="@color/white"
+            android:outlineSpotShadowColor="@color/white" />
+
+        <TextView
+            android:id="@+id/loadingTxt"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:layout_toRightOf="@+id/progressBar"
+            android:ellipsize="none"
+            android:fontFamily="@font/poppins_regular"
+            android:gravity="center"
+            android:maxLines="1"
+            android:text="Logging In.."
+            android:textColor="@color/white"
+            android:textSize="20dp">
+
+        </TextView>
+
+    </RelativeLayout>
+
+</RelativeLayout>

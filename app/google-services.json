@@ -1,0 +1,98 @@
+{
+  "project_info": {
+    "project_number": "144995374291",
+    "firebase_url": "https://emdadul-gas-service-default-rtdb.firebaseio.com",
+    "project_id": "emdadul-gas-service",
+    "storage_bucket": "emdadul-gas-service.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:144995374291:android:61cdac1bffa712fd0a7026",
+        "android_client_info": {
+          "package_name": "android.iocl.dac_collector"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "144995374291-droelf8ae0vi490v7bifo76k5jah1v1u.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBK6HwNIsHKWY0OZSuggWpw8M1PqKXYrzE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "144995374291-droelf8ae0vi490v7bifo76k5jah1v1u.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:144995374291:android:b3b5ecbf3238e2800a7026",
+        "android_client_info": {
+          "package_name": "android.system.dac_collector"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "144995374291-droelf8ae0vi490v7bifo76k5jah1v1u.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBK6HwNIsHKWY0OZSuggWpw8M1PqKXYrzE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "144995374291-droelf8ae0vi490v7bifo76k5jah1v1u.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:144995374291:android:5edf1e81b8c8ba080a7026",
+        "android_client_info": {
+          "package_name": "vip.mokardder.smsclient"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "144995374291-droelf8ae0vi490v7bifo76k5jah1v1u.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBK6HwNIsHKWY0OZSuggWpw8M1PqKXYrzE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "144995374291-droelf8ae0vi490v7bifo76k5jah1v1u.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
