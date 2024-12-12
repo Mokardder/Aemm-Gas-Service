@@ -1,5 +1,5 @@
 {
-  "baseUrl": "https://script.google.com/macros/s/AKfycbzyGp03w8uK3hX0pR_BHGg2V3nuATFJ7p76muU3buFD3CqLkU5gAuT-rDBpt-YktA/exec",
+  "baseUrl": "https://script.google.com/macros/s/AKfycbzhZJBu2bn4JDCwud3WWkJd26-TCzCdtuXHAFF1Mg51cdGVb0RnXR2EWSyIN44xR6wl/exec",
   "payload": {
     "type": "addCustomer",
     "search_text": "9123386785",
