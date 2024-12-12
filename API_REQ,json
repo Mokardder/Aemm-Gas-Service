@@ -1,0 +1,14 @@
+{
+  "baseUrl": "https://script.google.com/macros/s/AKfycbzyGp03w8uK3hX0pR_BHGg2V3nuATFJ7p76muU3buFD3CqLkU5gAuT-rDBpt-YktA/exec",
+  "payload": {
+    "type": "addCustomer",
+    "search_text": "9123386785",
+    "dataToUpdate": [
+      {"column": "CONSUMER_ID", "value": "7210405060"},
+      {"column": "USER_NAME"  , "value": "Mokardder" },
+      {"column": "FCM_KEY"    , "value": "Notoott"   },
+      {"column": "APP_VERSION", "value": "V1"        },
+      {"column": "LAST_ACTIVE", "value": "201515"    }
+    ]
+  }
+}
