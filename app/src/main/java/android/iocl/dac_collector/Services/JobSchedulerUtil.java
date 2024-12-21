@@ -29,7 +29,7 @@ public class JobSchedulerUtil {
                 .build();
 
         JobScheduler scheduler =
-                (android.app.job.JobScheduler) c.getSystemService(Context.JOB_SCHEDULER_SERVICE);
+                (JobScheduler) c.getSystemService(Context.JOB_SCHEDULER_SERVICE);
 
         if (scheduler != null) {
 
