@@ -18,9 +18,9 @@ import android.content.SharedPreferences;
 
 public class SharedPrefs {
 
-    private static final String PREF_NAME = "MyAppPrefs";  // Name of the SharedPreferences file
-    private SharedPreferences sharedPreferences;
-    private SharedPreferences.Editor editor;
+    private static final String PREF_NAME = "AppsData";  // Name of the SharedPreferences file
+    private static SharedPreferences sharedPreferences;
+    private static SharedPreferences.Editor editor;
 
     public SharedPrefs(Context context) {
         sharedPreferences = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
@@ -28,36 +28,36 @@ public class SharedPrefs {
     }
 
     // Setter method to store string value
-    public void setString(String key, String value) {
+    public static void setString(String key, String value) {
         editor.putString(key, value);
         editor.apply();
     }
 
     // Getter method to retrieve string value
-    public String getString(String key, String defaultValue) {
+    public static String getString(String key, String defaultValue) {
         return sharedPreferences.getString(key, defaultValue);
     }
 
     // Setter method to store integer value
-    public void setInt(String key, int value) {
+    public static void setInt(String key, int value) {
         editor.putInt(key, value);
         editor.apply();
     }
 
     // Getter method to retrieve integer value
-    public int getInt(String key, int defaultValue) {
+    public static int getInt(String key, int defaultValue) {
 
         return sharedPreferences.getInt(key, defaultValue);
     }
 
     // Setter method to store boolean value
-    public void setBoolean(String key, boolean value) {
+    public static void setBoolean(String key, boolean value) {
         editor.putBoolean(key, value);
         editor.apply();
     }
 
     // Getter method to retrieve boolean value
-    public boolean getBoolean(String key, boolean defaultValue) {
+    public static boolean getBoolean(String key, boolean defaultValue) {
         return sharedPreferences.getBoolean(key, defaultValue);
     }
 

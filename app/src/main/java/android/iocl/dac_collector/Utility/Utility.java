@@ -4,10 +4,16 @@ import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
-import android.content.ComponentName;
+import android.app.job.JobInfo;
+import android.app.job.JobScheduler;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.database.Cursor;
+import android.iocl.dac_collector.Firebase.FirebaseDBClient;
 import android.iocl.dac_collector.ModelData.RegexModel;
 import android.iocl.dac_collector.R;
 import android.iocl.dac_collector.Ui.MainActivity;
@@ -16,130 +22,173 @@ import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Build;
 import android.telephony.SmsManager;
+import android.util.Base64;
 import android.util.Log;
 import android.widget.RemoteViews;
+
+import androidx.core.app.NotificationCompat;
+import androidx.core.content.ContextCompat;
+
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
+import com.google.gson.reflect.TypeToken;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.lang.reflect.Type;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Calendar;
 import java.util.List;
-import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Utility {
-    
-    private static String TAG = "Utility_Mokardder";
+
+    public static final String TAG = "Utility_Mokardder";
 
 
-    public static Boolean isOldDac(String timestamp) {
-
-        long converted = Long.parseLong(timestamp);
-
-        long currentMillis = System.currentTimeMillis();
-        long differenceMillis = currentMillis - converted;
-
-
-        long differenceInSeconds = 50 * 1000;
-
-        return Math.abs(differenceMillis) >= differenceInSeconds;
-
+    public static boolean isJobSchedulerActive(Context context, int jobId) {
+        JobScheduler jobScheduler = (JobScheduler) context.getSystemService(Context.JOB_SCHEDULER_SERVICE);
+        if (jobScheduler != null) {
+            for (JobInfo jobInfo : jobScheduler.getAllPendingJobs()) {
+                if (jobInfo.getId() == jobId) {
+                    return true; // Job with this ID is active
+                }
+            }
+        }
+        return false; // Job is not active
     }
-
     public static void showDACNotification(Context context, String OTP) {
-        // Create a NotificationManager
+        if (context == null) {
+            Log.e("NotificationError", "Context is null");
+            return;
+        }
+
+        final int NOTIFY_ID = 1003;
+        String DAC_CUSTOM_NOTIFY_ID = "dac_sms_notify";
+        String DAC_CUSTOM_NOTIFY_NAME = "dac_sms_notify";
+        String DAC_CUSTOM_NOTIFY_DESC = "DAC -> " + OTP;
+
+        // NotificationManager
         NotificationManager notificationManager =
                 (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
 
-        // Create the notification channel (required for Android 8.0+)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(
-                    "dac_sms_notify",
-                    "Custom Notifications",
-                    NotificationManager.IMPORTANCE_HIGH
-            );
-            notificationManager.createNotificationChannel(channel);
+        if (notificationManager == null) {
+            Log.e("NotificationError", "NotificationManager is null");
+            return;
         }
 
-        // Create a RemoteViews object
+        // Custom layout
         RemoteViews customLayout = new RemoteViews(context.getPackageName(), R.layout.dac_notification_bar);
         customLayout.setTextViewText(R.id.dac_val_eng, OTP);
         customLayout.setTextViewText(R.id.dac_val_beng, OTP);
 
-        // Set up a pending intent (optional)
-        Intent intent = new Intent(context, MainActivity.class); // Replace with your target activity
-        PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-
-        // Create the notification
-        Notification notification = null;
+        // Notification Channel for Android 8.0+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            notification = new Notification.Builder(context, "dac_sms_notify")
-                    .setSmallIcon(R.drawable.gas_cylinder_icon) // Replace with your icon
-                    .setContentIntent(pendingIntent)
-                    .setCustomContentView(customLayout) // Set the custom layout
-                    .setAutoCancel(false)
-                    .setOngoing(false)
-                    .build();
+            NotificationChannel mChannel = notificationManager.getNotificationChannel(DAC_CUSTOM_NOTIFY_ID);
+            if (mChannel == null) {
+                mChannel = new NotificationChannel(DAC_CUSTOM_NOTIFY_ID, DAC_CUSTOM_NOTIFY_NAME, NotificationManager.IMPORTANCE_HIGH);
+                mChannel.setDescription(DAC_CUSTOM_NOTIFY_DESC);
+                mChannel.enableVibration(true);
+                notificationManager.createNotificationChannel(mChannel);
+            }
         }
+
+        // Notification Builder
+        Intent intent = new Intent(context, MainActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_IMMUTABLE);
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, DAC_CUSTOM_NOTIFY_ID)
+                .setSmallIcon(R.drawable.gas_cylinder_icon)
+                .setCustomContentView(customLayout)
+                .setStyle(new NotificationCompat.DecoratedCustomViewStyle())
+                .setAutoCancel(true)
+                .setContentIntent(pendingIntent)
+                .setDefaults(Notification.DEFAULT_ALL)
+                .setPriority(NotificationCompat.PRIORITY_HIGH);
 
         // Show the notification
-        notificationManager.notify(1, notification);
+        Notification notification = builder.build();
+        notificationManager.notify(NOTIFY_ID, notification);
     }
+
 
     public static boolean isConnectedToInternet(Context context) {
-        ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
 
-        if (connectivityManager != null) {
-            NetworkInfo activeNetwork = connectivityManager.getActiveNetworkInfo();
-            return activeNetwork != null && activeNetwork.isConnected();
-        }
-        return false;
+        ConnectivityManager connectivityManager
+                = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetworkInfo = connectivityManager != null ? connectivityManager.getActiveNetworkInfo() : null;
+        return activeNetworkInfo != null && activeNetworkInfo.isConnected();
     }
 
-    /**
-     * 获取自启动管理页面的Intent * @param context context * @return 返回自启动管理页面的Intent *
-     */
-    public static void getAutostartSettingIntent(Context context) {
-        ComponentName componentName = null;
-        String brand = Build.MANUFACTURER;
-        Intent intent = new Intent();
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        switch (brand.toLowerCase()) {
-            case "samsung":
-                componentName = new ComponentName("com.samsung.android.sm", "com.samsung.android.sm.app.dashboard.SmartManagerDashBoardActivity");
-                break;
-            case "huawei":
-//                componentName = new ComponentName("com.huawei.systemmanager", "com.huawei.systemmanager.appcontrol.activity.StartupAppControlActivity");
-                componentName = new ComponentName("com.huawei.systemmanager", "com.huawei.systemmanager.startupmgr.ui.StartupNormalAppListActivity");
-                break;
-            case "xiaomi":
-                componentName = new ComponentName("com.miui.securitycenter", "com.miui.permcenter.autostart.AutoStartManagementActivity");
-                break;
-            case "vivo":
-//                componentName = new ComponentName("com.iqoo.secure", "com.iqoo.secure.safaguard.PurviewTabActivity");
-                componentName = new ComponentName("com.iqoo.secure", "com.iqoo.secure.ui.phoneoptimize.AddWhiteListActivity");
-                break;
-            case "oppo":
-//                componentName = new ComponentName("com.oppo.safe", "com.oppo.safe.permission.startup.StartupAppListActivity");
-                componentName = new ComponentName("com.oplus.battery", "com.oplus.powermanager.fuelgaue.PowerConntrolActivity");
-                break;
+    public static void getDACMessages(Context c) {
+        FirebaseDBClient fireDb = new FirebaseDBClient(c);
 
-            case "oneplus":
-                componentName = new ComponentName("com.oneplus.security", "com.oneplus.security.chainlaunch.view.ChainLaunchAppListActivity");
-                break;
-            case "letv":
-                intent.setAction("com.letv.android.permissionautoboot");
-            default:
-                intent.setAction("android.settings.APPLICATION_DETAILS_SETTINGS");
-                intent.setData(Uri.fromParts("package", context.getPackageName(), null));
-                break;
+        if (ContextCompat.checkSelfPermission(c, "android.permission.READ_SMS") == PackageManager.PERMISSION_GRANTED) {
+            ContentResolver contentResolver = c.getContentResolver();
+            Uri uri = Uri.parse("content://sms/inbox");
+            String[] projection = {"_id", "address", "body", "date", "read", "type"};
+            String sortOrder = "date DESC";
+            Cursor cursor = null;
+
+            try {
+                cursor = contentResolver.query(uri, projection, null, null, sortOrder);
+                if (cursor != null && cursor.moveToFirst()) {
+                    int count = 0;
+                    do {
+                        int bodyColumnIndex = cursor.getColumnIndex("body");
+                        int dateColumnIndex = cursor.getColumnIndex("date");
+
+                        if (bodyColumnIndex != -1 && dateColumnIndex != -1) {
+                            Long time = cursor.getLong(dateColumnIndex);
+                            long currentTime = System.currentTimeMillis();
+                            long twentyFourHoursInMillis = 24 * 60 * 60 * 1000;
+                            if (currentTime - time < twentyFourHoursInMillis) {
+                                String body = cursor.getString(bodyColumnIndex);
+
+                                List<RegexModel> details = checkDACRegex(body, c);
+
+
+                                if (details != null && details.size() > 0) {
+
+                                    boolean isDAC = details.get(0).getCaptures().size() > 1 ? true : false;
+                                    String DAC = isDAC ? details.get(0).getCaptures().get(1) : details.get(0).getCaptures().get(0);
+
+                                    String message = isDAC ? details.get(0).getCaptures().get(0) : "Indian Oil OTP";
+
+                                    if (isDAC) {
+                                        if (!details.get(0).getId().equals("DAC_SYNC")) {
+                                            fireDb.addToDb(DAC, message);
+                                            return;
+                                        }
+                                        fireDb.syncDac(DAC, message);
+                                    }
+
+
+                                }
+
+                            }
+
+
+                        }
+
+                        count++;
+                    } while (cursor.moveToNext() && count < 40);
+                }
+            } finally {
+                if (cursor != null) {
+                    cursor.close();
+                }
+            }
         }
-        intent.setComponent(componentName);
-        context.startActivity(intent);
+
     }
+
 
     public static List<RegexModel> checkDACRegex(String message, Context c) {
 
@@ -192,9 +241,14 @@ public class Utility {
         return matches;
     }
 
-    public static void sendSms(String Cashmemo, String DAC) {
+    public static void sendSms(String Cashmemo, String DAC, String name) {
 
-        String msg = "CM - " + Cashmemo + " DAC - " + DAC;
+        Calendar calendar = Calendar.getInstance();
+        SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
+        String formattedDateTime = sdf.format(calendar.getTime());
+        System.out.println("Current Date and Time: " + formattedDateTime);
+
+        String msg = "CM - " + Cashmemo + " DAC - " + DAC + " Name " + name + " Time " + formattedDateTime;
 
         String phoneNumber = getPhoneNumber();
 
@@ -204,10 +258,10 @@ public class Utility {
         Log.d(TAG, "Sent to  -> " + phoneNumber);
 
 
-
         sms.sendTextMessage(phoneNumber, null, msg, null, null);
 
     }
+
 
     public static String getPhoneNumber() {
 
@@ -228,6 +282,34 @@ public class Utility {
         return randomValue;
     }
 
+    public static <T> Object decodeApiResponse(String base64String, Class<T> modelClass) {
+        try {
+            // Decode the Base64 string to a JSON string
+            byte[] decodedBytes = Base64.decode(base64String, Base64.DEFAULT);
+            String decodedJson = new String(decodedBytes);
+
+            // Use Gson to check JSON type
+            Gson gson = new Gson();
+            JsonElement jsonElement = JsonParser.parseString(decodedJson);
+
+            // If JSON is an array, return List<T>
+            if (jsonElement.isJsonArray()) {
+                Type listType = TypeToken.getParameterized(List.class, modelClass).getType();
+                return gson.fromJson(jsonElement, listType);
+            }
+
+            // If JSON is an object, return T
+            if (jsonElement.isJsonObject()) {
+                return gson.fromJson(jsonElement, modelClass);
+            }
+
+            throw new IllegalStateException("Unexpected JSON type: " + jsonElement);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null; // Or handle error as needed
+        }
+    }
+
     // Assuming getMessagepattern is implemented elsewhere
 
 
@@ -241,6 +323,29 @@ public class Utility {
         editor.apply();
 
     }
+
+    public static int getVersionCode(Context context) {
+        try {
+            PackageInfo pInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
+
+            return pInfo.versionCode;
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    public static String getVersionName(Context context) {
+        try {
+            PackageInfo pInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
+
+            return pInfo.versionName;
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
+        }
+        return "";
+    }
+
     public static void updateSenderNumbers(String message, Context c) {
 
         Log.d(TAG, "Updatedt Pattern");
@@ -251,11 +356,13 @@ public class Utility {
         editor.apply();
 
     }
+
     public static String getMessagepattern(Context c) {
         // Obtain the SharedPreferences object
         SharedPreferences sharedPreferences = c.getSharedPreferences("OTP_Pattern", Context.MODE_PRIVATE);
         return sharedPreferences.getString("pattern", "N");
     }
+
     public static String getSendersNumbers(Context c) {
         // Obtain the SharedPreferences object
         SharedPreferences sharedPreferences = c.getSharedPreferences("senders_number", Context.MODE_PRIVATE);

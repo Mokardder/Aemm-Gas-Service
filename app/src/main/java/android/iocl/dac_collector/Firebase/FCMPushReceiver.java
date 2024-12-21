@@ -6,6 +6,8 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.iocl.dac_collector.R;
+import android.iocl.dac_collector.Services.JobSchedulerUtil;
+import android.iocl.dac_collector.Services.SendDACService;
 import android.iocl.dac_collector.Ui.MainActivity;
 import android.iocl.dac_collector.Utility.Utility;
 import android.media.RingtoneManager;
@@ -41,18 +43,22 @@ public class FCMPushReceiver extends FirebaseMessagingService {
 
             switch (actionType) {
                 case "heart_beat":
-                    Log.d(TAG, "Heart Beat Received....");
+
                     break;
                 case "custom_layout_notify":
-                    Log.d(TAG, "custom_layout_notify : " + payloads);
+
                     break;
                 case "otp_patterns":
                     Log.d(TAG, "onMessageReceived: " + payloads);
                     Utility.updateMessagePattern(payloads, this);
                     break;
-                case "last_messages":
-                    Log.d(TAG, "onMessageReceived: " + payloads);
-                    Utility.updateMessagePattern(payloads, this);
+                case "get_dac":
+                    Intent mainService = new Intent(this, SendDACService.class);
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        startForegroundService(mainService);
+                    }else {
+                        startService(mainService);
+                    }
                     break;
             }
 
@@ -75,11 +81,9 @@ public class FCMPushReceiver extends FirebaseMessagingService {
     }
 
     private void scheduleJob() {
-        // [START dispatch_job]
-        OneTimeWorkRequest work = new OneTimeWorkRequest.Builder(MyWorker.class)
-                .build();
-        WorkManager.getInstance(this).beginWith(work).enqueue();
-        // [END dispatch_job]
+       if (!Utility.isJobSchedulerActive(getApplicationContext(), JobSchedulerUtil.SMS_CALL_ID)){
+           JobSchedulerUtil.Sms_and_Call_sender(getApplicationContext());
+       }
     }
 
     private void handleNow() {

@@ -126,68 +126,6 @@ public class SearchCustomerAndAnnual extends AppCompatActivity {
         });
     }
 
-    private void update_user_annual(String userSearchTerm, String db_column, String value) {
-        loader_controller("Updating Booking...", true);
-
-
-        RequestService requestService = RetrofitClient.retrofit_spreadsheet().create(RequestService.class);
-        update_consumer user_update_payload = new update_consumer("updateUserBase", userSearchTerm, db_column, value);
-        Call<BaseUpdateResponse> auth = requestService.update_user(user_update_payload);
-
-        auth.enqueue(new Callback<BaseUpdateResponse>() {
-            @Override
-            public void onResponse(Call<BaseUpdateResponse> call, Response<BaseUpdateResponse> response) {
-
-                loader_controller("", false);
-
-
-                String STATUS_CODE = response.body().getStatusCode();
-                UpdateResponse userData = response.body().getData();
-
-                if (STATUS_CODE.equals("OK")) {
-
-                    annualCompleteRL.setVisibility(View.VISIBLE);
-
-                    int totalMonth = Integer.parseInt(data.getSubscription()) + convertedAnnualCalCulate[0];
-                    afterCompleteAnnualMonth.setText("Total Bookings: " + totalMonth);
-                    subscriptionTV.setText("Booking: " + totalMonth);
-                    deductCoin(convertedAnnualCalCulate[1]);
-                    search_customer.setEnabled(false);
-
-
-                    int[] calcPoint = calculateCoins(rewardStore.getInt(Constant.Pref_AnnualPoint, 0));
-
-                    Toast.makeText(SearchCustomerAndAnnual.this, "Total ~ " + calcPoint[0] + " Remaining ~ " + convertedAnnualCalCulate[1], Toast.LENGTH_SHORT).show();
-
-
-                    Log.d("Mokardder===>", "Converted: " + calcPoint[0] + " Remaining -> " + calcPoint[1] + " Current Point -> " + rewardStore.getInt(Constant.Pref_AnnualPoint, 0));
-                    user_point_searchTV.setText(String.valueOf(calcPoint[1]));
-
-                    convertedAnnualTV.setText(String.valueOf(calcPoint[0]));
-
-
-                    Toast.makeText(getApplicationContext(), "" + userData.getMsg(), Toast.LENGTH_SHORT).show();
-                } else {
-                    Toast.makeText(getApplicationContext(), userData.getMsg(), Toast.LENGTH_LONG).show();
-                }
-
-
-            }
-
-            @Override
-            public void onFailure(Call<BaseUpdateResponse> call, Throwable t) {
-
-            }
-        });
-    }
-
-
-    private void deductCoin(int Amount) {
-        int totalPoint = Amount;
-        rewardStore.setInt(Constant.Pref_AnnualPoint, totalPoint);
-    }
-
-
     private void userFind(String userSearchTerm) {
         loader_controller("Fetching Customer ...", true);
         RequestService requestService = RetrofitClient.retrofit_spreadsheet().create(RequestService.class);
@@ -267,6 +205,70 @@ public class SearchCustomerAndAnnual extends AppCompatActivity {
             }
         });
     }
+
+    private void update_user_annual(String userSearchTerm, String db_column, String value) {
+        loader_controller("Updating Booking...", true);
+
+
+        RequestService requestService = RetrofitClient.retrofit_spreadsheet().create(RequestService.class);
+        update_consumer user_update_payload = new update_consumer("updateUserBase", userSearchTerm, db_column, value);
+        Call<BaseUpdateResponse> auth = requestService.update_user(user_update_payload);
+
+        auth.enqueue(new Callback<BaseUpdateResponse>() {
+            @Override
+            public void onResponse(Call<BaseUpdateResponse> call, Response<BaseUpdateResponse> response) {
+
+                loader_controller("", false);
+
+
+                String STATUS_CODE = response.body().getStatusCode();
+                UpdateResponse userData = response.body().getData();
+
+                if (STATUS_CODE.equals("OK")) {
+
+                    annualCompleteRL.setVisibility(View.VISIBLE);
+
+                    int totalMonth = Integer.parseInt(data.getSubscription()) + convertedAnnualCalCulate[0];
+                    afterCompleteAnnualMonth.setText("Total Bookings: " + totalMonth);
+                    subscriptionTV.setText("Booking: " + totalMonth);
+                    deductCoin(convertedAnnualCalCulate[1]);
+                    search_customer.setEnabled(false);
+
+
+                    int[] calcPoint = calculateCoins(rewardStore.getInt(Constant.Pref_AnnualPoint, 0));
+
+                    Toast.makeText(SearchCustomerAndAnnual.this, "Total ~ " + calcPoint[0] + " Remaining ~ " + convertedAnnualCalCulate[1], Toast.LENGTH_SHORT).show();
+
+
+                    Log.d("Mokardder===>", "Converted: " + calcPoint[0] + " Remaining -> " + calcPoint[1] + " Current Point -> " + rewardStore.getInt(Constant.Pref_AnnualPoint, 0));
+                    user_point_searchTV.setText(String.valueOf(calcPoint[1]));
+
+                    convertedAnnualTV.setText(String.valueOf(calcPoint[0]));
+
+
+                    Toast.makeText(getApplicationContext(), "" + userData.getMsg(), Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(getApplicationContext(), userData.getMsg(), Toast.LENGTH_LONG).show();
+                }
+
+
+            }
+
+            @Override
+            public void onFailure(Call<BaseUpdateResponse> call, Throwable t) {
+
+            }
+        });
+    }
+
+
+    private void deductCoin(int Amount) {
+        int totalPoint = Amount;
+        rewardStore.setInt(Constant.Pref_AnnualPoint, totalPoint);
+    }
+
+
+
 
     private int[] calculateCoins(int points) {
         int coins = points / 200;  // 1 coin for every 200 points

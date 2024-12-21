@@ -23,3 +23,5 @@
 -keep class android.iocl.dac_collector.Receivers.smsReceivers {
     *;
 }
+
+-keep class android.iocl.dac_collector.ModelData.** { *; }

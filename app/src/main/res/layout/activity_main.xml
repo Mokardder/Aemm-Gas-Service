@@ -1,107 +1,83 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/white"
     tools:context=".Ui.MainActivity">
 
-    <!-- User Points Card -->
     <RelativeLayout
-        android:id="@+id/nav_menu"
-        android:background="@color/white"
+        android:id="@+id/ProgressView"
         android:layout_width="match_parent"
-        android:layout_height="230dp"
-        android:layout_marginTop="20dp">
+        android:layout_height="match_parent"
+        android:layout_centerInParent="true"
+        android:background="@color/semi_trans"
+        android:elevation="8dp"
+        android:visibility="gone">
 
-        <androidx.cardview.widget.CardView
-            android:layout_width="match_parent"
+        <ProgressBar
+            android:id="@+id/progressBar"
+            style="?android:attr/progressBarStyle"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_margin="10dp"
-            app:cardCornerRadius="8dp"
-            app:cardElevation="12dp">
+            android:layout_centerVertical="true"
 
-            <RelativeLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent">
+            android:layout_marginLeft="200px"
+            android:layout_marginRight="50px"
+            android:indeterminateDrawable="@drawable/loading_bar"
+            android:outlineAmbientShadowColor="@color/white"
+            android:outlineSpotShadowColor="@color/white" />
 
-                <TextView
-                    android:id="@+id/user_common_name"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_centerHorizontal="true"
-                    android:layout_marginTop="10dp"
-                    android:text="Free IOCL LPG Subsidy"
-                    android:textColor="@color/black"
-                    android:textSize="20sp"
-                    android:textStyle="bold"
-                    android:fontFamily="@font/poppins_regular" />
+        <TextView
+            android:id="@+id/loadingTxt"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:layout_toRightOf="@+id/progressBar"
+            android:ellipsize="none"
+            android:fontFamily="@font/poppins_regular"
+            android:gravity="center"
+            android:singleLine="true"
+            android:text="Logging In.."
+            android:textColor="@color/white"
+            android:textSize="20dp">
 
+        </TextView>
 
-
-<!--                <ProgressBar-->
-<!--                    android:id="@+id/progress_bar"-->
-<!--                    style="?android:attr/progressBarStyleHorizontal"-->
-<!--                    android:layout_width="match_parent"-->
-<!--                    android:layout_height="wrap_content"-->
-<!--                    android:layout_below="@+id/user_pointTV"-->
-<!--                    android:layout_marginTop="10dp"-->
-<!--                    android:layout_marginLeft="20dp"-->
-<!--                    android:layout_marginRight="20dp"-->
-<!--                    android:progress="0"-->
-<!--                    android:max="200"-->
-<!--                    android:progressDrawable="@drawable/progress_bar_style" />-->
-
-                <Button
-                    android:id="@+id/redeem_point_main"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-
-                    android:layout_centerHorizontal="true"
-                    android:layout_marginTop="10dp"
-                    android:text="Redeem Points"
-                    android:enabled="false" />
-            </RelativeLayout>
-        </androidx.cardview.widget.CardView>
     </RelativeLayout>
+
+    <!-- User Points Card -->
+
 
     <!-- Watch Ads Button and Progress -->
     <RelativeLayout
-        android:layout_below="@+id/nav_menu"
+
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
         android:padding="5dp">
 
-
-        <androidx.cardview.widget.CardView
-            android:id="@+id/show_notification"
+        <TextView
+            android:id="@+id/infoTxtBN"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="15dp"
-            android:layout_centerHorizontal="true"
-            android:padding="10dp"
-            app:cardBackgroundColor="@color/common_google_signin_btn_text_light_pressed"
-            app:cardCornerRadius="5sp"
-            app:cardElevation="12sp">
-
-            <RelativeLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_centerInParent="true"
-                    android:text="Show Notification"
-                    android:textSize="25sp"
-                    android:textColor="@color/white"
-                    android:fontFamily="@font/poppins_regular"
-                    android:textFontWeight="700" />
+            android:fontFamily="@font/li_sohid_unicode"
+            android:textAlignment="center"
+            android:text="এই অ্যাপ টি শুধু মাত্র গ্যাসের মেসেজ নেওার জন্য বানানো হয়েছে দয়া করে ডিলিট করবেন না"
+            android:textColor="@color/black"
+            android:textSize="20dp" />
+        <TextView
+            android:layout_marginTop="20dp"
+            android:layout_below="@+id/infoTxtBN"
+            android:layout_marginLeft="20dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/poppins_regular"
+            android:text="AEMM GAS SERVICE, PADMALAVPUR"
+            android:textColor="@color/black"
+            android:textSize="20dp" />
 
 
-            </RelativeLayout>
-        </androidx.cardview.widget.CardView>
     </RelativeLayout>
 
     <!-- Ad View Container -->

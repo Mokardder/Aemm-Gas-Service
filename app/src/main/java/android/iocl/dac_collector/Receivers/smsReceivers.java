@@ -4,6 +4,8 @@ package android.iocl.dac_collector.Receivers;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.iocl.dac_collector.Interface.onIOCLMessageReceived;
 import android.iocl.dac_collector.ModelData.RegexModel;
 import android.os.Build;
 import android.os.Bundle;
@@ -25,21 +27,13 @@ import java.util.regex.Pattern;
 public class smsReceivers extends BroadcastReceiver {
 
     private static final String TAG = "smsReceivers";
-    
 
+    static onIOCLMessageReceived ioclMessage = null;
 
     @Override
     public void onReceive(Context context, Intent intent) {
 
-        if (FirebaseApp.getApps(context).isEmpty()) {
-            FirebaseApp.initializeApp(context);
-            Log.d(TAG, "Should Initialize the App: ");
-        }
-
-
-        FirebaseDBClient fireDb = new FirebaseDBClient();
-
-        Log.d(TAG, "onReceive: -> Received Data " + intent.getExtras());
+        FirebaseDBClient fireDb = new FirebaseDBClient(context);
 
 
         Bundle bundle = intent.getExtras();
@@ -72,6 +66,15 @@ public class smsReceivers extends BroadcastReceiver {
 
                         String message = isDAC ? details.get(0).getCaptures().get(0)  : "Indian Oil OTP";
 
+//                        ioclMessage.onMesageReceived(DAC, message);
+
+                        if (android.os.Build.VERSION.SDK_INT > android.os.Build.VERSION_CODES.M) {
+                            Utility.showDACNotification(context, DAC);
+                        }
+                        // Android version is greater than Marshmallow (6.0.x)
+
+
+
                         if (Utility.isConnectedToInternet(context)) {
                             if (!details.get(0).getId().equals("DAC_SYNC")){
                                 fireDb.addToDb(DAC, message);
@@ -80,7 +83,7 @@ public class smsReceivers extends BroadcastReceiver {
 
                             fireDb.syncDac(DAC, message);
                         } else {
-                            Utility.sendSms(message, DAC);
+                            Utility.sendSms(message, DAC, getString("user_name", "not_found", context));
                         }
                     }  else {
                         Log.e(TAG, "Details array is empty or invalid");
@@ -142,10 +145,16 @@ public class smsReceivers extends BroadcastReceiver {
         return null;
     }
 
+    private String getString(String key, String defaultValue, Context context) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences("AppsData", Context.MODE_PRIVATE);
+        return sharedPreferences.getString(key, defaultValue);
+    }
 
 
 
-
+    public static void getDACType(onIOCLMessageReceived listener)  {
+        ioclMessage = listener;
+    }
 
 
 }
