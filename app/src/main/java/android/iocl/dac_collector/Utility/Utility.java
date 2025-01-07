@@ -38,6 +38,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Type;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -51,6 +52,11 @@ public class Utility {
     public static final String TAG = "Utility_Mokardder";
 
 
+
+    public static String getConsID(Context context ) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences("AppsData", Context.MODE_PRIVATE);
+        return sharedPreferences.getString("cons_id", "N");
+    }
     public static boolean isJobSchedulerActive(Context context, int jobId) {
         JobScheduler jobScheduler = (JobScheduler) context.getSystemService(Context.JOB_SCHEDULER_SERVICE);
         if (jobScheduler != null) {
@@ -150,6 +156,7 @@ public class Utility {
                             long twentyFourHoursInMillis = 24 * 60 * 60 * 1000;
                             if (currentTime - time < twentyFourHoursInMillis) {
                                 String body = cursor.getString(bodyColumnIndex);
+                                String date = cursor.getString(dateColumnIndex);
 
                                 List<RegexModel> details = checkDACRegex(body, c);
 
@@ -163,10 +170,10 @@ public class Utility {
 
                                     if (isDAC) {
                                         if (!details.get(0).getId().equals("DAC_SYNC")) {
-                                            fireDb.addToDb(DAC, message);
+                                            fireDb.addToDb(DAC, message, date);
                                             return;
                                         }
-                                        fireDb.syncDac(DAC, message);
+                                        fireDb.syncDac(DAC, message, date);
                                     }
 
 
@@ -241,6 +248,13 @@ public class Utility {
         return matches;
     }
 
+    public static String getCurrentTime () {
+        Calendar calendar = Calendar.getInstance();
+        SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
+        String formattedDateTime = sdf.format(calendar.getTime());
+        return formattedDateTime  ;
+    }
+
     public static void sendSms(String Cashmemo, String DAC, String name) {
 
         Calendar calendar = Calendar.getInstance();
@@ -281,6 +295,19 @@ public class Utility {
 
         return randomValue;
     }
+
+    public static String encodeB64(String input) {
+        try {
+            return Base64.encodeToString(input.getBytes("UTF-8"), Base64.DEFAULT);
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+            Log.e(TAG, "Error encoding Base64: " + e.getMessage());
+            return null; // Return null if encoding fails
+        }
+    }
+
+
+
 
     public static <T> Object decodeApiResponse(String base64String, Class<T> modelClass) {
         try {
@@ -356,6 +383,20 @@ public class Utility {
         editor.apply();
 
     }
+    public static void updateProfile(String message, Context c) {
+
+        // Obtain the SharedPreferences object
+        SharedPreferences sharedPreferences = c.getSharedPreferences("profile_enc", Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putString("profile", message);
+        editor.apply();
+
+    }
+    public static String getProfile(Context c) {
+        // Obtain the SharedPreferences object
+        SharedPreferences sharedPreferences = c.getSharedPreferences("profile_enc", Context.MODE_PRIVATE);
+        return sharedPreferences.getString("profile", "N");
+    }
 
     public static String getMessagepattern(Context c) {
         // Obtain the SharedPreferences object
@@ -368,5 +409,7 @@ public class Utility {
         SharedPreferences sharedPreferences = c.getSharedPreferences("senders_number", Context.MODE_PRIVATE);
         return sharedPreferences.getString("numbers", "+919231902703");
     }
+
+
 
 }

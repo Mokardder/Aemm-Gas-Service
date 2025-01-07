@@ -2,6 +2,9 @@ package android.iocl.dac_collector.RetrofitClient;
 
 
 
+import android.content.Context;
+import android.iocl.dac_collector.Interface.ConnectivityInterceptor;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -19,7 +22,7 @@ public class RetrofitClient {
     private static Retrofit retrofit;
     private static final String BASE_URL = "https://script.google.com/";
 
-    public static Retrofit retrofit_spreadsheet () {
+    public static Retrofit retrofit_spreadsheet (Context context) {
         HttpLoggingInterceptor interceptor = new HttpLoggingInterceptor()
                 .setLevel(HttpLoggingInterceptor.Level.BODY);
 
@@ -28,6 +31,7 @@ public class RetrofitClient {
                 .connectTimeout(90, TimeUnit.SECONDS) // Increase timeout for establishing connection
                 .readTimeout(90, TimeUnit.SECONDS)    // Increase timeout for reading data
                 .writeTimeout(90, TimeUnit.SECONDS)   // Increase timeout for writing data
+                .addInterceptor(new ConnectivityInterceptor(context))
                 .addInterceptor(interceptor).build();
 
 

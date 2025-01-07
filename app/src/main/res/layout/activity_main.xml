@@ -1,86 +1,441 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/white"
+    tools:ignore="HardcodedText"
     tools:context=".Ui.MainActivity">
 
-    <RelativeLayout
-        android:id="@+id/ProgressView"
+    <!-- ScrollView for the main content -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:layout_marginTop="10dp"
+            android:padding="15dp">
+
+            <!-- Header Text -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Aemm Gas Service"
+                android:textStyle="bold"
+                android:textSize="30sp"
+                android:fontFamily="@font/poppins_regular"
+                android:layout_gravity="center"
+                android:autoSizeTextType="uniform"
+                android:textColor="@color/black"
+
+
+                tools:ignore="HardcodedText" />
+
+            <!-- User Info Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="10dp"
+                android:layout_marginTop="20dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="10dp">
+
+                    <RelativeLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_alignBaseline="@+id/annualTick"
+                            android:id="@+id/userName"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text=""
+                            android:textAlignment="center"
+                            android:textSize="20sp"
+                            android:fontFamily="@font/poppins_regular"
+                            android:textColor="@color/black"
+                            android:textStyle="bold" />
+
+                        <ImageView
+
+                            android:foregroundGravity="center"
+                            android:layout_marginTop="3dp"
+                            android:layout_toRightOf="@+id/userName"
+                            android:id="@+id/annualTick"
+                            android:visibility="gone"
+                            android:layout_marginLeft="10dp"
+                            android:layout_width="25dp"
+                            android:layout_height="25dp"
+                            android:src="@drawable/verify_icon_blue" />
+                    </RelativeLayout>
+
+
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent" >
+
+                    <RelativeLayout
+                        android:layout_marginTop="5dp"
+                        android:layout_width="wrap_content"
+                        android:padding="2dp"
+                        android:layout_centerInParent="true"
+                        android:layout_height="wrap_content">
+
+
+
+                        <TextView
+                            android:layout_marginLeft="5dp"
+                            android:id="@+id/refreshProfile"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/rounded_background"
+                            android:clickable="true"
+                            android:drawablePadding="12dp"
+                            android:focusable="true"
+                            android:fontFamily="@font/poppins_regular"
+                            android:foreground="?android:attr/selectableItemBackgroundBorderless"
+                            android:paddingHorizontal="8dp"
+                            android:text="Refresh Profile"
+                            android:textColor="@color/black" />
+
+                        <TextView
+                            android:layout_marginLeft="5dp"
+                            android:layout_toRightOf="@+id/refreshProfile"
+                            android:id="@+id/Check_Update"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="@font/poppins_regular"
+                            android:text="Check Update"
+                            android:textColor="@color/black"
+                            android:paddingHorizontal="8dp"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:foreground="?android:attr/selectableItemBackgroundBorderless"
+                            android:drawablePadding="12dp"
+                            android:background="@drawable/rounded_background" />
+
+                        <TextView
+
+                            android:layout_marginLeft="5dp"
+                            android:layout_toRightOf="@+id/Check_Update"
+                            android:id="@+id/aboutApp"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="@font/poppins_regular"
+                            android:text="About"
+                            android:textColor="@color/black"
+                            android:paddingHorizontal="8dp"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:foreground="?android:attr/selectableItemBackgroundBorderless"
+                            android:drawablePadding="12dp"
+                            android:background="@drawable/rounded_background" />
+
+                    </RelativeLayout>
+                    </RelativeLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Remaining Book & Last Book Date Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                app:cardCornerRadius="10dp">
+
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:padding="15dp">
+
+                    <RelativeLayout
+                        android:id="@+id/rl_remain_annual"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="10dp"
+                        android:textAlignment="center"
+                        android:layout_marginEnd="10dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="@color/black"
+                            android:text="Remaining Book"
+                            android:fontFamily="@font/poppins_regular"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/remainBook"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="30dp"
+                            android:layout_centerHorizontal="true"
+                            android:textColor="@color/black"
+                            android:text="0"
+                            android:fontFamily="@font/poppins_regular"
+                            android:textSize="15sp" />
+                    </RelativeLayout>
+
+                    <RelativeLayout
+                        android:layout_toRightOf="@+id/rl_remain_annual"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="10dp"
+                        android:layout_marginEnd="10dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="@color/black"
+                            android:text="Last Book Date"
+                            android:fontFamily="@font/poppins_regular"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/lastBook"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="30dp"
+                            android:layout_centerHorizontal="true"
+                            android:textColor="@color/black"
+                            android:text=""
+                            android:fontFamily="@font/poppins_regular"
+                            android:textSize="15sp" />
+                    </RelativeLayout>
+                </RelativeLayout>
+            </com.google.android.material.card.MaterialCardView>
+            <!-- Call Button Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                app:cardCornerRadius="10dp">
+
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:padding="15dp">
+
+                    <TextView
+                        android:id="@+id/call_Akram"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:padding="5dp"
+                        android:layout_marginRight="5dp"
+                        android:fontFamily="@font/poppins_regular"
+                        android:paddingHorizontal="7dp"
+                        android:clickable="true"
+                        android:textColor="@color/blue"
+                        android:drawablePadding="5dp"
+                        android:background="@drawable/rounded_blue_background"
+                        android:drawableLeft="@drawable/call_outgoing"
+                        android:text="Akram" />
+
+                    <TextView
+                        android:id="@+id/call_Emdadul"
+                        android:layout_toRightOf="@+id/call_Akram"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:padding="5dp"
+                        android:layout_marginRight="5dp"
+                        android:paddingHorizontal="7dp"
+                        android:textColor="@color/blue"
+                        android:drawablePadding="5dp"
+                        android:background="@drawable/rounded_blue_background"
+                        android:drawableLeft="@drawable/call_outgoing"
+                        android:text="Emdadul" />
+
+                    <TextView
+                        android:layout_toRightOf="@+id/call_Emdadul"
+                        android:id="@+id/call_Mokardder"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:padding="5dp"
+                        android:paddingHorizontal="9dp"
+                        android:textColor="@color/blue"
+                        android:drawablePadding="5dp"
+                        android:background="@drawable/rounded_blue_background"
+                        android:drawableLeft="@drawable/call_outgoing"
+                        android:text="Mokardder" />
+
+
+                </RelativeLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- User Information Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                app:cardCornerRadius="10dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="15dp">
+
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="@color/black"
+                            android:text="User Information"
+                            android:fontFamily="@font/poppins_regular"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+                    </RelativeLayout>
+
+                    <!-- Mobile No -->
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="15dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="@color/black"
+                            android:text="Mobile No"
+                            android:fontFamily="@font/poppins_regular"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/mobNo"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="#6E6C6C"
+                            android:text=""
+                            android:fontFamily="@font/poppins_regular"
+                            android:textSize="15sp"
+                            android:layout_alignParentEnd="true"
+                            android:textStyle="bold" />
+                    </RelativeLayout>
+
+                    <!-- Additional user details -->
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="15dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="@color/black"
+                            android:text="Consumer ID"
+                            android:fontFamily="@font/poppins_regular"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/consID"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="#6E6C6C"
+                            android:text=""
+                            android:fontFamily="@font/poppins_regular"
+                            android:textSize="15sp"
+                            android:layout_alignParentEnd="true"
+                            android:textStyle="bold" />
+                    </RelativeLayout>
+
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="15dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="@color/black"
+                            android:text="Location"
+                            android:fontFamily="@font/poppins_regular"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/location"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="#6E6C6C"
+                            android:text=""
+                            android:fontFamily="@font/poppins_regular"
+                            android:textSize="15sp"
+                            android:padding="5dp"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:foreground="?android:attr/selectableItemBackgroundBorderless"
+                            android:background="@drawable/rounded_background"
+                            android:layout_alignParentEnd="true"
+                            android:textStyle="bold" />
+                    </RelativeLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="180dp">
+                <TextView
+                    android:id="@+id/Book_Btn"
+                    android:layout_centerInParent="true"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/poppins_regular"
+                    android:text="BOOK"
+                    android:paddingVertical="20dp"
+                    android:paddingHorizontal="40dp"
+                    android:textColor="#0d6efd"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="?android:attr/selectableItemBackgroundBorderless"
+                    android:background="@drawable/rounded_blue_background"/>
+            </RelativeLayout>
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- Loader Overlay -->
+    <LinearLayout
+        android:id="@+id/loaderLayout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_centerInParent="true"
-        android:background="@color/semi_trans"
-        android:elevation="8dp"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:background="#80000000"
+        android:elevation="20dp"
         android:visibility="gone">
 
         <ProgressBar
             android:id="@+id/progressBar"
-            style="?android:attr/progressBarStyle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_centerVertical="true"
-
-            android:layout_marginLeft="200px"
-            android:layout_marginRight="50px"
-            android:indeterminateDrawable="@drawable/loading_bar"
-            android:outlineAmbientShadowColor="@color/white"
-            android:outlineSpotShadowColor="@color/white" />
+            android:indeterminateTint="#FFFFFF"
+            android:indeterminate="true" />
 
         <TextView
-            android:id="@+id/loadingTxt"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_centerInParent="true"
-            android:layout_toRightOf="@+id/progressBar"
-            android:ellipsize="none"
-            android:fontFamily="@font/poppins_regular"
-            android:gravity="center"
-            android:singleLine="true"
-            android:text="Logging In.."
-            android:textColor="@color/white"
-            android:textSize="20dp">
-
-        </TextView>
-
-    </RelativeLayout>
-
-    <!-- User Points Card -->
-
-
-    <!-- Watch Ads Button and Progress -->
-    <RelativeLayout
-
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_centerInParent="true"
-        android:padding="5dp">
-
-        <TextView
-            android:id="@+id/infoTxtBN"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:fontFamily="@font/li_sohid_unicode"
-            android:textAlignment="center"
-            android:text="এই অ্যাপ টি শুধু মাত্র গ্যাসের মেসেজ নেওার জন্য বানানো হয়েছে দয়া করে ডিলিট করবেন না"
-            android:textColor="@color/black"
-            android:textSize="20dp" />
-        <TextView
-            android:layout_marginTop="20dp"
-            android:layout_below="@+id/infoTxtBN"
-            android:layout_marginLeft="20dp"
+            android:id="@+id/loadingText_UI"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:fontFamily="@font/poppins_regular"
-            android:text="AEMM GAS SERVICE, PADMALAVPUR"
-            android:textColor="@color/black"
-            android:textSize="20dp" />
-
-
-    </RelativeLayout>
-
-    <!-- Ad View Container -->
-
-
-</RelativeLayout>
+            android:text="Fetching Customers..."
+            android:textSize="16sp"
+            android:textColor="#FFFFFF"
+            android:layout_marginStart="10dp" />
+    </LinearLayout>
+</FrameLayout>

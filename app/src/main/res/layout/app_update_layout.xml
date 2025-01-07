@@ -2,7 +2,6 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/update_layout_dialog"
-
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     >
@@ -33,36 +32,34 @@
             android:layout_marginTop="5dp"
             android:layout_gravity="center_horizontal"
             >
-
-            <ImageView
-                android:id="@+id/app_ico"
-                android:layout_width="85dp"
-                android:layout_height="85dp"
-                android:src="@mipmap/ic_launcher"
-                android:layout_centerHorizontal="true"
-                />
+            <RelativeLayout
+                android:id="@+id/header_text"
+                android:layout_width="wrap_content"
+                android:padding="5dp"
+                android:layout_height="wrap_content" >
             <TextView
-                android:layout_marginTop="5dp"
-                android:id="@+id/application_name"
-                android:layout_centerHorizontal="true"
-                android:layout_below="@+id/app_ico"
+                android:id="@+id/alertUpdatebangla"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:fontFamily="@font/poppins_regular"
+                android:textSize="18dp"
+                android:textColor="@color/black"
+                android:layout_marginRight="4dp"
+                android:text="New Version Available"/>
+            <TextView
+                android:layout_toRightOf="@+id/alertUpdatebangla"
+                android:id="@+id/newVer"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:fontFamily="@font/poppins_regular"
-                android:textSize="20dp"
-                android:text="@string/app_name"
-                android:textColor="@color/black"
-                />
-            <TextView
-                android:id="@+id/alertUpdatebangla"
-                android:layout_below="@+id/application_name"
-                android:layout_centerHorizontal="true"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:fontFamily="@font/li_sohid_unicode"
-                android:textSize="18dp"
-                android:textColor="@color/black"
-                android:text="নতুন আপডেট এসেছে"/>
+                android:textSize="12dp"
+                android:paddingVertical="3dp"
+                android:paddingHorizontal="4dp"
+                android:background="@drawable/rounded_blue_background"
+                android:textColor="@color/blue"
+                android:text="V 0.5.6"/>
+            </RelativeLayout>
 
             <RelativeLayout
                 android:layout_width="match_parent"
@@ -70,56 +67,9 @@
                 android:layout_alignParentTop="true"
                 android:elevation="200dp">
 
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_alignParentRight="true"
-                    android:orientation="vertical"
-                    android:padding="5dp">
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:fontFamily="@font/poppins_regular"
-                        android:text="New Ver."
-                        android:textColor="@color/black"
-                        android:textSize="10dp" />
 
-                    <TextView
-                        android:id="@+id/newVer"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:fontFamily="@font/poppins_regular"
-                        android:text=""
-                        android:textColor="@color/black"
-                        android:textSize="10dp" />
-                </LinearLayout>
 
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_alignParentLeft="true"
-                    android:orientation="vertical"
-
-                    android:padding="5dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:fontFamily="@font/poppins_regular"
-                        android:text="Current Ver."
-                        android:textColor="@color/black"
-                        android:textSize="10dp" />
-
-                    <TextView
-                        android:id="@+id/currentVer"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:fontFamily="@font/poppins_regular"
-                        android:text=""
-                        android:textColor="@color/black"
-                        android:textSize="10dp" />
-                </LinearLayout>
 
 
             </RelativeLayout>
@@ -127,9 +77,10 @@
 
             <RelativeLayout
                 android:id="@+id/appUpdateDesc"
-                android:layout_below="@+id/alertUpdatebangla"
+                android:layout_below="@+id/header_text"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:padding="3dp"
                 android:layout_centerHorizontal="true">
 
                 <ScrollView
@@ -164,10 +115,8 @@
                 android:layout_alignParentBottom="true"
                 android:layout_width="match_parent"
                 android:layout_height="40dp"
-
-
                 android:gravity="center_horizontal"
-                android:background="@color/purple_accent">
+                android:background="@color/blue">
                 <TextView
                     android:id="@+id/update_btn_text"
                     android:visibility="visible"

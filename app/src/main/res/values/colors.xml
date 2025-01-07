@@ -6,4 +6,8 @@
     <color name="primary_color">#89CFF0</color>
     <color name="grey">#E5E4E2</color>
     <color name="purple_accent">#67219E</color>
+    <color name="yellow">#ffc107</color>
+    <color name="red">#dc3545</color>
+    <color name="blue">#0d6efd</color>
+    <color name="green">#198754</color>
 </resources>

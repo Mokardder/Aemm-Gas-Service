@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Aemm Gas Service</string>
+    <string name="accessibility_service_description">Enable to Stay Alive Always</string>
+    <string name="about_the_app">This app is made to captures Sms only of IndianOil, This app helps to read the OTPs and DACs of IndianOil and Indane Gas and these OTPs and DACs then transferred to Aemm Gas Service, Padmalavpur. Simple and Hassle Free, No Data Shared with Third-party. All data is stored in our Secure Database.\nBenefits:\n* Check the Remaining Booking of your subscription\n\n*Check Subsidy Details, just watching some ads :)\n\n*Your Account Status and So on..\n\nThis app is developed by Mokardder @ Aemm Gas Service, Padmalavpur\n\n 🎊Thanks For Using The App🎊</string>
 </resources>

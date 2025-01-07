@@ -3,16 +3,16 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-
     android:paddingLeft="7dp"
     android:paddingRight="7dp"
     >
-    <androidx.cardview.widget.CardView
+    <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="5dp"
         app:cardBackgroundColor="@color/white"
-        app:cardCornerRadius="3dp"
+        android:theme="@style/Theme.Material3.DynamicColors.Light.NoActionBar"
+
         >
         <RelativeLayout
             android:layout_width="wrap_content"
@@ -28,28 +28,27 @@
                 android:fontFamily="@font/poppins_regular"
                 android:text="1 ˟"
                 android:layout_marginRight="10dp"
-                android:textSize="20dp"
+                android:textSize="12dp"
 
 
                 />
 
             <TextView
                 android:id="@+id/descString"
+               android:textAlignment="center"
                 android:layout_toRightOf="@+id/txtNumbering"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_centerVertical="true"
-                android:textColor="@color/black"
+                android:textColor="@color/green"
+                android:paddingHorizontal="4dp"
+                android:background="@drawable/rounded_green_background"
                 android:fontFamily="@font/poppins_regular"
                 android:text="Updated Automatic DAC Sending"
-                android:textSize="17dp"/>
-            <ImageView
-                android:layout_width="70dp"
-                android:layout_height="40dp"
-                android:layout_alignParentRight="true"
-                android:src="@drawable/sparkle_bg2"/>
+                android:textSize="13dp"/>
+
         </RelativeLayout>
 
-    </androidx.cardview.widget.CardView>
+    </RelativeLayout>
 
 </RelativeLayout>

@@ -128,7 +128,7 @@ public class SearchCustomerAndAnnual extends AppCompatActivity {
 
     private void userFind(String userSearchTerm) {
         loader_controller("Fetching Customer ...", true);
-        RequestService requestService = RetrofitClient.retrofit_spreadsheet().create(RequestService.class);
+        RequestService requestService = RetrofitClient.retrofit_spreadsheet(getApplicationContext()).create(RequestService.class);
         search_consumer receiver = new search_consumer("deedup", userSearchTerm);
         Call<search_consumer_response> auth = requestService.search_customer(receiver);
 
@@ -210,7 +210,7 @@ public class SearchCustomerAndAnnual extends AppCompatActivity {
         loader_controller("Updating Booking...", true);
 
 
-        RequestService requestService = RetrofitClient.retrofit_spreadsheet().create(RequestService.class);
+        RequestService requestService = RetrofitClient.retrofit_spreadsheet(getApplicationContext()).create(RequestService.class);
         update_consumer user_update_payload = new update_consumer("updateUserBase", userSearchTerm, db_column, value);
         Call<BaseUpdateResponse> auth = requestService.update_user(user_update_payload);
 

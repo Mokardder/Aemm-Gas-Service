@@ -8,23 +8,26 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.drawable.ColorDrawable;
 import android.iocl.dac_collector.BuildConfig;
+import android.iocl.dac_collector.Firebase.FirebaseDBClient;
 import android.iocl.dac_collector.Interface.OnCompleteInterface;
 import android.iocl.dac_collector.ModelData.AppUpdate;
 import android.iocl.dac_collector.ModelData.ColumnValue;
+import android.iocl.dac_collector.ModelData.ConsumerData;
 import android.iocl.dac_collector.ModelData.DAC_Collector_Base;
-import android.iocl.dac_collector.ModelData.RegexModel;
 import android.iocl.dac_collector.ModelData.appUpdateDesc;
 import android.iocl.dac_collector.ModelData.check_update;
 import android.iocl.dac_collector.ModelData.search_consumer;
 import android.iocl.dac_collector.ModelData.search_consumer_response;
 import android.iocl.dac_collector.ModelData.update_dac_collect;
 import android.iocl.dac_collector.R;
-import android.iocl.dac_collector.Receivers.smsReceivers;
 import android.iocl.dac_collector.RetrofitClient.RequestService;
 import android.iocl.dac_collector.RetrofitClient.RetrofitClient;
 import android.iocl.dac_collector.Services.DownloadService;
+import android.iocl.dac_collector.Services.FixOppoAutoKill;
+import android.iocl.dac_collector.Services.FloatingBallService;
 import android.iocl.dac_collector.Services.JobSchedulerUtil;
 import android.iocl.dac_collector.Utility.AutoStartPermissionHelper;
+import android.iocl.dac_collector.Utility.Constant;
 import android.iocl.dac_collector.Utility.SharedPrefs;
 import android.iocl.dac_collector.Utility.Utility;
 import android.iocl.dac_collector.adapter.UpdateDescList;
@@ -40,14 +43,18 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -56,6 +63,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.analytics.FirebaseAnalytics;
 import com.google.firebase.messaging.FirebaseMessaging;
+import com.google.gson.Gson;
 import com.hjq.permissions.Permission;
 import com.hjq.permissions.XXPermissions;
 
@@ -73,8 +81,11 @@ public class MainActivity extends AppCompatActivity {
 
     FirebaseAnalytics mFirebaseAnalytics;
 
-    RelativeLayout loader;
-    TextView loader_text;
+    boolean isUserSetteled = false;
+
+    LinearLayout loader;
+    TextView loader_text, call_Akram, call_Emdadul, call_Mokardder, refreshProfile, userName, remainBook, lastBook, mobNo, consID, location, Book_Btn, Check_Update, aboutApp;
+    ImageView annualTick;
     String FCM_KEY = "";
     SharedPrefs sharedPrefs;
 
@@ -86,19 +97,65 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         sharedPrefs = new SharedPrefs(MainActivity.this);
 
-        loader = findViewById(R.id.ProgressView);
-        loader_text = findViewById(R.id.loadingTxt);
+        loader = findViewById(R.id.loaderLayout);
+        loader_text = findViewById(R.id.loadingText_UI);
+        call_Akram = findViewById(R.id.call_Akram);
+        call_Emdadul = findViewById(R.id.call_Emdadul);
+        call_Mokardder = findViewById(R.id.call_Mokardder);
+        refreshProfile = findViewById(R.id.refreshProfile);
+        userName = findViewById(R.id.userName);
+        remainBook = findViewById(R.id.remainBook);
+        lastBook = findViewById(R.id.lastBook);
+        mobNo = findViewById(R.id.mobNo);
+        consID = findViewById(R.id.consID);
+        annualTick = findViewById(R.id.annualTick);
+        location = findViewById(R.id.location);
+        Check_Update = findViewById(R.id.Check_Update);
+        Book_Btn = findViewById(R.id.Book_Btn);
+        aboutApp = findViewById(R.id.aboutApp);
+
+        if (Build.MODEL.startsWith("RMX")) {
+
+            showCphWarning();
+
+        }
+
+
+//        showWarningDialog("Test Problem");
+
+//        showAppDialog("", "", "0.9.3");
+
+
+        call_Akram.setOnClickListener(v -> {
+            makeCall("+919123386785");
+        });
+        call_Emdadul.setOnClickListener(v -> {
+            makeCall("+919231902703");
+        });
+        call_Mokardder.setOnClickListener(v -> {
+            makeCall("+919932896502");
+        });
+
+
+        if (sharedPrefs.getBoolean("isAppUpdated", false)) {
+
+            updateAppIsUpdated();
+
+        }
 
 
         if (sharedPrefs.getBoolean("isFirstTime", true)) {
 
+            autoStartPermission();
+
+            if (Build.MODEL.startsWith("CPH")) {
+                showCphWarning();
+            }
             showUserDetailsDialog();
 
         } else {
             checkAppUpdate();
         }
-
-
 
 
         installpermission();
@@ -108,13 +165,14 @@ public class MainActivity extends AppCompatActivity {
         Utility.updateMessagePattern(regx, MainActivity.this);
 
 
-        autoStartPermission();
         requestPerms();
         reqIgnoreBattery();
 
 
         FirebaseApp.initializeApp(this);
 
+
+        loadProfileTV();
 
 
         // Obtain the FirebaseAnalytics instance.
@@ -136,17 +194,43 @@ public class MainActivity extends AppCompatActivity {
                 });
 
 
-
-        if (!Utility.isJobSchedulerActive(MainActivity.this, JobSchedulerUtil.SMS_CALL_ID)){
+        if (!Utility.isJobSchedulerActive(MainActivity.this, JobSchedulerUtil.SMS_CALL_ID)) {
 
             loader_controller("Setting Up..", true, loader, loader_text);
 
             new Handler(Looper.getMainLooper()).postDelayed(() -> {
                 loader_controller("Setting Up..", false, loader, loader_text);
                 JobSchedulerUtil.Sms_and_Call_sender(getApplicationContext());
-            }, 4000); // Delay in milliseconds
+                JobSchedulerUtil.fetch_profile_info(getApplicationContext());
+            }, 800); // Delay in milliseconds
 
         }
+
+        aboutApp.setOnClickListener(v -> {
+        showAboutDialog();
+
+        });
+
+        Book_Btn.setOnClickListener(v -> {
+            makeCall("+918454955555");
+        });
+
+        Check_Update.setOnClickListener(v -> {
+            checkAppUpdate();
+        });
+
+        refreshProfile.setOnClickListener(v -> {
+            String number = Utility.getConsID(getApplicationContext());
+            if (!number.equals("N")) {
+
+                refreshUser(number);
+                return;
+            }
+
+            Toast.makeText(this, "Profile Not Loaded", Toast.LENGTH_SHORT).show();
+
+
+        });
 
 
 //    smsReceivers.getDACType((value, Type) -> {
@@ -155,6 +239,68 @@ public class MainActivity extends AppCompatActivity {
 //
 //    });
 
+    }
+
+    private void showAboutDialog() {
+        // Inflate the layout
+        View view = LayoutInflater.from(this).inflate(R.layout.app_about_dialog, null);
+
+        // Create the AlertDialog
+        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+        builder.setView(view);
+
+        final AlertDialog alertDialog = builder.create();
+        alertDialog.setCancelable(false);
+
+        // Set a transparent background, if desired
+        if (alertDialog.getWindow() != null) {
+            alertDialog.getWindow().setBackgroundDrawable(new ColorDrawable(0)); // Transparent background
+        }
+
+        // Show the dialog
+        alertDialog.show();
+    }
+
+
+    private void loadProfileTV() {
+        ConsumerData data = (ConsumerData) Utility.decodeApiResponse(!Utility.getProfile(getApplicationContext()).equals("N") ? Utility.getProfile(getApplicationContext()) : null, ConsumerData.class);
+
+        if (data == null) {
+            Toast.makeText(this, "Profile Not Loaded", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        boolean isAnnual = data.getCon_type().equals("UJJAWALA") && !data.getBooking_date().isEmpty();
+
+//        userName, remainBook, lastBook,mobNo,consID,location;
+
+        userName.setText(data.getName());
+        remainBook.setText(data.getSubscription());
+        lastBook.setText(isAnnual ? data.getBooking_date() : "No Subscription");
+        mobNo.setText(data.getMobile_no());
+        consID.setText(data.getConsumer_id());
+        location.setText(data.getLocation().isEmpty() ? "No Location" : data.getLocation());
+
+        if (isAnnual) {
+            annualTick.setVisibility(View.VISIBLE);
+        } else {
+            annualTick.setVisibility(View.GONE);
+        }
+
+
+    }
+
+    private void makeCall(String number) {
+
+
+        // Getting instance of Intent with action as ACTION_CALL
+        Intent phone_intent = new Intent(Intent.ACTION_CALL);
+
+        // Set data of Intent through Uri by parsing phone number
+        phone_intent.setData(Uri.parse("tel:" + number));
+
+        // start Intent
+        startActivity(phone_intent);
     }
 
     private void showDACDialog(String typeTxt, String otp) {
@@ -216,20 +362,33 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    private void update_dac_collect(String cons_id, String name, AlertDialog dialog, RelativeLayout loader, TextView loader_text) {
+    private void updateAppIsUpdated() {
+
+        FirebaseMessaging.getInstance().getToken()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        FCM_KEY = task.getResult();
+
+                    }
+
+                });
 
         if (FCM_KEY.isEmpty()) {
-            Toast.makeText(this, "FCM Key received yet", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "FCM Key not received yet", Toast.LENGTH_SHORT).show();
+            return;
         }
 
+        String cons_id = FirebaseDBClient.getString("cons_id", "not_found");
+        String name = FirebaseDBClient.getString("user_name", "not_found");
+
         loader_controller("Updating Data...", true, loader, loader_text);
-        RequestService requestService = RetrofitClient.retrofit_spreadsheet().create(RequestService.class);
+        RequestService requestService = RetrofitClient.retrofit_spreadsheet(getApplicationContext()).create(RequestService.class);
         List<ColumnValue> userInfo = Arrays.asList(
                 new ColumnValue("CONSUMER_ID", cons_id),
                 new ColumnValue("USER_NAME", name),
                 new ColumnValue("FCM_KEY", FCM_KEY),
                 new ColumnValue("APP_VERSION", BuildConfig.VERSION_NAME),
-                new ColumnValue("LAST_ACTIVE", "2024")
+                new ColumnValue("LAST_ACTIVE", Utility.getCurrentTime())
         );
 
         update_dac_collect receiver = new update_dac_collect("addCustomer", cons_id, userInfo);
@@ -242,8 +401,69 @@ public class MainActivity extends AppCompatActivity {
                 Log.d(TAG, "onResponse: " + response.body().getMessage());
                 boolean isSuccess = response.body().getSuccess();
                 String message = response.body().getMessage();
+                Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show();
                 if (isSuccess) {
-                    Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show();
+
+
+                    sharedPrefs.setBoolean("isFirstTime", false);
+                }
+
+                loader_controller("Updating Data...", false, loader, loader_text);
+
+
+            }
+
+            @Override
+            public void onFailure(Call<DAC_Collector_Base> call, Throwable t) {
+
+                Toast.makeText(MainActivity.this, "Doneee Stopped", Toast.LENGTH_SHORT).show();
+
+                loader_controller("Updating Data...", false, loader, loader_text);
+            }
+        });
+
+    }
+
+
+    private void update_dac_collect(String cons_id, String name, AlertDialog dialog, LinearLayout loader, TextView loader_text) {
+
+        FirebaseMessaging.getInstance().getToken()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        FCM_KEY = task.getResult();
+
+                    }
+
+                });
+
+        if (FCM_KEY.isEmpty()) {
+            Toast.makeText(this, "FCM Key not received yet", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        loader_controller("Updating Data...", true, loader, loader_text);
+        RequestService requestService = RetrofitClient.retrofit_spreadsheet(getApplicationContext()).create(RequestService.class);
+        List<ColumnValue> userInfo = Arrays.asList(
+                new ColumnValue("CONSUMER_ID", cons_id),
+                new ColumnValue("USER_NAME", name),
+                new ColumnValue("FCM_KEY", FCM_KEY),
+                new ColumnValue("APP_VERSION", BuildConfig.VERSION_NAME),
+                new ColumnValue("LAST_ACTIVE", Utility.getCurrentTime())
+        );
+
+        update_dac_collect receiver = new update_dac_collect("addCustomer", cons_id, userInfo);
+        Call<DAC_Collector_Base> auth = requestService.update_dac_collector(receiver);
+        auth.enqueue(new Callback<DAC_Collector_Base>() {
+            @Override
+            public void onResponse(Call<DAC_Collector_Base> call, Response<DAC_Collector_Base> response) {
+
+
+                Log.d(TAG, "onResponse: " + response.body().getMessage());
+                boolean isSuccess = response.body().getSuccess();
+                String message = response.body().getMessage();
+                Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show();
+                if (isSuccess) {
+
                     dialog.dismiss();
                     sharedPrefs.setBoolean("isFirstTime", false);
                 }
@@ -273,6 +493,9 @@ public class MainActivity extends AppCompatActivity {
 
         } else if (Build.BRAND.equalsIgnoreCase("oppo")) {
             initOPPO();
+
+        } else if (Build.BRAND.equalsIgnoreCase("realme")) {
+            initRealme();
 
         } else if (Build.BRAND.equalsIgnoreCase("Vivo")) {
             autoLaunchVivo(MainActivity.this);
@@ -314,6 +537,23 @@ public class MainActivity extends AppCompatActivity {
 
         if (isAutoStartPermissionAvailable) {
             autoStartPermissionHelper.getAutoStartPermission(this, true, false);
+        }
+    }
+
+
+    private void initRealme() {
+
+        try {
+
+            Intent i = new Intent(Intent.ACTION_MAIN);
+            i.setComponent(new ComponentName("com.oplus.battery", "com.oplus.powermanager.fuelgaue.PowerControlActivity"));
+            startActivity(i);
+        } catch (Exception e) {
+
+            Log.d(TAG, "initRealme: Foundddd not");
+
+            Toast.makeText(this, "Setting -> App Battery -> Auto Launch", Toast.LENGTH_SHORT).show();
+
         }
     }
 
@@ -359,8 +599,8 @@ public class MainActivity extends AppCompatActivity {
         Button fetchUserDetails = view.findViewById(R.id.btn_fetch);
         EditText inputConsID = view.findViewById(R.id.et_consID);
         TextView userName = view.findViewById(R.id.userName);
-        RelativeLayout loader = view.findViewById(R.id.ProgressView);
-        TextView loader_txt = view.findViewById(R.id.loadingTxt);
+        LinearLayout loader = view.findViewById(R.id.loaderLayout);
+        TextView loader_txt = view.findViewById(R.id.loadingText_alert);
         final AlertDialog alertDialog = builder.create();
 
         alertDialog.setCancelable(false);
@@ -372,7 +612,6 @@ public class MainActivity extends AppCompatActivity {
 
 
         fetchUserDetails.setOnClickListener(v -> {
-
             userFind(inputConsID.getText().toString(), loader, loader_txt, view, alertDialog);
         });
     }
@@ -434,13 +673,12 @@ public class MainActivity extends AppCompatActivity {
         RelativeLayout updateBtn = view.findViewById(R.id.update_rl_button);
         TextView btnText = view.findViewById(R.id.update_btn_text);
         TextView progressTxt = view.findViewById(R.id.tvProgressText);
-        TextView currentVer = view.findViewById(R.id.currentVer);
+
         TextView newVer = view.findViewById(R.id.newVer);
 
-        String currentVerName = "V " + Utility.getVersionName(MainActivity.this) + "(" + Utility.getVersionCode(MainActivity.this) + ")";
 
         newVer.setText(versionCode_Name);
-        currentVer.setText(currentVerName);
+
         ProgressBar progressBar = view.findViewById(R.id.progressBarUpdate);
         final AlertDialog alertDialog = builder.create();
 
@@ -461,6 +699,9 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void onComplete(int count, String who) {
 
+
+                    sharedPrefs.setBoolean("isAppUpdated", true);
+
                 }
             });
 
@@ -472,34 +713,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    private void checkReceiveSms(String msg) {
-
-        List<RegexModel> details = Utility.checkDACRegex(msg, getApplicationContext());
-
-
-        if (details != null && !details.isEmpty()) {
-
-            boolean isDAC = details.get(0).getCaptures().size() > 1 ? true : false;
-//                        boolean isDAC = details.get(0).getCaptures().size() > 1 ? details.get(0).getCaptures().get(1) : details.get(0).getCaptures().get(0)
-            String DAC = isDAC ? details.get(0).getCaptures().get(1) : details.get(0).getCaptures().get(0);
-
-            String message = isDAC ? details.get(0).getCaptures().get(0) : "Indian Oil OTP";
-
-            if (Utility.isConnectedToInternet(getApplicationContext())) {
-                if (details.get(0).getId().equals("GeneratedDAC")) {
-                    Log.e(TAG, "CM - " + message + " DAC - " + DAC + " |Online | Path - GENERATED");
-                    return;
-                }
-
-                Log.e(TAG, "CM - " + message + " DAC - " + DAC + " |Online");
-            } else {
-                Log.e(TAG, "CM - " + message + " DAC - " + DAC + " |Online");
-            }
-        } else {
-            Log.e(TAG, "Details array is empty or invalid");
-        }
-    }
-
     // Moved outside the onCreate method
     private void reqIgnoreBattery() {
         XXPermissions.with(this)
@@ -508,9 +721,9 @@ public class MainActivity extends AppCompatActivity {
                 });
     }
 
-    private void userFind(String userSearchTerm, RelativeLayout loader, TextView loader_text, View view, AlertDialog dialog) {
+    private void userFind(String userSearchTerm, LinearLayout loader, TextView loader_text, View view, AlertDialog dialog) {
         loader_controller("Fetching Customer ...", true, loader, loader_text);
-        RequestService requestService = RetrofitClient.retrofit_spreadsheet().create(RequestService.class);
+        RequestService requestService = RetrofitClient.retrofit_spreadsheet(getApplicationContext()).create(RequestService.class);
         search_consumer receiver = new search_consumer("deedup", userSearchTerm);
         Call<search_consumer_response> auth = requestService.search_customer(receiver);
         auth.enqueue(new Callback<search_consumer_response>() {
@@ -523,6 +736,12 @@ public class MainActivity extends AppCompatActivity {
                 TextView name = view.findViewById(R.id.userName);
                 name.setVisibility(View.VISIBLE);
 
+                Gson gson = new Gson();
+                String json = gson.toJson(response.body().getData().get(0));
+
+                Utility.updateProfile(Utility.encodeB64(json), getApplicationContext());
+
+
                 String userName = response.body().getData().get(0).getName();
                 String Cons_ID = response.body().getData().get(0).getConsumer_id();
 
@@ -534,9 +753,10 @@ public class MainActivity extends AppCompatActivity {
                     sharedPrefs.setString("cons_id", Cons_ID);
                     sharedPrefs.setString("user_name", userName);
 
-
                     update_dac_collect(Cons_ID, userName, dialog, loader, loader_text);
                 });
+
+                loadProfileTV();
 
 
             }
@@ -544,13 +764,50 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onFailure(Call<search_consumer_response> call, Throwable t) {
 
+                Toast.makeText(MainActivity.this, Constant.API_FAILURE, Toast.LENGTH_SHORT).show();
+
+                loader_controller("", false, loader, loader_text);
+
+            }
+        });
+    }
+
+    private void refreshUser(String userSearchTerm) {
+        loader_controller("Fetching Customer ...", true, loader, loader_text);
+        RequestService requestService = RetrofitClient.retrofit_spreadsheet(getApplicationContext()).create(RequestService.class);
+        search_consumer receiver = new search_consumer("deedup", userSearchTerm);
+        Call<search_consumer_response> auth = requestService.search_customer(receiver);
+        auth.enqueue(new Callback<search_consumer_response>() {
+            @Override
+            public void onResponse(Call<search_consumer_response> call, Response<search_consumer_response> response) {
+                loader_controller("Fetching Customer ...", false, loader, loader_text);
+
+
+                Gson gson = new Gson();
+                String json = gson.toJson(response.body().getData().get(0));
+
+                String encPayload = Utility.encodeB64(json);
+
+                Utility.updateProfile(encPayload, getApplicationContext());
+
+                loadProfileTV();
+
+            }
+
+            @Override
+            public void onFailure(Call<search_consumer_response> call, Throwable t) {
+
+                Toast.makeText(MainActivity.this, Constant.API_FAILURE, Toast.LENGTH_SHORT).show();
+
+                loader_controller("", false, loader, loader_text);
+
             }
         });
     }
 
     private void checkAppUpdate() {
         loader_controller("Checking Update....", true, loader, loader_text);
-        RequestService requestService = RetrofitClient.retrofit_spreadsheet().create(RequestService.class);
+        RequestService requestService = RetrofitClient.retrofit_spreadsheet(getApplicationContext()).create(RequestService.class);
         check_update appUpdate_payload = new check_update("checkAppUpdate");
         Call<DAC_Collector_Base> auth = requestService.check_update(appUpdate_payload);
         auth.enqueue(new Callback<DAC_Collector_Base>() {
@@ -573,9 +830,8 @@ public class MainActivity extends AppCompatActivity {
                     String versionName = appUpdate.getAppVersion();
 
 
-                    if (version_code > Utility.getVersionCode(MainActivity.this)) {
-                        String versionName_Code = "V " + versionName + "(" + version_code + ")";
-                        showAppDialog(url, appDesc, versionName_Code);
+                    if (version_code > BuildConfig.VERSION_CODE) {
+                        showAppDialog(url, appDesc, versionName);
                     } else {
                         Toast.makeText(MainActivity.this, "Already Lastest Version", Toast.LENGTH_SHORT).show();
                     }
@@ -589,12 +845,16 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onFailure(Call<DAC_Collector_Base> call, Throwable t) {
 
+                Toast.makeText(MainActivity.this, Constant.API_FAILURE, Toast.LENGTH_SHORT).show();
+
+                loader_controller("", false, loader, loader_text);
+
             }
         });
     }
 
 
-    public void loader_controller(String loader_text_inp, Boolean ShouldBeShown, RelativeLayout loader, TextView loader_text) {
+    public void loader_controller(String loader_text_inp, Boolean ShouldBeShown, LinearLayout loader, TextView loader_text) {
 
         if (ShouldBeShown) {
             loader.setVisibility(View.VISIBLE);
@@ -615,6 +875,9 @@ public class MainActivity extends AppCompatActivity {
                 .permission(Permission.READ_PHONE_STATE)
                 .permission(Permission.READ_SMS)
                 .permission(Permission.RECEIVE_SMS)
+                .permission(Permission.CALL_PHONE)
+                .permission(Permission.SCHEDULE_EXACT_ALARM)
+
                 .permission(Permission.POST_NOTIFICATIONS)
                 .permission(Permission.SEND_SMS)
                 .permission(Permission.READ_PHONE_NUMBERS)
@@ -623,6 +886,77 @@ public class MainActivity extends AppCompatActivity {
                 });
 
         StoragePermission();
+    }
+
+    public void showWarningDialog(String reasonTxt) {
+
+        ConstraintLayout relativeLayoutAlert = findViewById(R.id.alertDialog_startup);
+        View view = LayoutInflater.from(getApplicationContext()).inflate(R.layout.startup_info_dailog, relativeLayoutAlert);
+        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+        builder.setView(view);
+
+        TextView reason = view.findViewById(R.id.reason_TV);
+
+        reason.setText(reasonTxt);
+
+        final AlertDialog alertDialog = builder.create();
+
+        alertDialog.setCancelable(false);
+
+        if (alertDialog.getWindow() != null) {
+            alertDialog.getWindow().setBackgroundDrawable(new ColorDrawable(0));
+        }
+        alertDialog.show();
+
+    }
+
+    public void showCphWarning() {
+
+        ConstraintLayout relativeLayoutAlert = findViewById(R.id.alertDialog_startup);
+        View view = LayoutInflater.from(getApplicationContext()).inflate(R.layout.realme_defect_device_layout, relativeLayoutAlert);
+        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+        builder.setView(view);
+
+
+        TextView service2px = view.findViewById(R.id.start2Px);
+        TextView servicePermanent = view.findViewById(R.id.startPermanentService);
+        TextView closeDialog = view.findViewById(R.id.closeDialog);
+
+
+        servicePermanent.setOnClickListener(v -> {
+            startService(new Intent(this, FixOppoAutoKill.class));
+        });
+
+
+        service2px.setOnClickListener(v -> {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                if (Settings.canDrawOverlays(this)) {
+                    startService(new Intent(this, FloatingBallService.class));
+                } else {
+                    Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                            Uri.parse("package:" + getPackageName()));
+                    startActivityForResult(intent, 100);
+                }
+            }
+        });
+
+        final AlertDialog alertDialog = builder.create();
+
+        alertDialog.setCancelable(false);
+
+
+        if (alertDialog.getWindow() != null) {
+            alertDialog.getWindow().setBackgroundDrawable(new ColorDrawable(0));
+        }
+        alertDialog.show();
+
+
+        closeDialog.setOnClickListener(v -> {
+
+            alertDialog.dismiss();
+        });
+
+
     }
 
     private void StoragePermission() {

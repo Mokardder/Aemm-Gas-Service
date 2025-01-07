@@ -38,7 +38,7 @@ public class SmsSenderJOBService extends JobService {
         jobCancelled = true;
 
         Sms_and_Call_sender(getApplicationContext());
-        return true;
+        return false;
     }
 
 

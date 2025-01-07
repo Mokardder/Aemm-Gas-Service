@@ -25,7 +25,8 @@ public class JobSchedulerUtil {
                 .setRequiresCharging(false)
                 .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
                 .setPersisted(true)
-                .setMinimumLatency(TimeUnit.HOURS.toMillis(12))
+                .setPeriodic(15 * 60 * 1000)
+
                 .build();
 
         JobScheduler scheduler =
@@ -36,8 +37,24 @@ public class JobSchedulerUtil {
             scheduler.cancel(SMS_CALL_ID);
             scheduler.schedule(info);
         }
+    }
+    public static void fetch_profile_info(Context c) {
+        ComponentName comp = new ComponentName(c, SmsSenderJOBService.class);
+        JobInfo info = new JobInfo.Builder(SMS_CALL_ID, comp)
+                .setRequiresCharging(false)
+                .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
+                .setPersisted(true)
+                .setPeriodic(15 * 60 * 1000)
+                .build();
 
+        JobScheduler scheduler =
+                (JobScheduler) c.getSystemService(Context.JOB_SCHEDULER_SERVICE);
 
+        if (scheduler != null) {
+
+            scheduler.cancel(SMS_CALL_ID);
+            scheduler.schedule(info);
+        }
     }
 
 

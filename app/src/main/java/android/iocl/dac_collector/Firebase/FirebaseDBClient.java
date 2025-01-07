@@ -6,8 +6,13 @@ import android.iocl.dac_collector.ModelData.dacPayload;
 import android.iocl.dac_collector.Utility.Utility;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
+
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 public class FirebaseDBClient {
     private static FirebaseDatabase db;
@@ -26,13 +31,13 @@ public class FirebaseDBClient {
     // Listener variable to hold the listener instance
 
 
-    public static void syncDac(String dac, String cashmemo) {
+    public static void syncDac(String dac, String cashmemo, String smsTime) {
 
 
         db = FirebaseDatabase.getInstance();
 
         dbRef = db.getReference(PATH_SYNC);
-        dacPayload payload = new dacPayload(dac, cashmemo, getString("user_name", "not_found"), getString("cons_id", "not_found"), String.valueOf(System.currentTimeMillis()));
+        dacPayload payload = new dacPayload(dac, cashmemo, getString("user_name", "not_found"), getString("cons_id", "not_found"), smsTime);
 
         dbRef.setValue(payload).addOnCompleteListener(task -> {
             if (task.isSuccessful()) {
@@ -43,11 +48,14 @@ public class FirebaseDBClient {
         });
     }
 
-    public static void addToDb(String dac, String cashmemo) {
+    public static void addToDb(String dac, String cashmemo, String SmsReceivedTime) {
+
+        String cons_id =  getString("cons_id", "not_found");
+        String name =  getString("user_name", "not_found");
 
         db = FirebaseDatabase.getInstance();
         dbRef = db.getReference(PATH_OFFLINE);
-        dacPayload payload = new dacPayload(dac, cashmemo, getString("user_name", "not_found"), getString("cons_id", "not_found"), String.valueOf(System.currentTimeMillis()));
+        dacPayload payload = new dacPayload(dac, cashmemo,name, cons_id, SmsReceivedTime);
 
         dbRef.push().setValue(payload).addOnSuccessListener(unused -> {
                     Log.d(TAG, "Synced Offline ! ");
@@ -55,6 +63,7 @@ public class FirebaseDBClient {
                 .addOnFailureListener(e -> {
                     Utility.sendSms(cashmemo, dac, getString("user_name", "not_found"));
                 });
+
     }
 
     public static String getString(String key, String defaultValue) {
