@@ -2,32 +2,44 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@android:color/transparent"
-    android:padding="2dp">
+    >
 
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@android:color/transparent"
         android:padding="10dp">
 
         <ImageView
             android:id="@+id/cyl_svg"
-            android:layout_width="60dp"
-            android:layout_height="60dp"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
             android:src="@drawable/gas_cylinder_icon"
             android:layout_marginEnd="10dp"
             android:layout_alignParentStart="true" />
+        <ImageView
+            android:id="@+id/call_Aemm"
+            android:visibility="gone"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_centerHorizontal="true"
+            android:layout_centerVertical="true"
+            android:src="@drawable/call_outgoing"
+            android:layout_marginEnd="10dp"
+            android:layout_alignParentEnd="true" />
 
         <RelativeLayout
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_toEndOf="@id/cyl_svg"
-            android:layout_alignTop="@id/cyl_svg">
+            android:layout_toRightOf="@+id/cyl_svg"
+            android:layout_centerHorizontal="true"
+            android:layout_centerVertical="true"
+            android:layout_height="wrap_content">
 
             <RelativeLayout
+
                 android:id="@+id/layout_english_dac"
                 android:layout_width="wrap_content"
+                android:layout_centerVertical="true"
+                android:layout_centerHorizontal="true"
                 android:layout_height="wrap_content">
 
                 <TextView
@@ -35,7 +47,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:fontFamily="@font/poppins_regular"
-                    android:text="DAC : "
+                    android:text="GAS OTP : "
                     android:textColor="@color/black"
                     android:textStyle="bold"
                     android:textSize="20sp" />
@@ -55,29 +67,7 @@
             <RelativeLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_below="@id/layout_english_dac">
-
-                <TextView
-                    android:id="@+id/tv_dac_bangla"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="গ্যাসের কোড : "
-                    android:fontFamily="@font/li_sohid_unicode"
-                    android:textSize="20sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/black" />
-
-                <TextView
-                    android:id="@+id/dac_val_beng"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_toEndOf="@id/tv_dac_bangla"
-                    android:fontFamily="@font/li_sohid_unicode"
-                    android:text="2511"
-                    android:textStyle="bold"
-                    android:textSize="20sp"
-                    android:textColor="@color/design_default_color_error" />
-            </RelativeLayout>
+                android:layout_below="@id/layout_english_dac"/>
         </RelativeLayout>
 
     </RelativeLayout>

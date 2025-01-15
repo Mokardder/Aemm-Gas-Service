@@ -6,120 +6,83 @@ import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
-import android.app.Service;
-import android.app.job.JobInfo;
-import android.app.job.JobScheduler;
-import android.content.ComponentName;
-import android.content.Context;
+import android.app.job.JobParameters;
+import android.app.job.JobService;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.iocl.dac_collector.ModelData.search_consumer;
 import android.iocl.dac_collector.ModelData.search_consumer_response;
 import android.iocl.dac_collector.R;
 import android.iocl.dac_collector.RetrofitClient.RequestService;
 import android.iocl.dac_collector.RetrofitClient.RetrofitClient;
 import android.iocl.dac_collector.Ui.MainActivity;
-import android.iocl.dac_collector.Utility.Constant;
 import android.iocl.dac_collector.Utility.Utility;
-import android.media.Ringtone;
-import android.media.RingtoneManager;
-import android.net.Uri;
-import android.os.Build;
-import android.os.Bundle;
-import android.os.Handler;
-import android.os.IBinder;
-import android.os.Looper;
-import android.os.PersistableBundle;
 import android.util.Log;
-import android.widget.Toast;
-
-
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
-
 
 import com.google.gson.Gson;
-
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
 
-public class FetchProfileInfo extends Service {
+public class FetchProfileInfo extends JobService {
+
     private static String CHANNEL_ID = "MainServiceActions";
 
-    @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
-    public void onCreate() {
-
+    public boolean onStartJob(JobParameters jobParameters) {
 
         createNotificationChannel();
         startServiceWithNotification();
 
-
-
-        super.onCreate();
-
-    }
-
-
-
-
-    @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
-
         String number = Utility.getConsID(getApplicationContext());
 
-        refreshUser(number);
+        if (!number.isEmpty()){
+            doJob(number);
+        }
 
 
 
-        return START_STICKY;
+        jobFinished(jobParameters, true);
+        return true;
     }
 
-    private void refreshUser(String userSearchTerm) {
-
-        RequestService requestService = RetrofitClient.retrofit_spreadsheet(getApplicationContext()).create(RequestService.class);
-        search_consumer receiver = new search_consumer("deedup", userSearchTerm);
-        Call<search_consumer_response> auth = requestService.search_customer(receiver);
-        auth.enqueue(new Callback<search_consumer_response>() {
-            @Override
-            public void onResponse(Call<search_consumer_response> call, Response<search_consumer_response> response) {
-
-                Gson gson = new Gson();
-                String json = gson.toJson(response.body().getData().get(0));
-
-                String encPayload = Utility.encodeB64( json);
-
-                Utility.updateProfile(encPayload, getApplicationContext());
-
-
-            }
-
-            @Override
-            public void onFailure(Call<search_consumer_response> call, Throwable t) {
-
-            }
-        });
-    }
-
-
-
-
-
-
-
-
-
-    @Nullable
     @Override
-    public IBinder onBind(Intent intent) {
-        return null;
+    public boolean onStopJob(JobParameters jobParameters) {
+        return true;
     }
 
+    private void doJob (String userSearchTerm) {
+
+
+
+            RequestService requestService = RetrofitClient.retrofit_spreadsheet(getApplicationContext()).create(RequestService.class);
+            search_consumer receiver = new search_consumer("deedup", userSearchTerm);
+            Call<search_consumer_response> auth = requestService.search_customer(receiver);
+            auth.enqueue(new Callback<search_consumer_response>() {
+                @Override
+                public void onResponse(Call<search_consumer_response> call, Response<search_consumer_response> response) {
+
+                    Gson gson = new Gson();
+                    String json = gson.toJson(response.body().getData().get(0));
+
+                    String encPayload = Utility.encodeB64( json);
+
+                    Utility.updateProfile(encPayload, getApplicationContext());
+
+                    Log.d(Utility.TAG, "onResponse: Job Succeed " + encPayload);
+
+
+                }
+
+                @Override
+                public void onFailure(Call<search_consumer_response> call, Throwable t) {
+
+                }
+            });
+
+
+    }
 
     private void startServiceWithNotification() {
         Intent notificationIntent = new Intent(this, MainActivity.class);
@@ -133,7 +96,7 @@ public class FetchProfileInfo extends Service {
                     .setContentTitle("Profile")
                     .setContentText("Fetching Profile...")
                     .setAutoCancel(true)
-                    .setSmallIcon(R.drawable.gas_cylinder_icon);
+                    .setSmallIcon(R.drawable.verify_icon_blue);
         }
 
         startForeground(1001, notification.build());
@@ -155,10 +118,6 @@ public class FetchProfileInfo extends Service {
         }
 
     }
-
-
-
-
 
 
 

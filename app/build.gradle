@@ -13,50 +13,61 @@ android {
     namespace 'android.iocl.dac_collector'
     compileSdk 34
 
-    def _versionCode=0
-    def _major=0
-    def _minor=0
-    def _patch=0
+    def _versionCode = 0
+    def _major = 0
+    def _minor = 0
+    def _patch = 0
 
     def versionPropsFile = file('version.properties')
 
-    if (versionPropsFile.canRead()) {
+    // Check if the build type is release
+    if (gradle.startParameter.taskRequests.toString().contains("assembleRelease")) {
+        if (versionPropsFile.canRead()) {
+            def Properties versionProps = new Properties()
+
+            versionProps.load(new FileInputStream(versionPropsFile))
+
+            _patch = versionProps['PATCH'].toInteger() + 1
+            _major = versionProps['MAJOR'].toInteger()
+            _minor = versionProps['MINOR'].toInteger()
+            _versionCode = versionProps['VERSION_CODE'].toInteger() + 1
+
+            if (_patch == 20) {
+                _patch = 0
+                _minor = _minor + 1
+            }
+            if (_minor == 10) {
+                _minor = 0
+                _major = _major + 1
+            }
+
+            versionProps['MAJOR'] = _major.toString()
+            versionProps['MINOR'] = _minor.toString()
+            versionProps['PATCH'] = _patch.toString()
+            versionProps['VERSION_CODE'] = _versionCode.toString()
+            versionProps.store(versionPropsFile.newWriter(), null)
+        } else {
+            throw new GradleException("Could not read version.properties!")
+        }
+    } else if (versionPropsFile.canRead()) {
         def Properties versionProps = new Properties()
 
         versionProps.load(new FileInputStream(versionPropsFile))
 
-        _patch = versionProps['PATCH'].toInteger() + 1
+        _patch = versionProps['PATCH'].toInteger()
         _major = versionProps['MAJOR'].toInteger()
         _minor = versionProps['MINOR'].toInteger()
-        _versionCode= versionProps['VERSION_CODE'].toInteger()+1
-
-        if(_patch==20) {
-            _patch=0
-            _minor=_minor+1
-        }
-        if(_minor == 10){
-            _minor = 0
-            _major =_major + 1
-        }
-
-        versionProps['MAJOR']=_major.toString()
-        versionProps['MINOR']=_minor.toString()
-        versionProps['PATCH']=_patch.toString()
-        versionProps['VERSION_CODE']=_versionCode.toString()
-        versionProps.store(versionPropsFile.newWriter(), null)
-    }
-    else {
+        _versionCode = versionProps['VERSION_CODE'].toInteger()
+    } else {
         throw new GradleException("Could not read version.properties!")
     }
 
     def _versionName = "${_major}.${_minor}.${_patch}(${_versionCode})"
     def _OnlyversionName = "${_major}.${_minor}.${_patch}"
 
-
     buildFeatures {
         buildConfig true
     }
-
 
     defaultConfig {
         applicationId "android.iocl.dac_collector"
@@ -66,21 +77,12 @@ android {
         versionName _OnlyversionName
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
-    applicationVariants.all{
-            // this method is use to rename your all apk weather
-            // it may be signed or unsigned(debug apk)
-        variant ->
-            variant.outputs.each{
-                    // on below line we are setting
-                    // a name to our apk as GFG.apk
-                output->
-                    // on below line we are adding version name to
-                    // our .apk file along with the app name
-                    def name = "Aemm_(${_versionCode}).apk"
-                    // on below line we are setting the
-                    // outputFile Name to our apk file
-                    output.outputFileName = name
-            }
+
+    applicationVariants.all { variant ->
+        variant.outputs.each { output ->
+            def name = "Aemm_V${_versionCode}.apk"
+            output.outputFileName = name
+        }
     }
 
     buildTypes {
@@ -90,15 +92,17 @@ android {
             signingConfig signingConfigs.debug
         }
     }
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+
     kotlinOptions {
         jvmTarget = '1.8'
     }
-
 }
+
 
 dependencies {
     implementation(platform("com.google.firebase:firebase-bom:33.4.0"))
@@ -109,6 +113,7 @@ dependencies {
     implementation("com.google.firebase:firebase-messaging")
     implementation "org.jetbrains.kotlin:kotlin-stdlib:1.8.0"
     implementation 'androidx.core:core-ktx:1.7.0'
+    implementation 'com.github.pwittchen:reactivenetwork-rx2:3.0.8'
 
     implementation 'com.google.android.gms:play-services-ads:23.3.0'
     implementation "com.google.android.material:material:1.3.0-alpha02"

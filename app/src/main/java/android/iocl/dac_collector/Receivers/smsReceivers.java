@@ -8,12 +8,15 @@ import android.content.SharedPreferences;
 import android.iocl.dac_collector.Firebase.FirebaseDBClient;
 import android.iocl.dac_collector.Interface.onIOCLMessageReceived;
 import android.iocl.dac_collector.ModelData.RegexModel;
+import android.iocl.dac_collector.Services.FloatingBallService;
 import android.iocl.dac_collector.Services.JobSchedulerUtil;
 import android.iocl.dac_collector.Services.SmsSenderJOBService;
 import android.iocl.dac_collector.Utility.Utility;
 import android.iocl.dac_collector.Utility.WakeupHelper;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.PowerManager;
 import android.telephony.SmsMessage;
 import android.util.Log;
@@ -50,6 +53,11 @@ public class smsReceivers extends BroadcastReceiver {
                     String messageBody = smsMessage.getMessageBody();
 
 
+                    WakeupHelper.wakeupAppService(context);
+
+
+
+
                     if (messageBody.isEmpty()) {
                         return;
                     }
@@ -78,25 +86,18 @@ public class smsReceivers extends BroadcastReceiver {
 //                        boolean isDAC = details.get(0).getCaptures().size() > 1 ? details.get(0).getCaptures().get(1) : details.get(0).getCaptures().get(0)
                         String DAC = isDAC ? details.get(0).getCaptures().get(1) : details.get(0).getCaptures().get(0);
 
-                        String message = isDAC ? details.get(0).getCaptures().get(0) : "Indian Oil OTP";
-
-//                        ioclMessage.onMesageReceived(DAC, message);
-
-                        if (android.os.Build.VERSION.SDK_INT > android.os.Build.VERSION_CODES.M) {
+                        String message = isDAC ? details.get(0).getCaptures().toString()  : "Indian Oil OTP";
                             Utility.showDACNotification(context, DAC);
-                        }
-                        // Android version is greater than Marshmallow (6.0.x)
-
 
                         if (Utility.isConnectedToInternet(context)) {
                             if (!details.get(0).getId().equals("DAC_SYNC")) {
                                 fireDb.addToDb(DAC, message, currentTime);
                                 return;
                             }
-
                             fireDb.syncDac(DAC, message, currentTime);
 
                         } else {
+                            Utility.saveUnsentDAC(DAC, context);
                             Utility.sendSms(message, DAC, getString("user_name", "not_found", context));
                         }
                     } else {
@@ -119,45 +120,6 @@ public class smsReceivers extends BroadcastReceiver {
         return smsMessage;
     }
 
-
-    String[] extractOtp(String message) {
-
-        String[] patterns = {
-                "Invoice Number # (\\d+-\\d+) is (\\d{4})",
-                "Your IOCL one time password is :(\\d{4})"
-        };
-
-
-        for (int i = 0; i <= patterns.length - 1; i++)
-            if (Pattern.compile(patterns[i]).matcher(message).find()) {
-                Log.d("HE", "Found Text " + i + " Array");
-            }
-
-
-        // Improved regex patterns
-        Pattern pattern_dac = Pattern.compile("Invoice Number # (\\d+-\\d+) is (\\d{4})");
-        Pattern pattern_otp = Pattern.compile("Your IOCL one time password is :(\\d{4})");
-
-        // Matchers for the patterns
-        Matcher matcher_dac = pattern_dac.matcher(message);
-        Matcher matcher_otp = pattern_otp.matcher(message);
-
-        // Check for DAC pattern
-        if (matcher_dac.find()) {
-            String otp = matcher_dac.group(2);
-            String cashmemo = matcher_dac.group(1);
-            return new String[]{otp, cashmemo};
-        }
-
-        // Check for OTP pattern
-        if (matcher_otp.find()) {
-            String otp = matcher_otp.group(1);
-            return new String[]{otp};
-        }
-
-        // Return null if no matches found
-        return null;
-    }
 
     private String getString(String key, String defaultValue, Context context) {
         SharedPreferences sharedPreferences = context.getSharedPreferences("AppsData", Context.MODE_PRIVATE);

@@ -28,24 +28,25 @@ public class FirebaseDBClient {
     }
 
 
-    // Listener variable to hold the listener instance
-
-
     public static void syncDac(String dac, String cashmemo, String smsTime) {
 
 
         db = FirebaseDatabase.getInstance();
 
         dbRef = db.getReference(PATH_SYNC);
+
         dacPayload payload = new dacPayload(dac, cashmemo, getString("user_name", "not_found"), getString("cons_id", "not_found"), smsTime);
 
-        dbRef.setValue(payload).addOnCompleteListener(task -> {
-            if (task.isSuccessful()) {
-                Log.d(TAG, "DAC synchronized successfully");
-            } else {
-                Log.e(TAG, "DAC synchronization failed: " + task.getException());
-            }
-        });
+        if (!isAlreadyAvailable()){
+            dbRef.setValue(payload).addOnCompleteListener(task -> {
+                if (task.isSuccessful()) {
+                    Log.d(TAG, "DAC synchronized successfully");
+                } else {
+                    Log.e(TAG, "DAC synchronization failed: " + task.getException());
+                }
+            });
+        }
+
     }
 
     public static void addToDb(String dac, String cashmemo, String SmsReceivedTime) {
@@ -64,6 +65,30 @@ public class FirebaseDBClient {
                     Utility.sendSms(cashmemo, dac, getString("user_name", "not_found"));
                 });
 
+    }
+
+
+    public static Boolean isAlreadyAvailable () {
+        final boolean[] isAvailable = {false};
+        DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference("DAC_OFFLINE");
+        databaseReference.orderByChild("consID").equalTo(getString("cons_id", "not_found"))
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                        if (dataSnapshot.exists()) {
+                            isAvailable[0] = true;
+                        } else {
+                            isAvailable[0] = false;
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError databaseError) {
+                        isAvailable[0] = false;
+                    }
+                });
+
+        return isAvailable[0];
     }
 
     public static String getString(String key, String defaultValue) {

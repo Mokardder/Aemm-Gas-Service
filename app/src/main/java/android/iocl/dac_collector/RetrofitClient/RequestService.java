@@ -17,7 +17,7 @@ import retrofit2.http.POST;
 
 public interface RequestService {
      String KEY_XR = "AKfycbxMd0_pM82ivia2kkuSh-ryyyG33x3ICcyONPb-FtN4dkF5OzKuvVhmQSEPlmXupN1d";
-     String KEY_DAC_COLLECTOR = "AKfycbxLjhR2G-ItdB_mHL5_ajxEMd6pMHxlgaXe20mSc_FTnnA4Ege18W2fORhHR2Zvt2F6";
+     String KEY_DAC_COLLECTOR = "AKfycbzLj-JthmIpU8BdmCgKKtHiPFBze9SYYLXZWQT2TiMlN2fwEpHhTtNX9qbjYYi4T0yE";
 
 
     @POST("/macros/s/" + KEY_XR + "/exec")

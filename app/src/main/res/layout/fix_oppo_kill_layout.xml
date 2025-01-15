@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <ImageView
+        android:id="@+id/clock_img"
+        android:layout_width="24dp"
+        android:layout_marginTop="5dp"
+        android:layout_height="24dp"
+        android:layout_marginRight="10dp"
+        android:src="@drawable/clock_time"/>
+
+    <TextView
+        android:layout_toRightOf="@+id/clock_img"
+        android:id="@+id/tvTime"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="00:00:00"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:layout_gravity="center"
+        android:textColor="@android:color/black" />
+
+</RelativeLayout>

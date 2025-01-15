@@ -14,15 +14,10 @@ public class MyReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        Log.d(TAG, "onReceive called");
-
-        // We are starting MyService via a worker and not directly because since Android 7
-        // (but officially since Lollipop!), any process called by a BroadcastReceiver
-        // (only manifest-declared receiver) is run at low priority and hence eventually
-        // killed by Android.
-        WorkManager workManager = WorkManager.getInstance(context);
-        OneTimeWorkRequest startServiceRequest = new OneTimeWorkRequest.Builder(MyWorker.class)
-                .build();
-        workManager.enqueue(startServiceRequest);
+        if (Intent.ACTION_BOOT_COMPLETED.equals(intent.getAction())) {
+            Log.d("MyReceiver", "BOOT_COMPLETED received!");
+        } else if ("android.iocl.dac_collector.TEST_BOOT".equals(intent.getAction())) {
+            Log.d("MyReceiver", "Test boot action received!");
+        }
     }
 }

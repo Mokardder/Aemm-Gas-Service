@@ -115,16 +115,19 @@
 
             <Button
                 android:id="@+id/btn_fetch"
+
+
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Fetch Data"
                 android:layout_marginTop="16dp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="2dp"
                 app:layout_constraintTop_toBottomOf="@+id/userName"
-                android:backgroundTint="@color/primary_color"
-                android:background="@drawable/round_primary"
-                android:textColor="@android:color/white" />
+                android:background="@drawable/rounded_yellow_background"
+                android:textColor="@color/yellow" />
             <Button
                 android:visibility="gone"
                 android:id="@+id/btn_saveData"
@@ -141,6 +144,7 @@
 
             <TextView
                 android:id="@+id/btn_skip"
+                android:enabled="false"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:background="@drawable/rounded_blue_background"
@@ -150,7 +154,6 @@
                 android:layout_marginLeft="10dp"
                 android:paddingHorizontal="7dp"
                 android:visibility="visible"
-
                 android:clickable="true"
                 android:focusable="true"
                 android:foreground="?android:attr/selectableItemBackgroundBorderless"

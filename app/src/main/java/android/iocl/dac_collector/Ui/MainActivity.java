@@ -1,7 +1,12 @@
 package android.iocl.dac_collector.Ui;
 
 
+import static android.iocl.dac_collector.Utility.Constant.DefaultRegex;
+
 import android.Manifest;
+import android.annotation.SuppressLint;
+import android.app.Activity;
+import android.app.role.RoleManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -38,6 +43,8 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.provider.Settings;
+import android.provider.Telephony;
+import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -47,19 +54,25 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
-import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.analytics.FirebaseAnalytics;
 import com.google.firebase.messaging.FirebaseMessaging;
@@ -77,14 +90,10 @@ import retrofit2.Response;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity_Mokardder";
-
-
     FirebaseAnalytics mFirebaseAnalytics;
 
-    boolean isUserSetteled = false;
-
     LinearLayout loader;
-    TextView loader_text, call_Akram, call_Emdadul, call_Mokardder, refreshProfile, userName, remainBook, lastBook, mobNo, consID, location, Book_Btn, Check_Update, aboutApp;
+    TextView loader_text, call_Akram, call_Emdadul, call_Mokardder, refreshProfile, userName, remainBook, lastBook, mobNo, consID, location, Book_Btn, Check_Update, aboutApp, cphPerm;
     ImageView annualTick;
     String FCM_KEY = "";
     SharedPrefs sharedPrefs;
@@ -113,17 +122,16 @@ public class MainActivity extends AppCompatActivity {
         Check_Update = findViewById(R.id.Check_Update);
         Book_Btn = findViewById(R.id.Book_Btn);
         aboutApp = findViewById(R.id.aboutApp);
-
-        if (Build.MODEL.startsWith("RMX")) {
-
-            showCphWarning();
-
-        }
+        cphPerm = findViewById(R.id.cphPerm);
 
 
-//        showWarningDialog("Test Problem");
 
-//        showAppDialog("", "", "0.9.3");
+        mFirebaseAnalytics = FirebaseAnalytics.getInstance(this);
+
+        mFirebaseAnalytics.setAnalyticsCollectionEnabled(true);
+
+
+        FirebaseMessaging.getInstance().setAutoInitEnabled(true);
 
 
         call_Akram.setOnClickListener(v -> {
@@ -135,6 +143,9 @@ public class MainActivity extends AppCompatActivity {
         call_Mokardder.setOnClickListener(v -> {
             makeCall("+919932896502");
         });
+        cphPerm.setOnClickListener(v -> {
+            showCphWarning();
+        });
 
 
         if (sharedPrefs.getBoolean("isAppUpdated", false)) {
@@ -144,29 +155,38 @@ public class MainActivity extends AppCompatActivity {
         }
 
 
-        if (sharedPrefs.getBoolean("isFirstTime", true)) {
+        subscribeTopics();
 
-            autoStartPermission();
+
+        if (sharedPrefs.getBoolean("isFirstTime", true)) {
 
             if (Build.MODEL.startsWith("CPH")) {
                 showCphWarning();
             }
             showUserDetailsDialog();
+            refreshFCMToken();
+            reqIgnoreBattery();
+            installpermission();
 
+            Utility.updateMessagePattern(DefaultRegex, MainActivity.this);
         } else {
             checkAppUpdate();
         }
 
-
-        installpermission();
-
-        String regx = "{\r\n  \"patterns\": [\r\n    {\r\n      \"id\": \"DAC\",\r\n      \"regex\": \"Invoice Number # (\\\\d+-\\\\d+) is (\\\\d{4})\",\r\n      \"capture\": \"1, 2\"\r\n    },\r\n    {\r\n      \"id\": \"OTP\",\r\n      \"regex\": \"Your IOCL one time password is :(\\\\d{4})\",\r\n      \"capture\": \"1\"\r\n    },\r\n    {\r\n      \"id\": \"GeneratedDAC\",\r\n      \"regex\": \"Invoice generated for Rs. (\\\\d{3}).Share DAC (\\\\d{4})\",\r\n      \"capture\": \"2\"\r\n    }\r\n  ]\r\n}";
-
-        Utility.updateMessagePattern(regx, MainActivity.this);
-
-
         requestPerms();
-        reqIgnoreBattery();
+
+
+        Log.d(TAG, "onCreate: " + Utility.getMyPhoneNumberFromSubscription(getApplicationContext(), 1));
+        TelephonyManager tMgr = (TelephonyManager)   this.getSystemService(Context.TELEPHONY_SERVICE);
+        @SuppressLint("MissingPermission") String mPhoneNumber = tMgr.getLine1Number();
+
+
+        Log.d(TAG, "onCreate: " + mPhoneNumber);
+
+
+
+
+
 
 
         FirebaseApp.initializeApp(this);
@@ -176,22 +196,6 @@ public class MainActivity extends AppCompatActivity {
 
 
         // Obtain the FirebaseAnalytics instance.
-        mFirebaseAnalytics = FirebaseAnalytics.getInstance(this);
-
-        mFirebaseAnalytics.setAnalyticsCollectionEnabled(true);
-
-
-        FirebaseMessaging.getInstance().setAutoInitEnabled(true);
-
-
-        FirebaseMessaging.getInstance().getToken()
-                .addOnCompleteListener(task -> {
-                    if (task.isSuccessful()) {
-                        FCM_KEY = task.getResult();
-
-                    }
-
-                });
 
 
         if (!Utility.isJobSchedulerActive(MainActivity.this, JobSchedulerUtil.SMS_CALL_ID)) {
@@ -207,7 +211,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         aboutApp.setOnClickListener(v -> {
-        showAboutDialog();
+            showAboutDialog();
 
         });
 
@@ -241,6 +245,20 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    private void refreshFCMToken() {
+        FirebaseMessaging.getInstance().getToken()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        FCM_KEY = task.getResult();
+
+
+                        Log.d(TAG, "onCreate: " + FCM_KEY);
+
+                    }
+
+                });
+    }
+
     private void showAboutDialog() {
         // Inflate the layout
         View view = LayoutInflater.from(this).inflate(R.layout.app_about_dialog, null);
@@ -250,7 +268,7 @@ public class MainActivity extends AppCompatActivity {
         builder.setView(view);
 
         final AlertDialog alertDialog = builder.create();
-        alertDialog.setCancelable(false);
+        alertDialog.setCancelable(true);
 
         // Set a transparent background, if desired
         if (alertDialog.getWindow() != null) {
@@ -291,8 +309,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void makeCall(String number) {
-
-
         // Getting instance of Intent with action as ACTION_CALL
         Intent phone_intent = new Intent(Intent.ACTION_CALL);
 
@@ -364,14 +380,6 @@ public class MainActivity extends AppCompatActivity {
 
     private void updateAppIsUpdated() {
 
-        FirebaseMessaging.getInstance().getToken()
-                .addOnCompleteListener(task -> {
-                    if (task.isSuccessful()) {
-                        FCM_KEY = task.getResult();
-
-                    }
-
-                });
 
         if (FCM_KEY.isEmpty()) {
             Toast.makeText(this, "FCM Key not received yet", Toast.LENGTH_SHORT).show();
@@ -427,14 +435,6 @@ public class MainActivity extends AppCompatActivity {
 
     private void update_dac_collect(String cons_id, String name, AlertDialog dialog, LinearLayout loader, TextView loader_text) {
 
-        FirebaseMessaging.getInstance().getToken()
-                .addOnCompleteListener(task -> {
-                    if (task.isSuccessful()) {
-                        FCM_KEY = task.getResult();
-
-                    }
-
-                });
 
         if (FCM_KEY.isEmpty()) {
             Toast.makeText(this, "FCM Key not received yet", Toast.LENGTH_SHORT).show();
@@ -484,109 +484,6 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    private void autoStartPermission() {
-
-        if (Build.BRAND.equalsIgnoreCase("xiaomi")) {
-            Intent intent = new Intent();
-            intent.setComponent(new ComponentName("com.miui.securitycenter", "com.miui.permcenter.autostart.AutoStartManagementActivity"));
-            startActivity(intent);
-
-        } else if (Build.BRAND.equalsIgnoreCase("oppo")) {
-            initOPPO();
-
-        } else if (Build.BRAND.equalsIgnoreCase("realme")) {
-            initRealme();
-
-        } else if (Build.BRAND.equalsIgnoreCase("Vivo")) {
-            autoLaunchVivo(MainActivity.this);
-        } else {
-            getAutoStartLib();
-        }
-    }
-
-    private void autoLaunchVivo(Context context) {
-        try {
-            Intent intent = new Intent();
-            intent.setComponent(new ComponentName("com.iqoo.secure",
-                    "com.iqoo.secure.ui.phoneoptimize.AddWhiteListActivity"));
-            context.startActivity(intent);
-        } catch (Exception e) {
-            try {
-                Intent intent = new Intent();
-                intent.setComponent(new ComponentName("com.vivo.permissionmanager",
-                        "com.vivo.permissionmanager.activity.BgStartUpManagerActivity"));
-                context.startActivity(intent);
-            } catch (Exception ex) {
-                try {
-                    Intent intent = new Intent();
-                    intent.setClassName("com.iqoo.secure",
-                            "com.iqoo.secure.ui.phoneoptimize.BgStartUpManager");
-                    context.startActivity(intent);
-                } catch (Exception exx) {
-                    getAutoStartLib();
-                }
-            }
-        }
-    }
-
-    private void getAutoStartLib() {
-        AutoStartPermissionHelper autoStartPermissionHelper = AutoStartPermissionHelper.getInstance();
-
-        boolean isAutoStartPermissionAvailable = autoStartPermissionHelper.isAutoStartPermissionAvailable(this, false);
-
-
-        if (isAutoStartPermissionAvailable) {
-            autoStartPermissionHelper.getAutoStartPermission(this, true, false);
-        }
-    }
-
-
-    private void initRealme() {
-
-        try {
-
-            Intent i = new Intent(Intent.ACTION_MAIN);
-            i.setComponent(new ComponentName("com.oplus.battery", "com.oplus.powermanager.fuelgaue.PowerControlActivity"));
-            startActivity(i);
-        } catch (Exception e) {
-
-            Log.d(TAG, "initRealme: Foundddd not");
-
-            Toast.makeText(this, "Setting -> App Battery -> Auto Launch", Toast.LENGTH_SHORT).show();
-
-        }
-    }
-
-    private void initOPPO() {
-        try {
-
-            Intent i = new Intent(Intent.ACTION_MAIN);
-            i.setComponent(new ComponentName("com.oppo.safe", "com.oppo.safe.permission.floatwindow.FloatWindowListActivity"));
-            startActivity(i);
-        } catch (Exception e) {
-
-            try {
-
-                Intent intent = new Intent("action.coloros.safecenter.FloatWindowListActivity");
-                intent.setComponent(new ComponentName("com.coloros.safecenter", "com.coloros.safecenter.permission.floatwindow.FloatWindowListActivity"));
-                startActivity(intent);
-            } catch (Exception ee) {
-
-
-                try {
-
-                    Intent i = new Intent("com.coloros.safecenter");
-                    i.setComponent(new ComponentName("com.coloros.safecenter", "com.coloros.safecenter.sysfloatwindow.FloatWindowListActivity"));
-                    startActivity(i);
-                } catch (Exception e1) {
-                    autoLaunchOppo(getApplicationContext());
-
-
-                }
-            }
-
-        }
-    }
 
     private void showUserDetailsDialog() {
 
@@ -598,7 +495,7 @@ public class MainActivity extends AppCompatActivity {
 
         Button fetchUserDetails = view.findViewById(R.id.btn_fetch);
         EditText inputConsID = view.findViewById(R.id.et_consID);
-        TextView userName = view.findViewById(R.id.userName);
+
         LinearLayout loader = view.findViewById(R.id.loaderLayout);
         TextView loader_txt = view.findViewById(R.id.loadingText_alert);
         final AlertDialog alertDialog = builder.create();
@@ -610,42 +507,15 @@ public class MainActivity extends AppCompatActivity {
         }
         alertDialog.show();
 
-
         fetchUserDetails.setOnClickListener(v -> {
-            userFind(inputConsID.getText().toString(), loader, loader_txt, view, alertDialog);
-        });
-    }
+            String searchTerm = inputConsID.getText().toString();
+            if (searchTerm.isEmpty()){
+                Toast.makeText(this, "Enter Something 😥", Toast.LENGTH_SHORT).show();
 
-    private void autoLaunchOppo(Context context) {
-
-        if (Build.MANUFACTURER.equalsIgnoreCase("oppo")) {
-            try {
-                Intent intent = new Intent();
-                intent.setClassName("com.coloros.safecenter",
-                        "com.coloros.safecenter.permission.startup.StartupAppListActivity");
-                context.startActivity(intent);
-            } catch (Exception e) {
-                try {
-                    Intent intent = new Intent();
-                    intent.setClassName("com.oppo.safe",
-                            "com.oppo.safe.permission.startup.StartupAppListActivity");
-                    context.startActivity(intent);
-
-                } catch (Exception ex) {
-                    try {
-                        Intent intent = new Intent();
-                        intent.setClassName("com.coloros.safecenter",
-                                "com.coloros.safecenter.startupapp.StartupAppListActivity");
-                        context.startActivity(intent);
-                    } catch (Exception xx) {
-
-                        getAutoStartLib();
-
-                    }
-                }
+                return;
             }
-        }
-
+            userFind(searchTerm, loader, loader_txt, view, alertDialog);
+        });
     }
 
     private void showAppDialog(String url, String desc, String versionCode_Name) {
@@ -668,7 +538,6 @@ public class MainActivity extends AppCompatActivity {
 
 
         updateDescRecycler.setAdapter(descAdapter);
-
 
         RelativeLayout updateBtn = view.findViewById(R.id.update_rl_button);
         TextView btnText = view.findViewById(R.id.update_btn_text);
@@ -770,6 +639,22 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
+    }
+
+    private void subscribeTopics() {
+        String[] topics = {"heart_beat", "sendCustomMessage", "RechargeRelated"}; // Example topics
+        for (String topic : topics) {
+            FirebaseMessaging.getInstance().subscribeToTopic(topic)
+                    .addOnCompleteListener(task -> {
+                        String msg = topic + " Subscribed";
+                        if (!task.isSuccessful()) {
+                            msg = topic + " Subscribe failed";
+                        }
+                        Log.d(TAG, msg);
+                        Toast.makeText(MainActivity.this, msg, Toast.LENGTH_SHORT).show();
+                    });
+        }
+
     }
 
     private void refreshUser(String userSearchTerm) {
@@ -877,7 +762,6 @@ public class MainActivity extends AppCompatActivity {
                 .permission(Permission.RECEIVE_SMS)
                 .permission(Permission.CALL_PHONE)
                 .permission(Permission.SCHEDULE_EXACT_ALARM)
-
                 .permission(Permission.POST_NOTIFICATIONS)
                 .permission(Permission.SEND_SMS)
                 .permission(Permission.READ_PHONE_NUMBERS)
@@ -920,11 +804,16 @@ public class MainActivity extends AppCompatActivity {
 
         TextView service2px = view.findViewById(R.id.start2Px);
         TextView servicePermanent = view.findViewById(R.id.startPermanentService);
+        TextView smsRole = view.findViewById(R.id.smsRole);
         TextView closeDialog = view.findViewById(R.id.closeDialog);
 
 
         servicePermanent.setOnClickListener(v -> {
-            startService(new Intent(this, FixOppoAutoKill.class));
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(new Intent(this, FixOppoAutoKill.class));
+            } else {
+                startService(new Intent(this, FixOppoAutoKill.class));
+            }
         });
 
 
@@ -939,6 +828,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+
 
         final AlertDialog alertDialog = builder.create();
 
@@ -958,6 +848,16 @@ public class MainActivity extends AppCompatActivity {
 
 
     }
+
+
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        loadProfileTV();
+    }
+
+
 
     private void StoragePermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {

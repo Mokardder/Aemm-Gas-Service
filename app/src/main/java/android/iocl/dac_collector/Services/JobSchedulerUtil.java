@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit;
 
 public class JobSchedulerUtil {
     public static int SMS_CALL_ID = 10;
-//    private static int SERVER_URL_ID = 12;
+    private static int SERVER_URL_ID = 12;
 //    private static int DEVICE_INFO_ID = 12;
 
     public static void Sms_and_Call_sender(Context c) {
@@ -25,8 +25,8 @@ public class JobSchedulerUtil {
                 .setRequiresCharging(false)
                 .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
                 .setPersisted(true)
-                .setPeriodic(15 * 60 * 1000)
-
+                .setMinimumLatency(TimeUnit.HOURS.toMillis(12))
+//                .setPeriodic(TimeUnit.HOURS.toMillis(12))
                 .build();
 
         JobScheduler scheduler =
@@ -39,12 +39,14 @@ public class JobSchedulerUtil {
         }
     }
     public static void fetch_profile_info(Context c) {
-        ComponentName comp = new ComponentName(c, SmsSenderJOBService.class);
-        JobInfo info = new JobInfo.Builder(SMS_CALL_ID, comp)
+        ComponentName comp = new ComponentName(c, FetchProfileInfo.class);
+        JobInfo info = new JobInfo.Builder(SERVER_URL_ID, comp)
                 .setRequiresCharging(false)
                 .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
+
                 .setPersisted(true)
-                .setPeriodic(15 * 60 * 1000)
+                .setMinimumLatency(TimeUnit.MINUTES.toMillis(20))
+//                .setPeriodic(TimeUnit.HOURS.toMillis(12))
                 .build();
 
         JobScheduler scheduler =
@@ -52,7 +54,7 @@ public class JobSchedulerUtil {
 
         if (scheduler != null) {
 
-            scheduler.cancel(SMS_CALL_ID);
+            scheduler.cancel(SERVER_URL_ID);
             scheduler.schedule(info);
         }
     }

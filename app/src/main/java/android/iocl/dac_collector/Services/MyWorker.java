@@ -2,6 +2,7 @@ package android.iocl.dac_collector.Services;
 
 import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -24,12 +25,16 @@ public class MyWorker extends Worker {
     @Override
     public Result doWork() {
         Log.d(TAG, "doWork called for: " + this.getId());
-        Log.d(TAG, "Service Running: " + FixOppoAutoKill.isServiceRunning);
-        if (!FixOppoAutoKill.isServiceRunning) {
+
+
             Log.d(TAG, "starting service from doWork");
             Intent intent = new Intent(this.context, FixOppoAutoKill.class);
-            ContextCompat.startForegroundService(context, intent);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            context.startForegroundService(intent);
+        }else {
+            context.startService(intent);
         }
+
         return Result.success();
     }
 

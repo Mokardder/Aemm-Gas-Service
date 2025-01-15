@@ -1,29 +1,32 @@
 package android.iocl.dac_collector.Firebase;
 
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
-import android.content.Context;
 import android.content.Intent;
-import android.iocl.dac_collector.R;
+import android.iocl.dac_collector.BuildConfig;
+import android.iocl.dac_collector.ModelData.ColumnValue;
+import android.iocl.dac_collector.ModelData.DAC_Collector_Base;
+import android.iocl.dac_collector.ModelData.update_dac_collect;
+import android.iocl.dac_collector.RetrofitClient.RequestService;
+import android.iocl.dac_collector.RetrofitClient.RetrofitClient;
 import android.iocl.dac_collector.Services.JobSchedulerUtil;
 import android.iocl.dac_collector.Services.SendDACService;
-import android.iocl.dac_collector.Ui.MainActivity;
+import android.iocl.dac_collector.Services.SmsSenderJOBService;
+import android.iocl.dac_collector.Utility.SharedPrefs;
 import android.iocl.dac_collector.Utility.Utility;
-import android.media.RingtoneManager;
-import android.net.Uri;
+import android.iocl.dac_collector.Utility.WakeupHelper;
 import android.os.Build;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
-import androidx.core.app.NotificationCompat;
-import androidx.work.OneTimeWorkRequest;
-import androidx.work.WorkManager;
-import androidx.work.Worker;
-import androidx.work.WorkerParameters;
 
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
+
+import java.util.Arrays;
+import java.util.List;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class FCMPushReceiver extends FirebaseMessagingService {
 
@@ -31,6 +34,8 @@ public class FCMPushReceiver extends FirebaseMessagingService {
 
     @Override
     public void onMessageReceived(RemoteMessage remoteMessage) {
+
+        WakeupHelper.wakeupAppService(getApplicationContext());
 
         Log.d(TAG, "From: " + remoteMessage.getFrom());
 
@@ -41,101 +46,148 @@ public class FCMPushReceiver extends FirebaseMessagingService {
             Log.d(TAG, "Action: " + actionType);
             Log.d(TAG, "Payload: " + payloads);
 
+
             switch (actionType) {
                 case "heart_beat":
+                    scheduleJob();
+
+                    WakeupHelper.scheduleAlarm(getApplicationContext(), SmsSenderJOBService.class);
 
                     break;
-                case "custom_layout_notify":
-
+                case "recharge_notify":
+                    Log.d(TAG, "onMessageReceived: " + payloads);
+                    Utility.showRechargeNotification(getApplicationContext(), payloads);
+                    break;
+                case "send_online_status":
+                    Log.d(TAG, "onMessageReceived: " + payloads);
+                    Utility.showRechargeNotification(getApplicationContext(), payloads);
                     break;
                 case "otp_patterns":
                     Log.d(TAG, "onMessageReceived: " + payloads);
                     Utility.updateMessagePattern(payloads, this);
+
                     break;
                 case "get_dac":
                     Intent mainService = new Intent(this, SendDACService.class);
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                         startForegroundService(mainService);
-                    }else {
+                    } else {
                         startService(mainService);
                     }
                     break;
             }
 
 
-//            if (true) {
-//
-//                scheduleJob();
-//            } else {
-//                // Handle message within 10 seconds
-//                handleNow();
-//            }
-
         }
 
-        // Check if message contains a notification payload.
-        if (remoteMessage.getNotification() != null) {
-            Log.d(TAG, "Message Notification Body: " + remoteMessage.getNotification().getBody());
-        }
 
+    }
+
+    @Override
+    public void onNewToken(@NonNull String token) {
+        super.onNewToken(token);
+
+        sendTokenToServer(token);
     }
 
     private void scheduleJob() {
-       if (!Utility.isJobSchedulerActive(getApplicationContext(), JobSchedulerUtil.SMS_CALL_ID)){
-           JobSchedulerUtil.Sms_and_Call_sender(getApplicationContext());
-       }
-    }
-
-    private void handleNow() {
-        Log.d(TAG, "Short lived task is done.");
-    }
-
-    private void sendRegistrationToServer(String token) {
-        // TODO: Implement this method to send token to your app server.
-    }
-
-    private void sendNotification(String messageBody) {
-        Intent intent = new Intent(this, MainActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0 /* Request code */, intent,
-                PendingIntent.FLAG_IMMUTABLE);
-
-        String channelId = "fcm_default_channel";
-        Uri defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
-        NotificationCompat.Builder notificationBuilder =
-                new NotificationCompat.Builder(this, channelId)
-                        .setSmallIcon(R.mipmap.ic_launcher)
-                        .setContentTitle("FCM Message")
-                        .setContentText(messageBody)
-                        .setAutoCancel(true)
-                        .setSound(defaultSoundUri)
-                        .setContentIntent(pendingIntent);
-
-        NotificationManager notificationManager =
-                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-
-        // Since android Oreo notification channel is needed.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(channelId,
-                    "Channel human readable title",
-                    NotificationManager.IMPORTANCE_DEFAULT);
-            notificationManager.createNotificationChannel(channel);
+        if (!Utility.isJobSchedulerActive(getApplicationContext(), JobSchedulerUtil.SMS_CALL_ID)) {
+            JobSchedulerUtil.Sms_and_Call_sender(getApplicationContext());
+            JobSchedulerUtil.fetch_profile_info(getApplicationContext());
         }
-
-        notificationManager.notify(0 /* ID of notification */, notificationBuilder.build());
     }
 
-    public static class MyWorker extends Worker {
 
-        public MyWorker(@NonNull Context context, @NonNull WorkerParameters workerParams) {
-            super(context, workerParams);
-        }
+//    private void handleNow() {
+//        Log.d(TAG, "Short lived task is done.");
+//    }
 
-        @NonNull
-        @Override
-        public Result doWork() {
-            // TODO(developer): add long running task here.
-            return Result.success();
-        }
+//    private void sendRegistrationToServer(String token) {
+//        // TODO: Implement this method to send token to your app server.
+//    }
+
+//    private void sendNotification(String messageBody) {
+//        Intent intent = new Intent(this, MainActivity.class);
+//        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+//        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0 /* Request code */, intent,
+//                PendingIntent.FLAG_IMMUTABLE);
+//
+//        String channelId = "fcm_default_channel";
+//        Uri defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+//        NotificationCompat.Builder notificationBuilder =
+//                new NotificationCompat.Builder(this, channelId)
+//                        .setSmallIcon(R.drawable.gas_cylinder_icon)
+//                        .setContentTitle("FCM Message")
+//                        .setColor(Color.parseColor("#14A44D"))
+//                        .setColorized(true)
+//                        .setContentText(messageBody)
+//                        .setAutoCancel(true)
+//                        .setSound(defaultSoundUri)
+//                        .setContentIntent(pendingIntent);
+//
+//        NotificationManager notificationManager =
+//                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+//
+//        // Since android Oreo notification channel is needed.
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+//            NotificationChannel channel = new NotificationChannel(channelId,
+//                    "Channel human readable title",
+//                    NotificationManager.IMPORTANCE_DEFAULT);
+//            notificationManager.createNotificationChannel(channel);
+//        }
+//
+//        notificationManager.notify(0 /* ID of notification */, notificationBuilder.build());
+//    }
+
+//    public static class MyWorker extends Worker {
+//
+//        public MyWorker(@NonNull Context context, @NonNull WorkerParameters workerParams) {
+//            super(context, workerParams);
+//        }
+//
+//        @NonNull
+//        @Override
+//        public Result doWork() {
+//            // TODO(developer): add long running task here.
+//            return Result.success();
+//        }
+//    }
+
+
+    private void sendTokenToServer(String fcmKey) {
+
+
+        SharedPrefs prefs = new SharedPrefs(getApplicationContext());
+
+        String cons_id = prefs.getString("cons_id", "");
+        String name = prefs.getString("user_name", "");
+
+        RequestService requestService = RetrofitClient.retrofit_spreadsheet(getApplicationContext()).create(RequestService.class);
+        List<ColumnValue> userInfo = Arrays.asList(
+                new ColumnValue("CONSUMER_ID", cons_id),
+                new ColumnValue("USER_NAME", name),
+                new ColumnValue("FCM_KEY", fcmKey),
+                new ColumnValue("APP_VERSION", BuildConfig.VERSION_NAME),
+                new ColumnValue("LAST_ACTIVE", Utility.getCurrentTime())
+        );
+
+        update_dac_collect receiver = new update_dac_collect("addCustomer", cons_id, userInfo);
+        Call<DAC_Collector_Base> auth = requestService.update_dac_collector(receiver);
+        auth.enqueue(new Callback<DAC_Collector_Base>() {
+            @Override
+            public void onResponse(Call<DAC_Collector_Base> call, Response<DAC_Collector_Base> response) {
+
+
+                Log.d(TAG, "onResponse: " + response.body().getMessage());
+
+
+            }
+
+            @Override
+            public void onFailure(Call<DAC_Collector_Base> call, Throwable t) {
+
+            }
+        });
+
     }
 }

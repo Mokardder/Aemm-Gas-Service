@@ -144,8 +144,17 @@ public class AutoStartPermissionHelper {
     }
 
     private boolean autoStartXiaomi(Context context, boolean open, boolean newTask) {
-        return autoStart(context, Arrays.asList(PACKAGE_XIAOMI_MAIN),
-                Arrays.asList(getIntent(PACKAGE_XIAOMI_MAIN, PACKAGE_XIAOMI_COMPONENT, newTask)), open);
+
+        try {
+            return autoStart(context, Arrays.asList(PACKAGE_XIAOMI_MAIN),
+                    Arrays.asList(getIntent(PACKAGE_XIAOMI_MAIN, PACKAGE_XIAOMI_COMPONENT, newTask)), open);
+
+        }catch (Exception e){
+
+            return false;
+
+        }
+
         // Similar updates for other autoStart() calls...
     }
 
