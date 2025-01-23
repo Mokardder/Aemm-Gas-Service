@@ -16,12 +16,12 @@ import retrofit2.http.Body;
 import retrofit2.http.POST;
 
 public interface RequestService {
-     String KEY_XR = "AKfycbxMd0_pM82ivia2kkuSh-ryyyG33x3ICcyONPb-FtN4dkF5OzKuvVhmQSEPlmXupN1d";
-     String KEY_DAC_COLLECTOR = "AKfycbzLj-JthmIpU8BdmCgKKtHiPFBze9SYYLXZWQT2TiMlN2fwEpHhTtNX9qbjYYi4T0yE";
+     String KEY_XR = "AKfycbzCu98bfvgb8uBqRIWkiZ-VAz2H7ZANSRLOTZucubIOkJ8ip3Rp6U3CXSAZNZw9VdMJ";
+     String KEY_DAC_COLLECTOR = "AKfycbx7exruxsEFMMyzA_Y-GjH7jQtkCUW6PdrOjxTVpRsxi6pP4Yfc8mz_JyArY4hs_vFH";
 
 
     @POST("/macros/s/" + KEY_XR + "/exec")
-    Call<search_consumer_response> search_customer (@Body search_consumer body);
+    Call<DAC_Collector_Base> search_customer (@Body search_consumer body);
 
     @POST("/macros/s/" + KEY_DAC_COLLECTOR + "/exec")
     Call<BaseUpdateResponse> update_user (@Body update_consumer body);

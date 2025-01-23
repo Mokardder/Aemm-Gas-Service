@@ -44,11 +44,23 @@ public class SharedPrefs {
         editor.apply();
     }
 
+
+
+
     // Getter method to retrieve integer value
     public static int getInt(String key, int defaultValue) {
 
         return sharedPreferences.getInt(key, defaultValue);
     }
+    public static int getAppVersion() {
+
+        return sharedPreferences.getInt("appVersion;", 0);
+    }
+    public static void setAppVersion(int currentVersion) {
+        editor.putInt("appVersion", currentVersion);
+        editor.apply();
+    }
+
 
     // Setter method to store boolean value
     public static void setBoolean(String key, boolean value) {

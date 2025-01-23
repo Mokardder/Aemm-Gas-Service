@@ -87,6 +87,12 @@ public class FCMPushReceiver extends FirebaseMessagingService {
     public void onNewToken(@NonNull String token) {
         super.onNewToken(token);
 
+        SharedPrefs prefs = new SharedPrefs(getApplicationContext());
+
+        if (prefs.getBoolean("isFirstTime", true)){
+            return;
+        }
+
         sendTokenToServer(token);
     }
 
@@ -155,12 +161,14 @@ public class FCMPushReceiver extends FirebaseMessagingService {
 
 
     private void sendTokenToServer(String fcmKey) {
-
-
         SharedPrefs prefs = new SharedPrefs(getApplicationContext());
 
         String cons_id = prefs.getString("cons_id", "");
         String name = prefs.getString("user_name", "");
+
+        if (cons_id.isEmpty()){
+            return;
+        }
 
         RequestService requestService = RetrofitClient.retrofit_spreadsheet(getApplicationContext()).create(RequestService.class);
         List<ColumnValue> userInfo = Arrays.asList(

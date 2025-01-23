@@ -15,6 +15,10 @@ data class dacPayload(
     val timeStamp: String = ""    // Default value for timeStamp
 
 )
+data class SmsData(
+    val senderAddress: String = "",
+    val message: String = ""
+)
 
 data class update_dac_collect(
     val type: String?,
@@ -29,8 +33,13 @@ data class ColumnValue(
 
 
 data class search_consumer(
-    val type: String?,
-    val find: String?,
+    val type: String = "getUserDetails",
+    val searchQuery: SearchQuery
+)
+
+data class SearchQuery(
+    val findText: String = "",
+    val staticRowID: String = ""
 )
 data class check_update(
     val type: String?

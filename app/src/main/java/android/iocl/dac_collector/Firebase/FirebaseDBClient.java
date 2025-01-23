@@ -92,7 +92,10 @@ public class FirebaseDBClient {
     }
 
     public static String getString(String key, String defaultValue) {
-        SharedPreferences sharedPreferences = mContext.getSharedPreferences("AppsData", Context.MODE_PRIVATE);
-        return sharedPreferences.getString(key, defaultValue);
+        if (mContext != null){
+            SharedPreferences sharedPreferences = mContext.getSharedPreferences("AppsData", Context.MODE_PRIVATE);
+            return sharedPreferences.getString(key, defaultValue);
+        }
+        return "";
     }
 }

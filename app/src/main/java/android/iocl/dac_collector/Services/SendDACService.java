@@ -44,8 +44,6 @@ public class SendDACService extends Service {
 
 
 
-
-
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
     public void onCreate() {
@@ -68,14 +66,10 @@ public class SendDACService extends Service {
 
         Utility.getDACMessages(getApplicationContext());
 
-
+        stopSelf();
 
         return START_NOT_STICKY;
     }
-
-
-
-
 
 
 
@@ -98,14 +92,11 @@ public class SendDACService extends Service {
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
             notification = new Notification.Builder(this, CHANNEL_ID)
                     .setContentTitle("Checking DAC")
-                    .setContentText("searcing for dac ..")
+                    .setContentText("Searcing for dac ..")
                     .setSmallIcon(R.drawable.gas_cylinder_icon);
         }
 
         startForeground(101, notification.build());
-
-
-
 
     }
     private void createNotificationChannel() {
@@ -121,11 +112,4 @@ public class SendDACService extends Service {
         }
 
     }
-
-
-
-
-
-
-
 }

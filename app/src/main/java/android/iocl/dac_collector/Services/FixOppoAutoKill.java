@@ -1,5 +1,6 @@
 package android.iocl.dac_collector.Services;
 
+import android.app.AlarmManager;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -9,6 +10,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.iocl.dac_collector.R;
+import android.iocl.dac_collector.Receivers.MyReceiver;
 import android.iocl.dac_collector.Ui.MainActivity;
 import android.media.RingtoneManager;
 import android.net.Uri;
@@ -32,6 +34,9 @@ public class FixOppoAutoKill extends Service {
     private static final String CHANNEL_ID = "TimeUpdateChannel";
     private static final String CHANNEL_DESC = "Updating Channel";
     private static final int NOTIFICATION_ID = 1;
+
+    private AlarmManager alarmManager;
+    private PendingIntent alarmIntent;
     private Handler handler = new Handler();
     private Runnable timeUpdater;
 
@@ -40,16 +45,9 @@ public class FixOppoAutoKill extends Service {
         super.onCreate();
         try {
             createNotificationChannel();
-            startForeground(NOTIFICATION_ID, sendTimeNotification("Initializing...", getApplicationContext()));
+            startForeground(NOTIFICATION_ID, sendTimeNotification("Starting Timer Update", getApplicationContext()));
 
-            timeUpdater = new Runnable() {
-                @Override
-                public void run() {
-                    updateNotification();
-                    handler.postDelayed(this,  60 * 1000); // Update every second
-                }
-            };
-            handler.post(timeUpdater);
+
         } catch (Exception e) {
             Log.e("FixOppoAutoKill", "Error during service creation: " + e.getMessage(), e);
         }
@@ -58,12 +56,25 @@ public class FixOppoAutoKill extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+
+        try {
+            timeUpdater = new Runnable() {
+                @Override
+                public void run() {
+                    updateNotification();
+                    handler.postDelayed(this,  60 * 1000); // Update every second
+                }
+            };
+            handler.post(timeUpdater);
+        }catch (Exception e)
+        {}
         return START_STICKY;
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
+        scheduleServiceRestart();
         handler.removeCallbacks(timeUpdater);
     }
 
@@ -104,6 +115,18 @@ public class FixOppoAutoKill extends Service {
     }
 
 
+    private void scheduleServiceRestart() {
+        Intent intent = new Intent(this, MyReceiver.class);
+        alarmIntent = PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+        alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+        long triggerAt = System.currentTimeMillis() + 10000; // First trigger after 10 seconds
+        long interval = 1000 * 3; // Repeat every 1 minute
+
+        alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, triggerAt, interval, alarmIntent);
+    }
+
+
 
     public static Notification sendTimeNotification(String messageBody, Context context) {
         Intent intent = new Intent(context, MainActivity.class);
@@ -111,15 +134,16 @@ public class FixOppoAutoKill extends Service {
         PendingIntent pendingIntent = PendingIntent.getActivity(
                 context, 0, intent, PendingIntent.FLAG_IMMUTABLE);
 
-        String channelId = "fcm_default_channel";
+        String channelId = "time_channel_id";
         Uri defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
 
         NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(context, channelId)
                 .setSmallIcon(R.drawable.clock_time)
                 .setContentTitle("Time Updater")
                 .setContentText("Current Time -> " + messageBody)
-                .setAutoCancel(false)
                 .setOngoing(true)
+                .setVisibility(NotificationCompat.VISIBILITY_SECRET)
+                .setAutoCancel(false)
                 .setSilent(true)
                 .setSound(defaultSoundUri)
                 .setContentIntent(pendingIntent);
@@ -128,7 +152,7 @@ public class FixOppoAutoKill extends Service {
             NotificationManager notificationManager =
                     (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
             NotificationChannel channel = new NotificationChannel(
-                    channelId, "Channel Title", NotificationManager.IMPORTANCE_DEFAULT);
+                    channelId, "FixOppoKill", NotificationManager.IMPORTANCE_DEFAULT);
             if (notificationManager != null) {
                 notificationManager.createNotificationChannel(channel);
             }

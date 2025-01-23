@@ -2,6 +2,7 @@ package android.iocl.dac_collector.Utility;
 
 
 
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.ActivityManager;
 import android.app.Notification;
@@ -21,16 +22,19 @@ import android.graphics.Color;
 import android.iocl.dac_collector.Firebase.FirebaseDBClient;
 import android.iocl.dac_collector.ModelData.RegexModel;
 import android.iocl.dac_collector.R;
+import android.iocl.dac_collector.Services.AcessibilitySettings;
 import android.iocl.dac_collector.Ui.MainActivity;
 import android.media.RingtoneManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Build;
+import android.provider.Settings;
 import android.telephony.SmsManager;
 import android.telephony.SubscriptionInfo;
 import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
+import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
 import android.view.View;
@@ -300,29 +304,70 @@ public class Utility {
         return activeNetworkInfo != null && activeNetworkInfo.isConnected();
     }
 
-    @SuppressLint("MissingPermission")
+
     public static String getMyPhoneNumber(Context context) {
-        TelephonyManager mTelephonyMgr;
-        mTelephonyMgr = (TelephonyManager)
-                context.getSystemService(Context.TELEPHONY_SERVICE);
-        return mTelephonyMgr.getLine1Number();
+        if (context == null) return null;
+
+        TelephonyManager telephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
+
+        if (telephonyManager != null) {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+                if (context.checkSelfPermission(android.Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED ||
+                        context.checkSelfPermission(android.Manifest.permission.READ_PHONE_NUMBERS) == PackageManager.PERMISSION_GRANTED) {
+
+                    String phoneNumber = telephonyManager.getLine1Number();
+                    return (phoneNumber != null && !phoneNumber.isEmpty()) ? phoneNumber : "Phone number unavailable";
+                } else {
+                    return "Permission not granted";
+                }
+            } else {
+                // For pre-Marshmallow versions
+                String phoneNumber = telephonyManager.getLine1Number();
+                return (phoneNumber != null && !phoneNumber.isEmpty()) ? phoneNumber : "Phone number unavailable";
+            }
+        }
+        return "TelephonyManager unavailable";
     }
 
-    public static String getMyPhoneNumberFromSubscription(Context context, int subscriptionId) {
-        if (DEFAULT_SUBSCRIPTION_ID == subscriptionId) {
-            return getMyPhoneNumber(context);
-        } else {
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP_MR1) {
-                SubscriptionManager subscriptionManager = SubscriptionManager.from(context);
-                SubscriptionInfo subscriptionInfo = subscriptionManager.getActiveSubscriptionInfo(subscriptionId);
-                if (subscriptionInfo != null) {
-                    return subscriptionInfo.getNumber();
+    public static boolean isAccessibilityServiceEnabled(Context mContext) {
+        int accessibilityEnabled = 0;
+        final String service = mContext.getPackageName() + "/" + AcessibilitySettings.class.getCanonicalName();
+        try {
+            accessibilityEnabled = Settings.Secure.getInt(
+                    mContext.getApplicationContext().getContentResolver(),
+                    Settings.Secure.ACCESSIBILITY_ENABLED
+            );
+            Log.v(TAG, "accessibilityEnabled = " + accessibilityEnabled);
+        } catch (Settings.SettingNotFoundException e) {
+            Log.e(TAG, "Error finding setting, default accessibility to not found: " + e.getMessage());
+        }
+
+        if (accessibilityEnabled == 1) {
+            Log.v(TAG, "Accessibility Is Enabled");
+            String settingValue = Settings.Secure.getString(
+                    mContext.getApplicationContext().getContentResolver(),
+                    Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
+            );
+            if (settingValue != null) {
+                TextUtils.SimpleStringSplitter splitter = new TextUtils.SimpleStringSplitter(':');
+                splitter.setString(settingValue);
+                while (splitter.hasNext()) {
+                    String accessibilityService = splitter.next();
+                    Log.v(TAG, "AccessibilityService :: " + accessibilityService + " " + service);
+                    if (accessibilityService.equalsIgnoreCase(service)) {
+                        Log.v(TAG, "accessibility is switched on!");
+                        return true;
+                    }
                 }
             }
-
-            return getMyPhoneNumber(context);
+        } else {
+            Log.v(TAG, "accessibility is disabled");
         }
+        return false;
     }
+
+
+
 
     public static void getDACMessages(Context c) {
         FirebaseDBClient fireDb = new FirebaseDBClient(c);
@@ -458,9 +503,6 @@ public class Utility {
 
         SmsManager sms = SmsManager.getDefault();
 
-
-
-
         sms.sendTextMessage(phoneNumber, null, msg, null, null);
 
     }
@@ -571,11 +613,6 @@ public class Utility {
         editor.putString("unsent_dac", DAC);
         editor.putLong("saved_timestamp", System.currentTimeMillis());
         editor.apply();
-        Log.d(TAG, "Not Connected To internet | Unsent DAC Saved -> " + DAC);
-        String DACsaved = sharedPreferences.getString("unsent_dac", "not_found");
-        String DACtime= sharedPreferences.getString("saved_timestamp", "not_found");
-
-        Log.d(TAG, "Not Connected To internet | Unsent DAC Saved -> " + DACsaved + " Time " + DACtime);
 
     }
 

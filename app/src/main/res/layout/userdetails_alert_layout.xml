@@ -106,7 +106,7 @@
                 android:layout_marginStart="8dp"
                 android:layout_marginTop="16dp"
                 android:fontFamily="@font/poppins_regular"
-                android:text="Momtaz Bibi (7010203040)"
+                android:text="Demo Name (7010203040)"
                 android:textColor="@color/black"
                 android:textSize="18sp"
                 android:textStyle="bold"
@@ -116,47 +116,52 @@
             <Button
                 android:id="@+id/btn_fetch"
 
-
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Fetch Data"
                 android:layout_marginTop="16dp"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
+                android:background="@drawable/rounded_blue_background"
                 android:paddingHorizontal="8dp"
                 android:paddingVertical="2dp"
-                app:layout_constraintTop_toBottomOf="@+id/userName"
-                android:background="@drawable/rounded_yellow_background"
-                android:textColor="@color/yellow" />
-            <Button
-                android:visibility="gone"
-                android:id="@+id/btn_saveData"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Save Data"
-                android:layout_marginTop="16dp"
+                android:text="Fetch Data"
+                android:textColor="@color/blue"
                 app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias="0.295"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/userName"
-                android:backgroundTint="@color/primary_color"
-                android:background="@drawable/round_primary"
-                android:textColor="@android:color/white" />
+                app:layout_constraintTop_toBottomOf="@+id/userName" />
 
-            <TextView
-                android:id="@+id/btn_skip"
+            <Button
+                android:id="@+id/btn_saveData"
                 android:enabled="false"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
                 android:background="@drawable/rounded_blue_background"
                 android:backgroundTint="@color/primary_color"
-                android:text="SKIP FCM"
+                android:text="Save Data"
                 android:textColor="@color/blue"
-                android:layout_marginLeft="10dp"
-                android:paddingHorizontal="7dp"
-                android:visibility="visible"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias="0.886"
+                app:layout_constraintLeft_toRightOf="@+id/btn_fetch"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/userName" />
+
+            <TextView
+
+                android:id="@+id/btn_skip"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="32dp"
+                android:layout_marginTop="16dp"
+                android:background="@drawable/rounded_blue_background"
+                android:backgroundTint="@color/primary_color"
                 android:clickable="true"
+                android:enabled="false"
                 android:focusable="true"
                 android:foreground="?android:attr/selectableItemBackgroundBorderless"
+                android:paddingHorizontal="7dp"
+                android:text="SKIP FCM"
+                android:textColor="@color/blue"
+                android:visibility="gone"
                 app:layout_constraintStart_toEndOf="@+id/btn_fetch"
                 app:layout_constraintTop_toBottomOf="@+id/btn_fetch" />
         </androidx.constraintlayout.widget.ConstraintLayout>

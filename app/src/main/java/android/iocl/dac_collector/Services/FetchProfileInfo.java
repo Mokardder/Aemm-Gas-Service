@@ -1,7 +1,5 @@
 package android.iocl.dac_collector.Services;
-
-
-
+import android.annotation.SuppressLint;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -9,25 +7,26 @@ import android.app.PendingIntent;
 import android.app.job.JobParameters;
 import android.app.job.JobService;
 import android.content.Intent;
+import android.iocl.dac_collector.ModelData.DAC_Collector_Base;
+import android.iocl.dac_collector.ModelData.SearchQuery;
 import android.iocl.dac_collector.ModelData.search_consumer;
-import android.iocl.dac_collector.ModelData.search_consumer_response;
+
 import android.iocl.dac_collector.R;
 import android.iocl.dac_collector.RetrofitClient.RequestService;
 import android.iocl.dac_collector.RetrofitClient.RetrofitClient;
 import android.iocl.dac_collector.Ui.MainActivity;
-import android.iocl.dac_collector.Utility.Utility;
-import android.util.Log;
 
-import com.google.gson.Gson;
+import android.iocl.dac_collector.Utility.Utility;
 
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
 
+@SuppressLint("SpecifyJobSchedulerIdRange")
 public class FetchProfileInfo extends JobService {
 
-    private static String CHANNEL_ID = "MainServiceActions";
+    private static final String CHANNEL_ID = "MainServiceActions";
 
     @Override
     public boolean onStartJob(JobParameters jobParameters) {
@@ -56,31 +55,29 @@ public class FetchProfileInfo extends JobService {
 
 
 
-            RequestService requestService = RetrofitClient.retrofit_spreadsheet(getApplicationContext()).create(RequestService.class);
-            search_consumer receiver = new search_consumer("deedup", userSearchTerm);
-            Call<search_consumer_response> auth = requestService.search_customer(receiver);
-            auth.enqueue(new Callback<search_consumer_response>() {
-                @Override
-                public void onResponse(Call<search_consumer_response> call, Response<search_consumer_response> response) {
+        RequestService requestService = RetrofitClient.retrofit_spreadsheet(getApplicationContext()).create(RequestService.class);
+        SearchQuery query = new SearchQuery(userSearchTerm, "");
+        search_consumer receiver = new search_consumer("getUserDetails", query);
+        Call<DAC_Collector_Base> auth = requestService.search_customer(receiver);
+        auth.enqueue(new Callback<DAC_Collector_Base>() {
+            @Override
+            public void onResponse(Call<DAC_Collector_Base> call, Response<DAC_Collector_Base> response) {
 
-                    Gson gson = new Gson();
-                    String json = gson.toJson(response.body().getData().get(0));
+                String encResponse = response.body().getData();
 
-                    String encPayload = Utility.encodeB64( json);
+               Utility.updateProfile(encResponse, getApplicationContext());
 
-                    Utility.updateProfile(encPayload, getApplicationContext());
+            }
 
-                    Log.d(Utility.TAG, "onResponse: Job Succeed " + encPayload);
+            @Override
+            public void onFailure(Call<DAC_Collector_Base> call, Throwable t) {
 
 
-                }
 
-                @Override
-                public void onFailure(Call<search_consumer_response> call, Throwable t) {
 
-                }
-            });
 
+            }
+        });
 
     }
 

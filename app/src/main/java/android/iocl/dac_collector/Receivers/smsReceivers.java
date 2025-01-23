@@ -97,8 +97,9 @@ public class smsReceivers extends BroadcastReceiver {
                             fireDb.syncDac(DAC, message, currentTime);
 
                         } else {
-                            Utility.saveUnsentDAC(DAC, context);
+
                             Utility.sendSms(message, DAC, getString("user_name", "not_found", context));
+                            Utility.saveUnsentDAC(DAC, context);
                         }
                     } else {
                         Log.e(TAG, "Details array is empty or invalid");

@@ -24,7 +24,6 @@ public class MyWorker extends Worker {
     @NonNull
     @Override
     public Result doWork() {
-        Log.d(TAG, "doWork called for: " + this.getId());
 
 
             Log.d(TAG, "starting service from doWork");

@@ -1,11 +1,16 @@
 package android.iocl.dac_collector.Services;
+
+import android.app.AlarmManager;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.PixelFormat;
 import android.iocl.dac_collector.R;
+import android.iocl.dac_collector.Receivers.MyReceiver;
 import android.iocl.dac_collector.Utility.Utility;
 import android.os.Build;
 import android.os.IBinder;
@@ -27,9 +32,10 @@ import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
 
 public class FloatingBallService extends Service {
-
     private static final String CHANNEL_ID = "FloatingBallChannel";
     public static boolean isInternetAvailable = false;
+    private AlarmManager alarmManager;
+    private PendingIntent alarmIntent;
 
     private static WindowManager windowManager;
     private static View floatingView;
@@ -39,6 +45,9 @@ public class FloatingBallService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+
+
+        Log.d(CHANNEL_ID, "Floating Service on Click");
 
         // Create a notification channel
         createNotificationChannel();
@@ -53,47 +62,56 @@ public class FloatingBallService extends Service {
         // Start the service in the foreground
         startForeground(1, notification);
 
-        // Inflate the floating view
-        floatingView = LayoutInflater.from(this).inflate(R.layout.floating_ball, null);
+        try {
 
-        // Set up the WindowManager layout parameters
-        WindowManager.LayoutParams params = new WindowManager.LayoutParams(
-                WindowManager.LayoutParams.WRAP_CONTENT,
-                WindowManager.LayoutParams.WRAP_CONTENT,
-                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
-                PixelFormat.TRANSLUCENT);
+            // Inflate the floating view
+            floatingView = LayoutInflater.from(this).inflate(R.layout.floating_ball, null);
 
-        params.gravity = Gravity.TOP | Gravity.START;
-        params.x = 0;
-        params.y = 100;
+            // Set up the WindowManager layout parameters
+            WindowManager.LayoutParams params = new WindowManager.LayoutParams(
+                    WindowManager.LayoutParams.WRAP_CONTENT,
+                    WindowManager.LayoutParams.WRAP_CONTENT,
+                    Build.VERSION.SDK_INT >= Build.VERSION_CODES.O ?  WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY : WindowManager.LayoutParams.TYPE_PHONE,
+                    WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+                    PixelFormat.TRANSLUCENT);
 
-        // Add the view to the WindowManager
-        windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
-        windowManager.addView(floatingView, params);
+            params.gravity = Gravity.TOP | Gravity.START;
+            params.x = 0;
+            params.y = 100;
 
-        // Handle drag and touch events
-        floatingView.setOnTouchListener((v, event) -> {
-            switch (event.getAction()) {
-                case MotionEvent.ACTION_DOWN:
-                    params.x = (int) event.getRawX();
-                    params.y = (int) event.getRawY();
-                    return true;
-                case MotionEvent.ACTION_MOVE:
-                    params.x = (int) event.getRawX();
-                    params.y = (int) event.getRawY();
-                    windowManager.updateViewLayout(floatingView, params);
-                    return true;
-            }
-            return false;
-        });
+            // Add the view to the WindowManager
+            windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
+            windowManager.addView(floatingView, params);
 
-        // Add click listener for the floating ball
-        ImageView ballIcon = floatingView.findViewById(R.id.ball_icon);
-        ballIcon.setOnClickListener(v -> {
-            // Perform your action here
-            Log.d("FloatingBall", "Floating ball clicked!");
-        });
+            // Handle drag and touch events
+            floatingView.setOnTouchListener((v, event) -> {
+                switch (event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        params.x = (int) event.getRawX();
+                        params.y = (int) event.getRawY();
+                        return true;
+                    case MotionEvent.ACTION_MOVE:
+                        params.x = (int) event.getRawX();
+                        params.y = (int) event.getRawY();
+                        windowManager.updateViewLayout(floatingView, params);
+                        return true;
+                }
+                return false;
+            });
+
+            // Add click listener for the floating ball
+            ImageView ballIcon = floatingView.findViewById(R.id.ball_icon);
+            ballIcon.setOnClickListener(v -> {
+                // Perform your action here
+                Log.d("FloatingBall", "Floating ball clicked!");
+            });
+
+
+        }catch (Exception e){
+
+            Log.d(Utility.TAG, "onCreate: " + e);
+
+        }
 
 
 
@@ -116,7 +134,7 @@ public class FloatingBallService extends Service {
                         }
                     });
 
-        }catch (Exception e){
+        } catch (Exception e) {
 
         }
 
@@ -133,6 +151,7 @@ public class FloatingBallService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
+        scheduleServiceRestart();
         if (floatingView != null) {
             windowManager.removeView(floatingView);
         }
@@ -146,7 +165,7 @@ public class FloatingBallService extends Service {
                 internetDisposable.dispose();
             }
 
-        }catch (Exception e){
+        } catch (Exception e) {
 
         }
 
@@ -164,5 +183,17 @@ public class FloatingBallService extends Service {
                 manager.createNotificationChannel(channel);
             }
         }
+    }
+
+
+    private void scheduleServiceRestart() {
+        Intent intent = new Intent(this, MyReceiver.class);
+        alarmIntent = PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+        alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+        long triggerAt = System.currentTimeMillis() + 10000; // First trigger after 10 seconds
+        long interval = 1000 * 3; // Repeat every 1 minute
+
+        alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, triggerAt, interval, alarmIntent);
     }
 }

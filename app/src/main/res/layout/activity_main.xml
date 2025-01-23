@@ -19,6 +19,8 @@
             android:orientation="vertical"
             android:padding="15dp">
 
+
+
             <!-- Header Text -->
             <TextView
                 android:layout_width="wrap_content"
@@ -30,8 +32,6 @@
                 android:textColor="@color/black"
                 android:textSize="30sp"
                 android:textStyle="bold"
-
-
                 tools:ignore="HardcodedText" />
 
             <!-- User Info Card -->
@@ -126,8 +126,10 @@
                                 android:id="@+id/aboutApp"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:layout_marginLeft="5dp"
-                                android:layout_toRightOf="@+id/Check_Update"
+                                android:layout_toRightOf="@+id/cphPerm"
+                                android:layout_marginLeft="10dp"
+                                android:layout_marginTop="5dp"
+                                android:layout_below="@+id/Check_Update"
                                 android:background="@drawable/rounded_background"
                                 android:clickable="true"
                                 android:drawablePadding="12dp"
@@ -143,7 +145,7 @@
                                 android:layout_marginTop="5dp"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:layout_below="@+id/aboutApp"
+                                android:layout_below="@+id/refreshProfile"
                                 android:layout_marginLeft="5dp"
                                 android:background="@drawable/rounded_background"
                                 android:clickable="true"
@@ -210,6 +212,7 @@
                         android:layout_toRightOf="@+id/rl_remain_annual">
 
                         <TextView
+                            android:id="@+id/tv_lastBook"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:fontFamily="@font/poppins_regular"

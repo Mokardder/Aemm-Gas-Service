@@ -12,6 +12,10 @@
         <ImageView
             android:id="@+id/cyl_svg"
             android:layout_width="40dp"
+            android:minWidth="20dp"
+            android:maxWidth="40dp"
+            android:minHeight="20dp"
+            android:maxHeight="40dp"
             android:layout_height="40dp"
             android:src="@drawable/gas_cylinder_icon"
             android:layout_marginEnd="10dp"
@@ -20,6 +24,8 @@
             android:id="@+id/call_Aemm"
             android:visibility="gone"
             android:layout_width="30dp"
+            android:maxWidth="30dp"
+            android:minWidth="20dp"
             android:layout_height="30dp"
             android:layout_centerHorizontal="true"
             android:layout_centerVertical="true"
@@ -44,8 +50,12 @@
 
                 <TextView
                     android:id="@+id/tv_DAC"
+
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:autoSizeTextType="uniform"
+                    android:autoSizeMinTextSize="12sp"
+                    android:autoSizeMaxTextSize="20sp"
                     android:fontFamily="@font/poppins_regular"
                     android:text="GAS OTP : "
                     android:textColor="@color/black"
@@ -56,6 +66,9 @@
                     android:id="@+id/dac_val_eng"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:autoSizeTextType="uniform"
+                    android:autoSizeMinTextSize="12sp"
+                    android:autoSizeMaxTextSize="20sp"
                     android:layout_toEndOf="@id/tv_DAC"
                     android:fontFamily="@font/poppins_regular"
                     android:text="2511"
