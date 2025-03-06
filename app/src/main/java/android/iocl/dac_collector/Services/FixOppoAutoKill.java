@@ -8,66 +8,31 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Color;
 import android.iocl.dac_collector.R;
 import android.iocl.dac_collector.Receivers.MyReceiver;
 import android.iocl.dac_collector.Ui.MainActivity;
-import android.media.RingtoneManager;
-import android.net.Uri;
 import android.os.Build;
-import android.os.Handler;
 import android.os.IBinder;
-
-import android.util.Log;
-import android.view.View;
-import android.widget.RemoteViews;
 
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 
-
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
-
 public class FixOppoAutoKill extends Service {
-    private static final String CHANNEL_ID = "TimeUpdateChannel";
-    private static final String CHANNEL_DESC = "Updating Channel";
-    private static final int NOTIFICATION_ID = 1;
+    private static final String CHANNEL_ID = "keep_alive_channel";
+    private static final String CHANNEL_NAME = "Background Service";
+    private static final int NOTIFICATION_ID = 1003;
 
     private AlarmManager alarmManager;
-    private PendingIntent alarmIntent;
-    private Handler handler = new Handler();
-    private Runnable timeUpdater;
 
     @Override
     public void onCreate() {
         super.onCreate();
-        try {
-            createNotificationChannel();
-            startForeground(NOTIFICATION_ID, sendTimeNotification("Starting Timer Update", getApplicationContext()));
-
-
-        } catch (Exception e) {
-            Log.e("FixOppoAutoKill", "Error during service creation: " + e.getMessage(), e);
-        }
+        createNotificationChannel();
+        startForeground(NOTIFICATION_ID, createNotification());
     }
-
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-
-        try {
-            timeUpdater = new Runnable() {
-                @Override
-                public void run() {
-                    updateNotification();
-                    handler.postDelayed(this,  60 * 1000); // Update every second
-                }
-            };
-            handler.post(timeUpdater);
-        }catch (Exception e)
-        {}
         return START_STICKY;
     }
 
@@ -75,7 +40,6 @@ public class FixOppoAutoKill extends Service {
     public void onDestroy() {
         super.onDestroy();
         scheduleServiceRestart();
-        handler.removeCallbacks(timeUpdater);
     }
 
     @Nullable
@@ -84,127 +48,64 @@ public class FixOppoAutoKill extends Service {
         return null;
     }
 
-    private void createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            Context context = getApplicationContext(); // Ensure the context is valid
-            NotificationManager manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-
-            if (manager == null) {
-                Log.e("FixOppoAutoKill", "NotificationManager is null. Delaying channel creation.");
-                new Handler().postDelayed(this::createNotificationChannel,  60*1000); // Retry after 1 second
-                return;
-            }
-
-            NotificationChannel channel = new NotificationChannel(
-                    CHANNEL_ID,
-                    "Time Update Service",
-                    NotificationManager.IMPORTANCE_LOW
-            );
-            channel.setDescription("Channel for updating time in notification.");
-            channel.enableLights(true);
-            channel.setLightColor(Color.BLUE);
-
-
-            try {
-                manager.createNotificationChannel(channel);
-                Log.d("FixOppoAutoKill", "Notification channel created successfully.");
-            } catch (Exception e) {
-                Log.e("FixOppoAutoKill", "Error creating notification channel: " + e.getMessage(), e);
-            }
-        }
-    }
-
-
     private void scheduleServiceRestart() {
         Intent intent = new Intent(this, MyReceiver.class);
-        alarmIntent = PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 0, intent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
-        alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-        long triggerAt = System.currentTimeMillis() + 10000; // First trigger after 10 seconds
-        long interval = 1000 * 3; // Repeat every 1 minute
-
-        alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, triggerAt, interval, alarmIntent);
+        AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+        if (alarmManager != null) {
+            long triggerAt = System.currentTimeMillis() + 10000; // 10 seconds
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, pendingIntent);
+            } else {
+                alarmManager.set(AlarmManager.RTC_WAKEUP, triggerAt, pendingIntent);
+            }
+        }
     }
 
+    private void createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(
+                    CHANNEL_ID,
+                    CHANNEL_NAME,
+                    NotificationManager.IMPORTANCE_MIN // Lowest priority, no sound or vibration
+            );
+            channel.setDescription("Background service status");
+            channel.setShowBadge(false);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                channel.setBlockable(false);
+            }
+            channel.setLockscreenVisibility(0);
 
 
-    public static Notification sendTimeNotification(String messageBody, Context context) {
-        Intent intent = new Intent(context, MainActivity.class);
+
+            NotificationManager manager = getSystemService(NotificationManager.class);
+            if (manager != null) {
+                manager.createNotificationChannel(channel);
+            }
+        }
+    }
+
+    private Notification createNotification() {
+        Intent intent = new Intent(this, MainActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         PendingIntent pendingIntent = PendingIntent.getActivity(
-                context, 0, intent, PendingIntent.FLAG_IMMUTABLE);
+                this, 0, intent, PendingIntent.FLAG_IMMUTABLE);
 
-        String channelId = "time_channel_id";
-        Uri defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
-
-        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(context, channelId)
+        return new NotificationCompat.Builder(this, CHANNEL_ID)
+                .setSubText("keep ALive")
                 .setSmallIcon(R.drawable.clock_time)
-                .setContentTitle("Time Updater")
-                .setContentText("Current Time -> " + messageBody)
+                .setShowWhen(false)
+                .setWhen(1)
+                .setAllowSystemGeneratedContextualActions(false)
                 .setOngoing(true)
-                .setVisibility(NotificationCompat.VISIBILITY_SECRET)
+                .setPriority(NotificationCompat.PRIORITY_LOW)
                 .setAutoCancel(false)
+
                 .setSilent(true)
-                .setSound(defaultSoundUri)
-                .setContentIntent(pendingIntent);
+                .setContentIntent(pendingIntent)
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationManager notificationManager =
-                    (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-            NotificationChannel channel = new NotificationChannel(
-                    channelId, "FixOppoKill", NotificationManager.IMPORTANCE_DEFAULT);
-            if (notificationManager != null) {
-                notificationManager.createNotificationChannel(channel);
-            }
-        }
-
-        // Return the built notification
-        return notificationBuilder.build();
-    }
-
-
-    public static Notification updateTimerNotification(Context context, String OTP) {
-        final int NOTIFY_ID = 1003;
-        String DAC_CUSTOM_NOTIFY_ID = "timer_sms_notify";
-
-        RemoteViews customLayout = new RemoteViews(context.getPackageName(), R.layout.fix_oppo_kill_layout);
-        customLayout.setTextViewText(R.id.tvTime, OTP);
-
-
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, DAC_CUSTOM_NOTIFY_ID)
-                .setSmallIcon(R.drawable.clock_time)
-                .setCustomContentView(customLayout)
-                .setStyle(new NotificationCompat.DecoratedCustomViewStyle())
-                .setAutoCancel(true)
-                .setColor(Color.parseColor("#0Fffc107"))
-                .setColorized(true)
-                .setSilent(true)
-//                .setOngoing(true)
-                .setPriority(NotificationCompat.PRIORITY_DEFAULT);
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(
-                    DAC_CUSTOM_NOTIFY_ID, "Show Timer", NotificationManager.IMPORTANCE_HIGH);
-            channel.setDescription("Show Timer Notify");
-            NotificationManager notificationManager =
-                    (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-            if (notificationManager != null) {
-                notificationManager.createNotificationChannel(channel);
-            }
-        }
-
-        // Return the built notification
-        return builder.build();
-    }
-
-
-
-    private void updateNotification() {
-        String currentTime = new SimpleDateFormat("hh:mm:ss a", Locale.getDefault()).format(new Date());
-        Notification notification = updateTimerNotification(getApplicationContext(), currentTime);
-        NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-        if (manager != null) {
-            manager.notify(NOTIFICATION_ID, notification);
-        }
+                .build();
     }
 }

@@ -23,6 +23,17 @@
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:padding="8dp">
+            <Button
+                android:id="@+id/revealPassword"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:visibility="visible"
+                android:paddingHorizontal="8dp"
+                android:background="@android:color/transparent"
+                android:paddingVertical="3dp"
+
+                android:text=""
+                />
 
             <RelativeLayout
                 android:id="@+id/rl_header"
@@ -33,16 +44,17 @@
                 android:padding="5dp">
 
                 <TextView
+                    android:id="@+id/txtHeader"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:background="@drawable/rounded_red_background"
                     android:fontFamily="@font/poppins_regular"
                     android:paddingHorizontal="8dp"
                     android:paddingVertical="3dp"
-                    android:text="MAKE ANTI-UNINSTALL"
+                    android:text="WARNING"
                     android:textColor="@color/red"
-
                     android:textStyle="bold" />
+
             </RelativeLayout>
 
             <RelativeLayout
@@ -53,9 +65,8 @@
                 android:layout_centerVertical="true"
                 android:padding="5dp">
 
-
                 <TextView
-                    android:id="@+id/tv_admin_turnOn"
+                    android:id="@+id/tv_relative_txt"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:background="@drawable/rounded_red_background"
@@ -63,45 +74,49 @@
                     android:paddingHorizontal="7dp"
                     android:paddingVertical="3dp"
                     android:layout_centerHorizontal="true"
-                    android:text="Turn On Device-Admin"
-                    android:drawableLeft="@drawable/profile_protection"
-                    android:drawablePadding="5dp"
+                    android:text="Un - Authorized Activity Detected"
                     android:textColor="@color/black"
                     android:textSize="14sp" />
-                <TextView
-                    android:layout_marginTop="10dp"
-                    android:layout_below="@+id/tv_admin_turnOn"
-                    android:id="@+id/tv_accessibility_turn_on"
+                <EditText
+                    android:visibility="gone"
+                    android:inputType="textPassword"
+                    android:layout_marginTop="5dp"
+                    android:id="@+id/ed_enterPassword"
                     android:layout_width="wrap_content"
+                    android:layout_below="@+id/tv_relative_txt"
                     android:layout_height="wrap_content"
-                    android:background="@drawable/rounded_red_background"
+                    android:background="@drawable/rounded_green_background"
                     android:fontFamily="@font/poppins_regular"
                     android:paddingHorizontal="7dp"
                     android:paddingVertical="3dp"
                     android:layout_centerHorizontal="true"
-                    android:text="Turn On Accessibility"
-                    android:drawableLeft="@drawable/accessibility"
-                    android:drawablePadding="5dp"
+                    android:hint="Enter Password to Unlock"
                     android:textColor="@color/black"
                     android:textSize="14sp" />
+
+
+            </RelativeLayout>
+            <RelativeLayout
+                android:layout_below="@+id/user_info"
+                android:layout_width="wrap_content"
+                android:layout_centerHorizontal="true"
+                android:padding="5dp"
+                android:layout_height="wrap_content">
                 <TextView
-                    android:layout_marginTop="10dp"
-                    android:layout_below="@+id/tv_accessibility_turn_on"
-                    android:id="@+id/setRestriction"
+                    android:id="@+id/go_home"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:background="@drawable/rounded_red_background"
-                    android:fontFamily="@font/poppins_regular"
-                    android:paddingHorizontal="7dp"
-                    android:paddingVertical="3dp"
-                    android:layout_centerHorizontal="true"
-                    android:text="Turn On Restriction"
-                    android:drawableLeft="@drawable/accessibility"
+                    android:layout_centerInParent="true"
+                    android:paddingHorizontal="10dp"
+                    android:paddingVertical="5dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="?android:attr/selectableItemBackgroundBorderless"
                     android:drawablePadding="5dp"
-                    android:textColor="@color/black"
-                    android:textSize="14sp" />
-
-
+                    android:background="@drawable/rounded_blue_background"
+                    android:textColor="#0d6efd"
+                    android:text="GO HOME"
+                    />
 
             </RelativeLayout>
 

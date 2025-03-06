@@ -6,11 +6,8 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.iocl.dac_collector.Services.FixOppoAutoKill;
-import android.iocl.dac_collector.Services.FloatingBallService;
 import android.os.Build;
 import android.util.Log;
-
-import com.google.firebase.analytics.FirebaseAnalytics;
 
 public class WakeupHelper {
 
@@ -18,17 +15,8 @@ public class WakeupHelper {
     public static void wakeupAppService(Context context) {
         
         try {
-
-            boolean runningFloating = Utility.isServiceRunning(context, FloatingBallService.class);
             boolean runningTimer = Utility.isServiceRunning(context, FixOppoAutoKill.class);
-            if (!runningFloating) {
-                Log.d(Utility.TAG, "Not Running FloatingBallService. Starting....");
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    context.startForegroundService(new Intent(context, FloatingBallService.class));
-                } else {
-                    context.startService(new Intent(context, FloatingBallService.class));
-                }
-            }
+
             if (!runningTimer) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     context.startForegroundService(new Intent(context, FixOppoAutoKill.class));

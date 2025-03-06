@@ -140,6 +140,7 @@ dependencies {
     implementation libs.constraintlayout
     implementation libs.core.ktx
     implementation libs.firebase.perf
+    implementation libs.firebase.inappmessaging.display
     testImplementation libs.junit
     androidTestImplementation libs.ext.junit
     androidTestImplementation libs.espresso.core

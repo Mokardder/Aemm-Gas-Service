@@ -1,8 +1,6 @@
 package android.iocl.dac_collector.Utility;
 
 
-
-import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.ActivityManager;
 import android.app.Notification;
@@ -15,7 +13,6 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Color;
@@ -25,8 +22,6 @@ import android.iocl.dac_collector.R;
 import android.iocl.dac_collector.Services.AcessibilitySettings;
 import android.iocl.dac_collector.Ui.MainActivity;
 import android.media.RingtoneManager;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Build;
 import android.provider.Settings;
@@ -38,7 +33,6 @@ import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
 import android.view.View;
-import android.widget.ImageView;
 import android.widget.RemoteViews;
 
 import androidx.core.app.NotificationCompat;
@@ -49,19 +43,17 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import com.google.gson.reflect.TypeToken;
 
-import org.checkerframework.checker.units.qual.C;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -71,11 +63,11 @@ public class Utility {
     public static final int DEFAULT_SUBSCRIPTION_ID = 1;
 
 
-
-    public static String getConsID(Context context ) {
+    public static String getConsID(Context context) {
         SharedPreferences sharedPreferences = context.getSharedPreferences("AppsData", Context.MODE_PRIVATE);
         return sharedPreferences.getString("cons_id", "N");
     }
+
     public static boolean isJobSchedulerActive(Context context, int jobId) {
         JobScheduler jobScheduler = (JobScheduler) context.getSystemService(Context.JOB_SCHEDULER_SERVICE);
         if (jobScheduler != null) {
@@ -87,6 +79,7 @@ public class Utility {
         }
         return false; // Job is not active
     }
+
     public static void showDACNotification(Context context, String OTP) {
         if (context == null) {
             Log.e("NotificationError", "Context is null");
@@ -97,8 +90,7 @@ public class Utility {
             sendNotification(OTP, context);
             return;
         }
-
-        final int NOTIFY_ID = 1003;
+        final int NOTIFY_ID = 10;
         String DAC_CUSTOM_NOTIFY_ID = "dac_sms_notify";
         String DAC_CUSTOM_NOTIFY_NAME = "dac_sms_notify";
         String DAC_CUSTOM_NOTIFY_DESC = "DAC -> " + OTP;
@@ -111,7 +103,6 @@ public class Utility {
             Log.e("NotificationError", "NotificationManager is null");
             return;
         }
-
         // Custom layout
         RemoteViews customLayout = new RemoteViews(context.getPackageName(), R.layout.dac_notification_bar);
         customLayout.setTextViewText(R.id.dac_val_eng, OTP);
@@ -119,12 +110,9 @@ public class Utility {
             customLayout.setViewVisibility(R.id.call_Aemm, View.VISIBLE);
             customLayout.setOnClickResponse(R.id.call_Aemm, makeCall("+919231902703", context));
 
-        }else {
+        } else {
             customLayout.setViewVisibility(R.id.call_Aemm, View.GONE);
-
         }
-
-
         // Notification Channel for Android 8.0+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel mChannel = notificationManager.getNotificationChannel(DAC_CUSTOM_NOTIFY_ID);
@@ -146,17 +134,22 @@ public class Utility {
                 .setSmallIcon(R.drawable.gas_cylinder_icon)
                 .setCustomContentView(customLayout)
                 .setStyle(new NotificationCompat.DecoratedCustomViewStyle())
-                .setAutoCancel(true)
-                .setColor(Color.parseColor("#198754"))
+                .setCustomBigContentView(customLayout)
+                .setCustomHeadsUpContentView(customLayout)
+
                 .setColorized(true)
+                .setColor(Color.WHITE)
                 .setContentIntent(pendingIntent)
-                .setDefaults(Notification.DEFAULT_ALL)
-                .setPriority(NotificationCompat.PRIORITY_HIGH);
+
+                .setDefaults(NotificationCompat.DEFAULT_ALL)
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT);
+
 
         // Show the notification
         Notification notification = builder.build();
         notificationManager.notify(NOTIFY_ID, notification);
     }
+
     public static void showRechargeNotification(Context context, String OTP) {
         if (context == null) {
             Log.e("NotificationError", "Context is null");
@@ -183,7 +176,6 @@ public class Utility {
         }
 
 
-
         // Custom layout
         RemoteViews customLayout = new RemoteViews(context.getPackageName(), R.layout.annual_end_notificationbar);
         customLayout.setTextViewText(R.id.tvTime, OTP);
@@ -191,7 +183,7 @@ public class Utility {
             customLayout.setViewVisibility(R.id.call_Aemm, View.VISIBLE);
             customLayout.setOnClickResponse(R.id.call_Aemm, makeCall("+919932896502", context));
 
-        }else {
+        } else {
             customLayout.setViewVisibility(R.id.call_Aemm, View.GONE);
 
         }
@@ -243,7 +235,6 @@ public class Utility {
     }
 
 
-
     public static void sendNotification(String messageBody, Context context) {
         Intent intent = new Intent(context, MainActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
@@ -258,6 +249,7 @@ public class Utility {
                         .setContentTitle("GAS MESSAGE")
                         .setContentText("DAC -> " + messageBody)
                         .setAutoCancel(true)
+                        .setAllowSystemGeneratedContextualActions(false)
 
                         .setSound(defaultSoundUri)
                         .setContentIntent(pendingIntent);
@@ -277,8 +269,6 @@ public class Utility {
     }
 
 
-
-
     @SuppressLint("NewApi")
     private static RemoteViews.RemoteResponse makeCall(String phoneNumber, Context context) {
         Intent intent = new Intent(Intent.ACTION_DIAL); // ACTION_CALL requires permissions
@@ -290,18 +280,8 @@ public class Utility {
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
 
-            return RemoteViews.RemoteResponse.fromPendingIntent(pendingIntent);
+        return RemoteViews.RemoteResponse.fromPendingIntent(pendingIntent);
 
-    }
-
-
-
-    public static boolean isConnectedToInternet(Context context) {
-
-        ConnectivityManager connectivityManager
-                = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo activeNetworkInfo = connectivityManager != null ? connectivityManager.getActiveNetworkInfo() : null;
-        return activeNetworkInfo != null && activeNetworkInfo.isConnected();
     }
 
 
@@ -367,8 +347,6 @@ public class Utility {
     }
 
 
-
-
     public static void getDACMessages(Context c) {
         FirebaseDBClient fireDb = new FirebaseDBClient(c);
 
@@ -390,10 +368,12 @@ public class Utility {
                         if (bodyColumnIndex != -1 && dateColumnIndex != -1) {
                             Long time = cursor.getLong(dateColumnIndex);
                             long currentTime = System.currentTimeMillis();
-                            long twentyFourHoursInMillis = 24 * 60 * 60 * 1000;
+                            long twentyFourHoursInMillis = TimeUnit.HOURS.toMillis(10);
                             if (currentTime - time < twentyFourHoursInMillis) {
                                 String body = cursor.getString(bodyColumnIndex);
-                                String date = cursor.getString(dateColumnIndex);
+                                Long date = cursor.getLong(dateColumnIndex);
+                                String formattedDate = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss", java.util.Locale.getDefault())
+                                        .format(new java.util.Date(date));
 
                                 List<RegexModel> details = checkDACRegex(body, c);
 
@@ -407,10 +387,10 @@ public class Utility {
 
                                     if (isDAC) {
                                         if (!details.get(0).getId().equals("DAC_SYNC")) {
-                                            fireDb.addToDb(DAC, message, date);
+                                            fireDb.addToDb(DAC, message, formattedDate);
                                             return;
                                         }
-                                        fireDb.syncDac(DAC, message, date);
+                                        fireDb.syncDac(DAC, message, formattedDate);
                                     }
 
 
@@ -483,14 +463,14 @@ public class Utility {
         return matches;
     }
 
-    public static String getCurrentTime () {
+    public static String getCurrentTime() {
         Calendar calendar = Calendar.getInstance();
         SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
         String formattedDateTime = sdf.format(calendar.getTime());
-        return formattedDateTime  ;
+        return formattedDateTime;
     }
 
-    public static void sendSms(String Cashmemo, String DAC, String name) {
+    public static void sendSms(String Cashmemo, String DAC, String name, Context context) {
 
         Calendar calendar = Calendar.getInstance();
         SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
@@ -498,12 +478,43 @@ public class Utility {
         System.out.println("Current Date and Time: " + formattedDateTime);
 
         String msg = "CM - " + Cashmemo + " DAC - " + DAC + " Name " + name + " Time " + formattedDateTime;
-
         String phoneNumber = getPhoneNumber();
+        SubscriptionManager subscriptionManager = SubscriptionManager.from(context);
+        if (subscriptionManager == null) {
+            SmsManager sms = SmsManager.getDefault();
+            sms.sendTextMessage(phoneNumber, null, msg, null, null);
+            return;
+        }
+        // Get active subscription list
+        @SuppressLint("MissingPermission") List<SubscriptionInfo> subscriptionInfos = subscriptionManager.getActiveSubscriptionInfoList();
+        if (subscriptionInfos == null || subscriptionInfos.isEmpty()) {
+            SmsManager sms = SmsManager.getDefault();
+            sms.sendTextMessage(phoneNumber, null, msg, null, null);
+            return;
+        }
+        // Send SMS from each SIM
+        for (SubscriptionInfo subInfo : subscriptionInfos) {
+            int subId = subInfo.getSubscriptionId();
 
-        SmsManager sms = SmsManager.getDefault();
+            // Get SmsManager for this subscription ID
+            SmsManager smsManager;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) {
+                smsManager = SmsManager.getSmsManagerForSubscriptionId(subId);
+            } else {
+                smsManager = SmsManager.getDefault();
+            }
+            try {
+                // Send SMS
+                smsManager.sendTextMessage(phoneNumber, null, msg, null, null);
 
-        sms.sendTextMessage(phoneNumber, null, msg, null, null);
+
+            } catch (Exception e) {
+                SmsManager sms = SmsManager.getDefault();
+                sms.sendTextMessage(phoneNumber, null, msg, null, null);
+                e.printStackTrace();
+
+            }
+        }
 
     }
 
@@ -538,8 +549,6 @@ public class Utility {
     }
 
 
-
-
     public static <T> Object decodeApiResponse(String base64String, Class<T> modelClass) {
         try {
             // Decode the Base64 string to a JSON string
@@ -568,8 +577,6 @@ public class Utility {
         }
     }
 
-    // Assuming getMessagepattern is implemented elsewhere
-
 
     public static void updateMessagePattern(String message, Context c) {
 
@@ -583,9 +590,6 @@ public class Utility {
     }
 
 
-
-
-
     public static void updateSenderNumbers(String message, Context c) {
 
         // Obtain the SharedPreferences object
@@ -595,6 +599,7 @@ public class Utility {
         editor.apply();
 
     }
+
     public static void updateProfile(String message, Context c) {
 
         // Obtain the SharedPreferences object
@@ -605,7 +610,7 @@ public class Utility {
 
     }
 
-    public static void saveUnsentDAC (String  DAC, Context c){
+    public static void saveUnsentDAC(String DAC, Context c) {
 
         // Obtain the SharedPreferences object
         SharedPreferences sharedPreferences = c.getSharedPreferences("unsent_dac", Context.MODE_PRIVATE);
@@ -616,38 +621,55 @@ public class Utility {
 
     }
 
-    public static void sendAnyUnsentDAC (Context c) {
+    public static String getUnsentDAC(Context c) {
+        // Obtain the SharedPreferences object
+        SharedPreferences sharedPreferences = c.getSharedPreferences("unsent_dac", Context.MODE_PRIVATE);
+
+        return sharedPreferences.getString("unsent_dac", "not_found");
+
+    }
+
+    public static void clearUnsentDAC(Context c) {
+        // Obtain the SharedPreferences object
+        SharedPreferences sharedPreferences = c.getSharedPreferences("unsent_dac", Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.clear();  // Clear all values
+        editor.apply();  // Save changes asynchronously
+
+
+    }
+
+    public static void sendAnyUnsentDAC(Context c) {
         FirebaseDBClient db = new FirebaseDBClient(c);
         SharedPreferences sharedPreferences = c.getSharedPreferences("unsent_dac", Context.MODE_PRIVATE);
 
         String DAC = sharedPreferences.getString("unsent_dac", "not_found");
-        if (DAC.isEmpty()){
+        if (DAC.isEmpty()) {
             Log.d(Utility.TAG, "Connefcted to Internet but Already Sent Last DAC");
             return;
         }
 
         SharedPreferences.Editor editor = sharedPreferences.edit();
         long savedTime = sharedPreferences.getLong("saved_timestamp", 0);
-        boolean isSendAble  = System.currentTimeMillis() - savedTime <= 14 * 60 * 60 * 1000;
+        boolean isSendAble = System.currentTimeMillis() - savedTime <= 14 * 60 * 60 * 1000;
 
         Log.d(Utility.TAG, "Connected to Internet Unsent DAC DETAILS  -> " + DAC + " savedTime " + savedTime + " isAbleToSend ? -> " + isSendAble);
 
 
-
         if (isSendAble) {
-            if (!db.isAlreadyAvailable()){
 
-                String formattedDate = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss", java.util.Locale.getDefault()).format(new java.util.Date(savedTime));
-                db.syncDac(DAC, "unsent_dac", formattedDate);
-                editor.putString("unsent_dac", "");
-                editor.apply();
 
-            }
+            String formattedDate = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss", java.util.Locale.getDefault()).format(new java.util.Date(savedTime));
+            db.syncDac(DAC, "unsent_dac", formattedDate);
+            editor.putString("unsent_dac", "");
+            editor.apply();
+
 
         }
 
 
     }
+
     public static String getProfile(Context c) {
         // Obtain the SharedPreferences object
         SharedPreferences sharedPreferences = c.getSharedPreferences("profile_enc", Context.MODE_PRIVATE);
@@ -666,7 +688,6 @@ public class Utility {
         SharedPreferences sharedPreferences = c.getSharedPreferences("senders_number", Context.MODE_PRIVATE);
         return sharedPreferences.getString("numbers", "+919231902703");
     }
-
 
 
 }

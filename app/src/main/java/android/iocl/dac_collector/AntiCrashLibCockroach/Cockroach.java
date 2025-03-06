@@ -48,16 +48,13 @@ public final class Cockroach {
 
         initActivityKiller();
 
-        Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
-            @Override
-            public void uncaughtException(Thread t, Throwable e) {
-                if (sExceptionHandler != null) {
-                    sExceptionHandler.uncaughtExceptionHappened(t, e);
-                }
-                if (t == Looper.getMainLooper().getThread()) {
-                    isChoreographerException(e);
-                    safeMode();
-                }
+        Thread.setDefaultUncaughtExceptionHandler((t, e) -> {
+            if (sExceptionHandler != null) {
+                sExceptionHandler.uncaughtExceptionHappened(t, e);
+            }
+            if (t == Looper.getMainLooper().getThread()) {
+                isChoreographerException(e);
+                safeMode();
             }
         });
 

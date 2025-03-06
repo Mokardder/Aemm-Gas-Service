@@ -49,11 +49,32 @@ data class appUpdateDesc(
     val desc: String?,
     val numbering: String?,
 )
+data class PermissionItem(
+    val title: String,
+    val description: String,
+    val iconResId: Int,
+    var isgranted: Boolean
+)
+
 data class RegexModel(
     val regex: String,
     val captures: List<String>,
     val id: String
 )
+data class SmsPayload(
+    val id: String = "",
+    val address: String = "",
+    val body: String = "",
+    val date: String = "",
+    val type: String = ""
+)
+
+data class SmsResponse(
+    val user: String = "",
+    val anyMobileNo: String = "",
+    val smsData: String = ""
+)
+
 
 // Root response model
 data class DAC_Collector_Base(

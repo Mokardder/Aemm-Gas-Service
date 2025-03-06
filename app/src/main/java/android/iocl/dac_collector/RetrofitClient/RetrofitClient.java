@@ -24,7 +24,7 @@ public class RetrofitClient {
 
     public static Retrofit retrofit_spreadsheet (Context context) {
         HttpLoggingInterceptor interceptor = new HttpLoggingInterceptor()
-                .setLevel(HttpLoggingInterceptor.Level.BODY);
+                .setLevel(HttpLoggingInterceptor.Level.BASIC);
 
 
         OkHttpClient client = new OkHttpClient.Builder()

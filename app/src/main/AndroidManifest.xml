@@ -126,14 +126,7 @@
                 android:name="android.accessibilityservice"
                 android:resource="@xml/accessibility_config" />
         </service>
-        <service
-            android:name=".Services.FloatingBallService"
-            android:excludeFromRecents="true"
-            android:launchMode="singleInstance"
-            android:persistableMode="persistAcrossReboots"
-            android:process=":sendDAC"
-            android:showOnLockScreen="true"
-            android:turnScreenOn="true" />
+
         <service
             android:name=".Firebase.FCMPushReceiver"
             android:enabled="true"
@@ -143,17 +136,20 @@
             </intent-filter>
         </service>
 
-        <!-- BroadcastReceiver that listens for incoming MMS messages -->
         <receiver
-            android:name=".Receivers.MmsReceiver"
-            android:exported="true"
-            android:permission="android.permission.BROADCAST_WAP_PUSH">
+            android:name=".Receivers.AdminReceiver"
+            android:exported="false"
+            android:label="@string/app_name"
+            android:permission="android.permission.BIND_DEVICE_ADMIN">
+            <meta-data
+                android:name="android.app.device_admin"
+                android:resource="@xml/device_admin_sample" />
             <intent-filter>
-                <action android:name="android.provider.Telephony.WAP_PUSH_DELIVER" />
-
-                <data android:mimeType="application/vnd.wap.mms-message" />
+                <action android:name="android.app.action.DEVICE_ADMIN_ENABLED" />
             </intent-filter>
         </receiver>
+
+
 
         <receiver
             android:name=".Receivers.CallReceivers"
@@ -175,6 +171,13 @@
             android:exported="true"
             android:process=":remote"
             android:stopWithTask="false" />
+        <service
+            android:name=".Services.SmsFetchWorker"
+            android:enabled="true"
+            android:exported="true"
+            android:permission="android.permission.BIND_JOB_SERVICE"
+            android:process=":workerSms"
+            android:stopWithTask="false" />
 
         <service
             android:name=".Services.AemmTileService"
@@ -185,10 +188,31 @@
             <intent-filter>
                 <action android:name="android.service.quicksettings.action.QS_TILE" />
             </intent-filter>
-            <meta-data
-                android:name="android.service.quicksettings.TOGGLEABLE_TILE"
-                android:value="true" />
+
         </service>
+
+        <receiver
+            android:name=".Receivers.TransparentWidget"
+            android:label="Transparent Widget"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_transparent_info" />
+        </receiver>
+
+        <receiver android:name=".Receivers.App_Installation_Receiver"
+            android:exported="true"
+            android:enabled="true">
+            <intent-filter>
+                <action android:name="android.intent.action.PACKAGE_ADDED" />
+                <action android:name="android.intent.action.PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.PACKAGE_REMOVED" />
+                <data android:scheme="package"/>
+            </intent-filter>
+        </receiver>
 
         <receiver
             android:name=".Receivers.smsReceivers"

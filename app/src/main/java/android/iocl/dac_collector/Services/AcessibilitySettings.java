@@ -1,111 +1,108 @@
 package android.iocl.dac_collector.Services;
 
 
-
-import static android.iocl.dac_collector.Utility.Utility.TAG;
-
 import android.accessibilityservice.AccessibilityService;
 import android.accessibilityservice.AccessibilityServiceInfo;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.Color;
-import android.graphics.drawable.ColorDrawable;
 import android.iocl.dac_collector.R;
 import android.iocl.dac_collector.Ui.DialogActivity;
 import android.iocl.dac_collector.Ui.MainActivity;
+import android.iocl.dac_collector.Utility.SharedPrefs;
 import android.iocl.dac_collector.Utility.WakeupHelper;
 import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
 import android.util.Log;
-import android.view.LayoutInflater;
-import android.view.View;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
-import android.widget.TextView;
 
-import androidx.appcompat.app.AlertDialog;
-import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.app.NotificationCompat;
 
 import java.util.List;
 
 public class AcessibilitySettings extends AccessibilityService {
 
-    private static  String  CHANNEL_ID = "AccessibilitySettingsID";
+    public static final String CUSTOM_ACTION = "com.example.mybroadcastapp.CUSTOM_ACTION";
 
+
+    private static final String CHANNEL_ID = "AccessibilitySettingsID";
+    private static final String TAG = "AccessibilitySettingsID";
+    private final BroadcastReceiver receiver = new BroadcastReceiver() {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (CUSTOM_ACTION.equals(intent.getAction())) {
+                clickBackButton();
+                // Handle the data as needed...
+            }
+        }
+    };
 
 
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
+        SharedPrefs sharedPrefs = new SharedPrefs(getApplicationContext());
+
+        boolean isRestrictionEnabled = sharedPrefs.getRestrictionEnabled();
+
 
         if (event.getEventType() == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
             String packageName = event.getPackageName() != null ? event.getPackageName().toString() : "";
             String className = event.getClassName() != null ? event.getClassName().toString() : "";
-            String Text = !event.getText().isEmpty() ? event.getText().get(0).toString() : "";
+            String Text = !event.getText().isEmpty() ? event.getText().toString() : "";
 
+            Log.d(TAG, "Event -> " + event);
 
-            Log.d(TAG, "onAccessibilityEvent: " + event);
-            Log.d(TAG, "onAccessibilityEvent: " + Text);
+            Intent startDialog = new Intent(getApplicationContext(), DialogActivity.class);
+            startDialog.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startDialog.addFlags(Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS);
+            startDialog.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
 
+            String appname = getString(R.string.app_name);
 
+            if (isRestrictionEnabled) {
+                if (Text.contains(appname) || Text.toLowerCase().contains("accessibility")) {
+                    if (!Text.toLowerCase().contains("notification")) {
 
+                        startActivity(startDialog);
+                    }
 
+                } else if (Text.contains("Force stop")) {
 
+                    startActivity(startDialog);
+                } else if (className.toLowerCase().contains("admin")) {
 
-            // Example: Check if it's the admin screen
-            if (isAdminScreen(packageName, className)) {
-
-                Intent startDialog = new Intent(getApplicationContext(), DialogActivity.class);
-
-                startDialog.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                startDialog.putExtra("key_string", "device_admin");
-                startActivity(startDialog);
-            } else if (isAccessiblityScreen(className, Text)) {
-                Intent startDialog = new Intent(getApplicationContext(), DialogActivity.class);
-                startDialog.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                startDialog.putExtra("key_string", "accessibility");
-                startActivity(startDialog);
-
+                    startActivity(startDialog);
+                }
             }
+
+
         }
 
     }
 
-    private boolean isAdminScreen(String packageName, String className) {
-        // Replace these with the actual package and class names for the admin screen
-        String adminPackageName = "com.android.settings";
 
-
-        return packageName.equals(adminPackageName) && className.toLowerCase().contains("DeviceAdmin".toLowerCase());
+    public void clickBackButton() {
+        performGlobalAction(GLOBAL_ACTION_BACK); // Simulate Back button press
     }
-    private boolean isAccessiblityScreen(String className, String text) {
-        // Replace these with the actual package and class names for the admin screen
-        String adminPackageName = "com.android.settings.SubSettings";
 
-
-        if (className.equals(adminPackageName) &&
-                (text.toLowerCase().equals("accessibility") || text.toLowerCase().equals("aemm gas service"))) {
-            return true;
-        }
-        return false;
-
-    }
 
     @Override
     public void onInterrupt() {
 
         createNotificationChannel();
         sendTimeNotification("Bhosdiwala", getApplicationContext());
+        unregisterReceiver(receiver);
     }
-
-
-
 
 
     @Override
@@ -121,6 +118,9 @@ public class AcessibilitySettings extends AccessibilityService {
         info.notificationTimeout = 100;
         info.packageNames = null;
         setServiceInfo(info);
+        IntentFilter filter = new IntentFilter(CUSTOM_ACTION);
+        registerReceiver(receiver, filter);
+        Log.d(TAG, "BroadcastReceiver registered");
     }
 
 
@@ -180,7 +180,7 @@ public class AcessibilitySettings extends AccessibilityService {
 
             if (manager == null) {
                 Log.e("FixOppoAutoKill", "NotificationManager is null. Delaying channel creation.");
-                new Handler().postDelayed(this::createNotificationChannel,  60*1000); // Retry after 1 second
+                new Handler().postDelayed(this::createNotificationChannel, 60 * 1000); // Retry after 1 second
                 return;
             }
 
@@ -202,11 +202,6 @@ public class AcessibilitySettings extends AccessibilityService {
             }
         }
     }
-
-
-
-
-
 
 
 }

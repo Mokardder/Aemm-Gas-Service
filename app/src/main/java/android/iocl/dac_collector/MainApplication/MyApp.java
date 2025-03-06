@@ -17,6 +17,8 @@ import com.google.firebase.crashlytics.FirebaseCrashlytics;
 public class MyApp extends Application {
     FirebaseCrashlytics crashlytics;
     FirebaseApp firebaseApp;
+
+    Boolean installCockroach = true;
     @Override
     public void onCreate() {
         super.onCreate();
@@ -34,7 +36,10 @@ public class MyApp extends Application {
         crashlytics.setCrashlyticsCollectionEnabled(true);
         // Initialize Firebase
 
-        install();
+         if (installCockroach){
+             install();
+         }
+
     }
 
 

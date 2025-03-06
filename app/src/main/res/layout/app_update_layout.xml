@@ -126,7 +126,7 @@
                     android:textColor="@color/white"
                     android:textSize="18dp"
                     android:fontFamily="@font/li_sohid_unicode"
-                    android:text="এখনিয় আপডেট দিন"/>
+                    android:text="UPDATE NOW"/>
 
                 <TextView
                     android:visibility="gone"

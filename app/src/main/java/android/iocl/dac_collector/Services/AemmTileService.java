@@ -1,5 +1,7 @@
 package android.iocl.dac_collector.Services;
 
+import android.app.ActivityManager;
+import android.content.Intent;
 import android.graphics.drawable.Icon;
 import android.iocl.dac_collector.R;
 import android.iocl.dac_collector.Utility.Utility;
@@ -12,6 +14,8 @@ import android.util.Log;
 import androidx.annotation.RequiresApi;
 
 import com.github.pwittchen.reactivenetwork.library.rx2.ReactiveNetwork;
+import com.github.pwittchen.reactivenetwork.library.rx2.internet.observing.InternetObservingSettings;
+import com.github.pwittchen.reactivenetwork.library.rx2.internet.observing.strategy.SocketInternetObservingStrategy;
 
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
@@ -21,76 +25,83 @@ import io.reactivex.schedulers.Schedulers;
 @RequiresApi(api = Build.VERSION_CODES.N)
 public class AemmTileService extends TileService {
 
-    public static boolean isInternetAvailable = false;
-    private Disposable networkDisposable;
-    private Disposable internetDisposable;
-
-    private final int STATE_ON = 1;
-    private final int STATE_OFF = 0;
-    private int TOGGLE = 0;
-    private String TAG = "AemmTILEService";
 
     @Override
     public void onTileAdded() {
         super.onTileAdded();
-        Log.d(TAG, "onTileAdded:  Tile Added");
+        // Tile added to Quick Settings
+        updateTileState(false);
     }
 
     @Override
     public void onStartListening() {
         super.onStartListening();
-
-        WakeupHelper.wakeupAppService(getApplicationContext());
-
-
-        try {
-
-            networkDisposable = ReactiveNetwork.observeNetworkConnectivity(getApplicationContext())
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(connectivity -> Log.d(TAG, connectivity.toString()));
-
-            // Observe internet connectivity
-            internetDisposable = ReactiveNetwork.observeInternetConnectivity()
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(isConnected -> {
-
-                        Log.d(TAG, "isInternetConnected ? " + isConnected);
-                        isInternetAvailable = isConnected;
-                        if (isConnected) {
-
-                            Utility.sendAnyUnsentDAC(getApplicationContext());
-                        }
-                    });
-
-        } catch (Exception e) {
-
+        // Update tile state when Quick Settings is opened
+        boolean isActive = isForegroundServiceRunning();
+        if (!isActive) {
+            startForegroundService();
         }
-    }
-
-    @Override
-    public void onStopListening() {
-        super.onStopListening();
+        updateTileState(isActive);
     }
 
     @Override
     public void onClick() {
         super.onClick();
-
-        Log.d(TAG, "onClick: Clicked " + getQsTile().getState());
-        Icon icon;
-
-        Log.d(TAG, "onClick: " + TOGGLE);
-        if (TOGGLE == STATE_ON) {
-            TOGGLE = STATE_OFF;
-            icon = Icon.createWithResource(getApplicationContext(), R.drawable.gas_tile_inactive);
-        }else {
-            TOGGLE = STATE_ON;
-            icon = Icon.createWithResource(getApplicationContext(), R.drawable.gas_tile_active);
+        // Toggle the tile state on click
+        boolean isActive = isForegroundServiceRunning();
+        if (!isActive) {
+            startForegroundService();
         }
 
-        getQsTile().setIcon(icon);
-        getQsTile().updateTile();
+
+        updateTileState(!isActive);
+    }
+
+    @Override
+    public void onStopListening() {
+        super.onStopListening();
+        boolean isActive = isForegroundServiceRunning();
+        if (!isActive) {
+            startForegroundService();
+        }
+
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        boolean isActive = isForegroundServiceRunning();
+        if (!isActive) {
+            startForegroundService();
+        }
+    }
+
+
+
+    private void updateTileState(boolean isActive) {
+        Tile tile = getQsTile();
+        if (tile == null) return;
+
+        tile.setState(isActive ? Tile.STATE_ACTIVE : Tile.STATE_INACTIVE);
+        tile.updateTile();
+    }
+
+    private void startForegroundService() {
+        Intent serviceIntent = new Intent(this, FixOppoAutoKill.class);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(serviceIntent);
+        } else {
+            startService(serviceIntent);
+        }
+    }
+
+    private boolean isForegroundServiceRunning() {
+        ActivityManager manager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (FixOppoAutoKill.class.getName().equals(service.service.getClassName())) {
+                return true;
+            }
+        }
+        return false;
     }
 }

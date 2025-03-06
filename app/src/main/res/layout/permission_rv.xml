@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="8dp"
+    android:background="@drawable/rounded_border_selectable_item"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:padding="2dp">
+
+    <!-- Icon for permission -->
+    <ImageView
+        android:id="@+id/permission_icon"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginTop="7dp"
+        android:layout_alignParentStart="true"
+        android:layout_marginEnd="16dp"
+        android:contentDescription="dasdad"
+        android:src="@drawable/clock_time" />
+
+    <!-- Permission Title -->
+    <TextView
+        android:id="@+id/permission_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:textColor="@color/black"
+        android:layout_toRightOf="@+id/permission_icon"
+        android:text="Read Sms"
+        android:textSize="16sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/permission_sub_description"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:maxWidth="200dp"
+        android:layout_below="@+id/permission_title"
+        android:layout_marginEnd="16dp"
+        android:layout_toRightOf="@+id/permission_icon"
+        android:text="This Sms Helps to Read Sms and Show in Notification bar"
+        android:textColor="@android:color/darker_gray"
+        android:textSize="14sp" />
+
+    <!-- Button for permission state with rounded border -->
+    <FrameLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+      android:padding="10dp">
+
+        <!-- MaterialButton -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/permission_switch"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/rounded_green_background"
+            android:textColor="@color/black"
+            android:layout_gravity="center" /> <!-- Center button in FrameLayout -->
+
+        <!-- Tick Icon centered inside the FrameLayout -->
+        <ImageView
+            android:id="@+id/tick_icon"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/green_tick"
+            android:layout_gravity="center" /> <!-- Center icon within FrameLayout -->
+    </FrameLayout>
+
+
+
+</RelativeLayout>

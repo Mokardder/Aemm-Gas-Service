@@ -29,4 +29,5 @@ public interface RequestService {
     Call<DAC_Collector_Base> check_update (@Body check_update body) ;
     @POST("/macros/s/" + KEY_DAC_COLLECTOR + "/exec")
     Call<DAC_Collector_Base> update_dac_collector (@Body update_dac_collect body) ;
+
 }

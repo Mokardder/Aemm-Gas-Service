@@ -4,12 +4,17 @@ package android.iocl.dac_collector.Ui;
 import static android.iocl.dac_collector.Utility.Constant.DefaultRegex;
 
 import android.Manifest;
+import android.app.StatusBarManager;
+import android.app.admin.DeviceAdminReceiver;
+import android.app.admin.DevicePolicyManager;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Icon;
 import android.iocl.dac_collector.BuildConfig;
 import android.iocl.dac_collector.Firebase.FirebaseDBClient;
-import android.iocl.dac_collector.Interface.OnCompleteInterface;
 import android.iocl.dac_collector.ModelData.AppUpdate;
 import android.iocl.dac_collector.ModelData.ColumnValue;
 import android.iocl.dac_collector.ModelData.ConsumerData;
@@ -18,19 +23,22 @@ import android.iocl.dac_collector.ModelData.SearchQuery;
 import android.iocl.dac_collector.ModelData.appUpdateDesc;
 import android.iocl.dac_collector.ModelData.check_update;
 import android.iocl.dac_collector.ModelData.search_consumer;
-import android.iocl.dac_collector.ModelData.search_consumer_response;
 import android.iocl.dac_collector.ModelData.update_dac_collect;
 import android.iocl.dac_collector.R;
+import android.iocl.dac_collector.Receivers.AdminReceiver;
 import android.iocl.dac_collector.RetrofitClient.RequestService;
 import android.iocl.dac_collector.RetrofitClient.RetrofitClient;
+import android.iocl.dac_collector.Services.AemmTileService;
 import android.iocl.dac_collector.Services.DownloadService;
 import android.iocl.dac_collector.Services.FixOppoAutoKill;
-import android.iocl.dac_collector.Services.FloatingBallService;
 import android.iocl.dac_collector.Services.JobSchedulerUtil;
 import android.iocl.dac_collector.Utility.Constant;
+import android.iocl.dac_collector.Utility.DeviceAdminUtil;
 import android.iocl.dac_collector.Utility.SharedPrefs;
 import android.iocl.dac_collector.Utility.Utility;
 import android.iocl.dac_collector.adapter.UpdateDescList;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -62,31 +70,45 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.analytics.FirebaseAnalytics;
 import com.google.firebase.messaging.FirebaseMessaging;
-import com.google.gson.Gson;
 import com.hjq.permissions.Permission;
 import com.hjq.permissions.XXPermissions;
 
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
 public class MainActivity extends AppCompatActivity {
+
+    private StatusBarManager statusBarManager;
     private static final String TAG = "MainActivity_Mokardder";
     FirebaseAnalytics mFirebaseAnalytics;
     FirebaseDBClient fireDB;
     Boolean isSkippingFCM = false;
 
+
     Button fetchUserDetails;
 
     LinearLayout loader;
-    TextView loader_text, call_Akram, call_Emdadul, call_Mokardder, refreshProfile, userName, remainBook, lastBook, mobNo, consID, location, Book_Btn, Check_Update, aboutApp, cphPerm, btn_skip;
+    TextView loader_text, call_Akram, call_Emdadul, tv_appVersion, call_Mokardder, refreshProfile, userName, remainBook, lastBook, mobNo, consID, location, Book_Btn, Check_Update, aboutApp, adminPerm, btn_skip;
     ImageView annualTick;
+
     String FCM_KEY = "";
     SharedPrefs sharedPrefs;
+    boolean isAccessibilityEnabled;
+    boolean isDeviceAdminEnabled;
+    private ExecutorService executorService = Executors.newSingleThreadExecutor();  // Executor for background tasks
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -97,18 +119,46 @@ public class MainActivity extends AppCompatActivity {
         setViewsUI();
 
 
-
-
         initFirebaseThings();
         checkIfAppUpdated();
         sharedPrefsCheck();
         settingUpJobs();
         setClickListener();
 
+        requestAddTile();
+
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            statusBarManager = (StatusBarManager) getSystemService(StatusBarManager.class);
+        }
+
     }
 
+    private final Executor resultSuccessExecutor = runnable -> {
+        Log.d(TAG, "requestAddTileService result success");
+        runOnUiThread(() -> Toast.makeText(this, "Tile added!", Toast.LENGTH_SHORT).show());
+    };
+
+    private void requestAddTile() {
+        if (statusBarManager == null) return;
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            statusBarManager.requestAddTileService(
+                    new ComponentName(this, AemmTileService.class),
+                    "Aemm Quick", // e.g., "Aemm Quick"
+                    Icon.createWithResource(this, R.drawable.gas),
+                    resultSuccessExecutor,
+                    resultCodeFailure -> {
+                        Log.e(TAG, "Failed to add tile: " + resultCodeFailure);
+                        runOnUiThread(() -> Toast.makeText(this, "Failed to add tile", Toast.LENGTH_SHORT).show());
+                    }
+            );
+        }
+    }
+
+
     private void checkIfAppUpdated() {
-        if (BuildConfig.VERSION_CODE > sharedPrefs.getAppVersion()){
+        if (BuildConfig.VERSION_CODE > sharedPrefs.getAppVersion()) {
 
             updateAppIsUpdated();
 
@@ -116,20 +166,22 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void sharedPrefsCheck() {
+        subscribeTopics();
 
         if (sharedPrefs.getBoolean("isAppUpdated", false)) {
             updateAppIsUpdated();
         }
         if (sharedPrefs.getBoolean("isFirstTime", true)) {
 
+            sharedPrefs.setRestrictionEnabled();
 
-            subscribeTopics();
 
+            try {
+                showUserDetailsDialog();
+            } catch (Exception e) {
 
-            if (Build.MODEL.startsWith("CPH")) {
-                showCphWarning();
             }
-            showUserDetailsDialog();
+
 
             reqIgnoreBattery();
             installpermission();
@@ -152,6 +204,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setViewsUI() {
+        isAccessibilityEnabled = Utility.isAccessibilityServiceEnabled(getApplicationContext());
+        isDeviceAdminEnabled = DeviceAdminUtil.isDeviceAdminEnabled(getApplicationContext(), AdminReceiver.class);
+        SharedPrefs sharedPrefs = new SharedPrefs(this);
+        boolean isRestrictionEnabled = sharedPrefs.getRestrictionEnabled();
         loader = findViewById(R.id.loaderLayout);
         loader_text = findViewById(R.id.loadingText_UI);
         call_Akram = findViewById(R.id.call_Akram);
@@ -168,10 +224,17 @@ public class MainActivity extends AppCompatActivity {
         Check_Update = findViewById(R.id.Check_Update);
         Book_Btn = findViewById(R.id.Book_Btn);
         aboutApp = findViewById(R.id.aboutApp);
-        cphPerm = findViewById(R.id.cphPerm);
+        tv_appVersion = findViewById(R.id.tv_appVersion);
+
+        adminPerm = findViewById(R.id.adminPerm);
+        if (isDeviceAdminEnabled && isAccessibilityEnabled && isRestrictionEnabled) {
+            adminPerm.setVisibility(View.GONE);
+        }
     }
 
     private void settingUpJobs() {
+
+
         if (!Utility.isJobSchedulerActive(MainActivity.this, JobSchedulerUtil.SMS_CALL_ID)) {
 
             loader_controller("Setting Up..", true, loader, loader_text);
@@ -195,14 +258,22 @@ public class MainActivity extends AppCompatActivity {
         });
 
         Check_Update.setOnClickListener(v -> {
-            checkAppUpdate();
+//            checkAppUpdate();
+
+            boolean isAvaialble = isInternetAvailable(MainActivity.this);
+            Log.d(TAG, "setClickListener: " + isAvaialble);
+
         });
 
         refreshProfile.setOnClickListener(v -> {
             String number = Utility.getConsID(getApplicationContext());
             if (!number.equals("N")) {
-//                refreshUser(number);
+                refreshUser(number);
             }
+        });
+
+        adminPerm.setOnClickListener(v -> {
+            showAdminAlert();
         });
 
 
@@ -215,11 +286,60 @@ public class MainActivity extends AppCompatActivity {
         call_Mokardder.setOnClickListener(v -> {
             makeCall("+919932896502");
         });
-        cphPerm.setOnClickListener(v -> {
-            showCphWarning();
-        });
+        tv_appVersion.setText(BuildConfig.VERSION_NAME);
+
 
     }
+
+ private boolean isInternetAvailable(Context context) {
+        if (!isNetworkConnected(context)) return false;
+
+        Future<Boolean> check = executorService.submit(() -> {
+            HttpURLConnection conn = null;
+            try {
+                // Use a reliable URL that responds to HEAD requests
+                conn = (HttpURLConnection) new URL("https://www.google.com").openConnection();
+                conn.setConnectTimeout(4000);
+                conn.setReadTimeout(4000);
+                conn.setRequestMethod("HEAD");
+
+                // Add User-Agent to mimic a browser request
+                conn.setRequestProperty("User-Agent", "Mozilla/5.0");
+
+                int responseCode = conn.getResponseCode();
+
+                Log.d(TAG, "isInternetAvailable: " + responseCode);
+
+                // Accept 200 (OK) or 3xx (redirects) if following them
+                return (responseCode == HttpURLConnection.HTTP_OK ||
+                        (responseCode >= HttpURLConnection.HTTP_MULT_CHOICE &&
+                                responseCode < HttpURLConnection.HTTP_BAD_REQUEST));
+            } catch (Exception e) {
+                Log.e("MainActivity_Mokardder", "Error checking internet", e); // Add logging
+                return false;
+            } finally {
+                if (conn != null) conn.disconnect();
+            }
+        });
+
+        try {
+            return check.get(5, TimeUnit.SECONDS); // Increased timeout slightly
+        } catch (TimeoutException e) {
+            Log.e("MainActivity_Mokardder", "Timeout checking internet");
+            check.cancel(true);
+            return false;
+        } catch (Exception e) {
+            Log.e("MainActivity_Mokardder", "Exception in future task", e);
+            return false;
+        }
+    }
+
+    private boolean isNetworkConnected(Context context) {
+        ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetwork = cm != null ? cm.getActiveNetworkInfo() : null;
+        return activeNetwork != null && activeNetwork.isConnectedOrConnecting();
+    }
+
 
     private void refreshFCMToken() {
         FirebaseMessaging.getInstance().getToken()
@@ -229,6 +349,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                 });
     }
+
 
     private void showAboutDialog() {
         // Inflate the layout
@@ -351,19 +472,13 @@ public class MainActivity extends AppCompatActivity {
         auth.enqueue(new Callback<DAC_Collector_Base>() {
             @Override
             public void onResponse(Call<DAC_Collector_Base> call, Response<DAC_Collector_Base> response) {
-
-
+                loader_controller("Updating Data...", false, loader, loader_text);
                 Log.d(TAG, "onResponse: " + response.body().getMessage());
                 boolean isSuccess = response.body().getSuccess();
                 String message = response.body().getMessage();
-                Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show();
                 if (isSuccess) {
-
-
                     sharedPrefs.setAppVersion(BuildConfig.VERSION_CODE);
                 }
-
-                loader_controller("Updating Data...", false, loader, loader_text);
 
             }
 
@@ -381,7 +496,7 @@ public class MainActivity extends AppCompatActivity {
     private void update_dac_collect(String cons_id, String name, AlertDialog dialog, LinearLayout loader, TextView loader_text) {
 
 
-        if (FCM_KEY.isEmpty() & !isSkippingFCM ) {
+        if (FCM_KEY.isEmpty() & !isSkippingFCM) {
             Toast.makeText(this, "FCM Key not received yet", Toast.LENGTH_SHORT).show();
             return;
         }
@@ -412,8 +527,6 @@ public class MainActivity extends AppCompatActivity {
                 } else {
                     Toast.makeText(MainActivity.this, "" + message, Toast.LENGTH_SHORT).show();
                 }
-
-
 
 
             }
@@ -475,22 +588,14 @@ public class MainActivity extends AppCompatActivity {
         RelativeLayout relativeLayoutAlert = findViewById(R.id.update_layout_dialog);
         View view = LayoutInflater.from(getApplicationContext()).inflate(R.layout.app_update_layout, relativeLayoutAlert);
         AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-
         builder.setView(view);
-
         RecyclerView updateDescRecycler = view.findViewById(R.id.update_recycle_view);
-        updateDescRecycler.setLayoutManager(new LinearLayoutManager(MainActivity.this));
-
-
+        updateDescRecycler.setLayoutManager(new LinearLayoutManager(getApplicationContext()));
         List<appUpdateDesc> descriptions = SplitText(desc);
-
-
         // Set up the adapter
         UpdateDescList descAdapter = new UpdateDescList(descriptions, MainActivity.this);
 
-
         updateDescRecycler.setAdapter(descAdapter);
-
         RelativeLayout updateBtn = view.findViewById(R.id.update_rl_button);
         TextView btnText = view.findViewById(R.id.update_btn_text);
         TextView progressTxt = view.findViewById(R.id.tvProgressText);
@@ -508,6 +613,7 @@ public class MainActivity extends AppCompatActivity {
         }
         alertDialog.show();
 
+
         updateBtn.setOnClickListener(v -> {
 
 
@@ -515,17 +621,26 @@ public class MainActivity extends AppCompatActivity {
             progressBar.setVisibility(View.VISIBLE);
             progressTxt.setVisibility(View.VISIBLE);
 
+            DownloadService downloadService = new DownloadService(
+                    MainActivity.this,
+                    url,
+                    progressTxt,
+                    progressBar,
+                    (status, message) -> {
+                        if (status == 0) {
+                            btnText.setVisibility(View.VISIBLE);
+                            btnText.setText("Install App");
+                            progressBar.setVisibility(View.GONE);
+                            progressTxt.setVisibility(View.GONE);
+                            Toast.makeText(MainActivity.this, "Download and installation started", Toast.LENGTH_SHORT).show();
+                        } else {
+                            Toast.makeText(MainActivity.this, "Download failed: " + message, Toast.LENGTH_SHORT).show();
+                        }
+                    }
+            );
 
-            DownloadService mDownloadService = new DownloadService(MainActivity.this, "app_update.apk", progressTxt, progressBar, new OnCompleteInterface() {
-                @Override
-                public void onComplete(int count, String who) {
-
-                }
-            });
-
-
-            mDownloadService.execute(url);
-
+            // Start the download process
+            downloadService.startDownload(url);
         });
 
     }
@@ -548,19 +663,19 @@ public class MainActivity extends AppCompatActivity {
         auth.enqueue(new Callback<DAC_Collector_Base>() {
             @Override
             public void onResponse(Call<DAC_Collector_Base> call, Response<DAC_Collector_Base> response) {
-
+                loader_controller("Fetching Customer ...", false, loader, loader_text);
                 String encResponse = response.body().getData();
 
+                boolean isSuccess = response.body().getSuccess();
+                if (!isSuccess) {
+                    String message = response.body().getMessage();
+                    Toast.makeText(MainActivity.this, "" + message, Toast.LENGTH_SHORT).show();
+                    return;
+                }
                 ConsumerData data = (ConsumerData) Utility.decodeApiResponse(encResponse, ConsumerData.class);
-
                 Button saveData = view.findViewById(R.id.btn_saveData);
-
                 TextView name = view.findViewById(R.id.userName);
                 name.setVisibility(View.VISIBLE);
-
-                Log.d(TAG, "onResponse: " + data.getName());
-
-
 
                 String userName = data.getName();
                 String Cons_ID = data.getConsumer_id();
@@ -571,9 +686,7 @@ public class MainActivity extends AppCompatActivity {
                 btn_skip.setOnClickListener(v -> {
                     isSkippingFCM = true;
                 });
-
                 refreshFCMToken();
-
                 saveData.setOnClickListener(v -> {
                     Utility.updateProfile(encResponse, getApplicationContext());
                     loadProfileTV();
@@ -582,9 +695,6 @@ public class MainActivity extends AppCompatActivity {
                     update_dac_collect(Cons_ID, userName, dialog, loader, loader_text);
                 });
 
-                loader_controller("Fetching Customer ...", false, loader, loader_text);
-
-
             }
 
             @Override
@@ -592,9 +702,36 @@ public class MainActivity extends AppCompatActivity {
 
                 Log.d(TAG, "onFailure: " + t);
                 loader_controller("", false, loader, loader_text);
-
                 Toast.makeText(MainActivity.this, Constant.API_FAILURE, Toast.LENGTH_SHORT).show();
 
+            }
+        });
+    }
+
+    private void refreshUser(String userSearchTerm) {
+        loader_controller("Refreshing Profile...", true, loader, loader_text);
+        RequestService requestService = RetrofitClient.retrofit_spreadsheet(getApplicationContext()).create(RequestService.class);
+        SearchQuery query = new SearchQuery(userSearchTerm, "");
+        search_consumer receiver = new search_consumer("getUserDetails", query);
+        Call<DAC_Collector_Base> auth = requestService.search_customer(receiver);
+        auth.enqueue(new Callback<DAC_Collector_Base>() {
+            @Override
+            public void onResponse(Call<DAC_Collector_Base> call, Response<DAC_Collector_Base> response) {
+
+                String encResponse = response.body().getData();
+                Utility.updateProfile(encResponse, getApplicationContext());
+                loadProfileTV();
+
+                loader_controller("Fetching Customer ...", false, loader, loader_text);
+
+            }
+
+            @Override
+            public void onFailure(Call<DAC_Collector_Base> call, Throwable t) {
+
+                loader_controller("", false, loader, loader_text);
+
+                Toast.makeText(MainActivity.this, Constant.API_FAILURE, Toast.LENGTH_SHORT).show();
 
 
             }
@@ -613,41 +750,8 @@ public class MainActivity extends AppCompatActivity {
                         Log.d(TAG, msg);
                     });
         }
-
     }
 
-//    private void refreshUser(String userSearchTerm) {
-//        loader_controller("Fetching Customer ...", true, loader, loader_text);
-//        RequestService requestService = RetrofitClient.retrofit_spreadsheet(getApplicationContext()).create(RequestService.class);
-//        search_consumer receiver = new search_consumer("deedup", userSearchTerm);
-//        Call<search_consumer_response> auth = requestService.search_customer(receiver);
-//        auth.enqueue(new Callback<search_consumer_response>() {
-//            @Override
-//            public void onResponse(Call<search_consumer_response> call, Response<search_consumer_response> response) {
-//                loader_controller("Fetching Customer ...", false, loader, loader_text);
-//
-//
-//                Gson gson = new Gson();
-//                String json = gson.toJson(response.body().getData().get(0));
-//
-//                String encPayload = Utility.encodeB64(json);
-//
-//                Utility.updateProfile(encPayload, getApplicationContext());
-//
-//                loadProfileTV();
-//
-//            }
-//
-//            @Override
-//            public void onFailure(Call<search_consumer_response> call, Throwable t) {
-//
-//                Toast.makeText(MainActivity.this, Constant.API_FAILURE, Toast.LENGTH_SHORT).show();
-//
-//                loader_controller("", false, loader, loader_text);
-//
-//            }
-//        });
-//    }
 
     private void checkAppUpdate() {
         loader_controller("Checking Update....", true, loader, loader_text);
@@ -658,10 +762,8 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onResponse(Call<DAC_Collector_Base> call, Response<DAC_Collector_Base> response) {
                 loader_controller("", false, loader, loader_text);
-
                 String encResponse = response.body().getData();
                 AppUpdate appUpdate = (AppUpdate) Utility.decodeApiResponse(encResponse, AppUpdate.class);
-
 
                 boolean isSuccess = response.body().getSuccess();
                 if (isSuccess) {
@@ -710,44 +812,62 @@ public class MainActivity extends AppCompatActivity {
     // Moved outside the onCreate method
     private void requestPerms() {
 
+        try {
 
-        XXPermissions.with(this)
-                .permission(Permission.READ_PHONE_STATE)
-                .permission(Permission.READ_SMS)
-                .permission(Permission.RECEIVE_SMS)
-                .permission(Permission.CALL_PHONE)
-                .permission(Permission.SCHEDULE_EXACT_ALARM)
-                .permission(Permission.POST_NOTIFICATIONS)
-                .permission(Permission.SEND_SMS)
-                .permission(Permission.READ_PHONE_NUMBERS)
-                .request((permissions, allGranted) -> {
+            XXPermissions.with(this)
+                    .permission(Permission.READ_PHONE_STATE)
+//                    .permission(Permission.SYSTEM_ALERT_WINDOW)
+                    .permission(Permission.READ_SMS)
+                    .permission(Permission.RECEIVE_SMS)
+                    .permission(Permission.CALL_PHONE)
+                    .permission(Permission.SCHEDULE_EXACT_ALARM)
+                    .permission(Permission.POST_NOTIFICATIONS)
+                    .permission(Permission.SEND_SMS)
+                    .permission(Permission.READ_PHONE_NUMBERS)
+                    .request((permissions, allGranted) -> {
 
-                });
+                    });
+            StoragePermission();
 
-        StoragePermission();
-    }
+        } catch (Exception e) {
 
-    public void showWarningDialog(String reasonTxt) {
-
-        ConstraintLayout relativeLayoutAlert = findViewById(R.id.alertDialog_startup);
-        View view = LayoutInflater.from(getApplicationContext()).inflate(R.layout.startup_info_dailog, relativeLayoutAlert);
-        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-        builder.setView(view);
-
-        TextView reason = view.findViewById(R.id.reason_TV);
-
-        reason.setText(reasonTxt);
-
-        final AlertDialog alertDialog = builder.create();
-
-        alertDialog.setCancelable(false);
-
-        if (alertDialog.getWindow() != null) {
-            alertDialog.getWindow().setBackgroundDrawable(new ColorDrawable(0));
         }
-        alertDialog.show();
+
 
     }
+
+//    public void showPermissionRequests() {
+//        RecyclerView recyclerView;
+//        PermissionAdapter permissionAdapter;
+//        List<PermissionItem> permissionList;
+//
+//        recyclerView = findViewById(R.id.permissions_recycler_view);
+//        recyclerView.setLayoutManager(new LinearLayoutManager(getApplicationContext()));
+//
+//        // Sample data
+//        permissionList = new ArrayList<>();
+//        permissionList.add(new PermissionItem("Camera", "This app requires access to your camera", R.drawable.gas_cylinder_icon, false));
+//        permissionList.add(new PermissionItem("Storage", "This app requires access to your storage", R.drawable.verify_icon_blue, true));
+//
+//        permissionAdapter = new PermissionAdapter(this, permissionList);
+//        recyclerView.setAdapter(permissionAdapter);
+//
+//        ConstraintLayout relativeLayoutAlert = findViewById(R.id.alertDialog_permissions);
+//        View view = LayoutInflater.from(getApplicationContext()).inflate(R.layout.permission_dialog, relativeLayoutAlert);
+//        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+//        builder.setView(view);
+//
+//
+//        final AlertDialog alertDialog = builder.create();
+//
+//        alertDialog.setCancelable(false);
+//
+//        if (alertDialog.getWindow() != null) {
+//            alertDialog.getWindow().setBackgroundDrawable(new ColorDrawable(0));
+//        }
+//        alertDialog.show();
+//
+//    }
 
     public void showCphWarning() {
         ConstraintLayout relativeLayoutAlert = findViewById(R.id.alertDialog_startup);
@@ -766,19 +886,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        service2px.setOnClickListener(v -> {
-            Log.d(TAG, "showCphWarning: Click Service");
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                if (Settings.canDrawOverlays(this)) {
-                    startService(new Intent(this, FloatingBallService.class));
-                } else {
-                    Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                            Uri.parse("package:" + getPackageName()));
-                    startActivity(intent);
-                }
-            }
-        });
-
         final AlertDialog alertDialog = builder.create();
 
         alertDialog.setCancelable(false);
@@ -793,7 +900,57 @@ public class MainActivity extends AppCompatActivity {
 
             alertDialog.dismiss();
         });
+    }
 
+    public void showAdminAlert() {
+        SharedPrefs sharedPrefs = new SharedPrefs(getApplicationContext());
+        boolean isRestrictionEnabled = sharedPrefs.getRestrictionEnabled();
+
+        Log.d(TAG, "showAdminAlert: Enabled " + isRestrictionEnabled);
+        ConstraintLayout relativeLayoutAlert = findViewById(R.id.alertDialog_startup);
+        View view = LayoutInflater.from(getApplicationContext()).inflate(R.layout.disable_app_uninstallation, relativeLayoutAlert);
+        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+        builder.setView(view);
+        TextView tvAdmin = view.findViewById(R.id.tv_admin_turnOn);
+        TextView tvAccessibility = view.findViewById(R.id.tv_accessibility_turn_on);
+        TextView tvSetRestriction = view.findViewById(R.id.setRestriction);
+
+
+        if (isAccessibilityEnabled) {
+            tvAccessibility.setVisibility(View.GONE);
+        }
+
+        if (isDeviceAdminEnabled) {
+            tvAdmin.setVisibility(View.GONE);
+        }
+        if (isRestrictionEnabled) {
+            tvSetRestriction.setVisibility(View.GONE);
+        }
+        final AlertDialog alertDialog = builder.create();
+
+        tvAdmin.setOnClickListener(v -> {
+            alertDialog.dismiss();
+            enableDeviceAdminIfNeeded(getApplicationContext(), AdminReceiver.class);
+        });
+        tvAccessibility.setOnClickListener(v -> {
+            alertDialog.dismiss();
+            Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
+            // Optionally, you can add flags to the intent if necessary.
+            startActivity(intent);
+        });
+        tvSetRestriction.setOnClickListener(v -> {
+            sharedPrefs.setRestrictionEnabled();
+            alertDialog.dismiss();
+        });
+
+
+        alertDialog.setCancelable(true);
+
+
+        if (alertDialog.getWindow() != null) {
+            alertDialog.getWindow().setBackgroundDrawable(new ColorDrawable(0));
+        }
+        alertDialog.show();
 
     }
 
@@ -802,6 +959,24 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         loadProfileTV();
+    }
+
+    private void enableDeviceAdminIfNeeded(Context context,
+                                           Class<? extends DeviceAdminReceiver> adminReceiverClass) {
+        DevicePolicyManager devicePolicyManager =
+                (DevicePolicyManager) context.getSystemService(Context.DEVICE_POLICY_SERVICE);
+        ComponentName adminComponent = new ComponentName(context, adminReceiverClass);
+
+        // Check if the app is already an active device administrator.
+        if (!devicePolicyManager.isAdminActive(adminComponent)) {
+            // Create an intent to prompt the user to add the device admin.
+            Intent intent = new Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            intent.putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, adminComponent);
+            intent.putExtra(DevicePolicyManager.EXTRA_ADD_EXPLANATION,
+                    "This app requires Device Admin permissions to enable enhanced security features.");
+            context.startActivity(intent);
+        }
     }
 
 

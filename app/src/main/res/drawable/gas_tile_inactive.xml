@@ -4,12 +4,19 @@
     android:viewportWidth="23.652"
     android:viewportHeight="45">
 
+    <!-- Main icon -->
     <path
-        android:fillColor="#dc3545"
+        android:fillColor="#198754"
         android:pathData="M20.06,11.323h-0.088L19.972,6.9A6.9,6.9 0,0 0,13.07 0L10.264,0a6.9,6.9 0,0 0,-6.9 6.9L3.364,11.34A3.526,3.526 0,0 0,0 14.818L0,36.9a3.549,3.549 0,0 0,3.592 3.5L20.06,40.4a3.549,3.549 0,0 0,3.592 -3.5L23.652,14.818A3.541,3.541 0,0 0,20.06 11.323ZM10.26,2.207L13.07,2.207a4.7,4.7 0,0 1,4.7 4.7v4.421h-4.51L13.26,6.072h0.732a1.288,1.288 0,0 0,0 -2.577L9.752,3.495a1.288,1.288 0,1 0,0 2.577L10.4,6.072v5.242L5.569,11.314L5.569,6.9A4.7,4.7 0,0 1,10.264 2.206Z" />
 
     <path
-        android:fillColor="#dc3545"
+        android:fillColor="#198754"
         android:pathData="M3.362,43.483a1.518,1.518 0,0 0,1.518 1.518L18.453,45.001a1.518,1.518 0,0 0,1.518 -1.518L19.971,41.135L3.362,41.135Z" />
 
+    <!-- Diagonal line for mute -->
+    <path
+        android:strokeColor="#000000"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:pathData="M2,2L21.652,43" />
 </vector>

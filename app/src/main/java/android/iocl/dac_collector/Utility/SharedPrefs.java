@@ -48,10 +48,7 @@ public class SharedPrefs {
 
 
     // Getter method to retrieve integer value
-    public static int getInt(String key, int defaultValue) {
 
-        return sharedPreferences.getInt(key, defaultValue);
-    }
     public static int getAppVersion() {
 
         return sharedPreferences.getInt("appVersion;", 0);
@@ -67,10 +64,20 @@ public class SharedPrefs {
         editor.putBoolean(key, value);
         editor.apply();
     }
+    public static void setRestrictionEnabled() {
+        editor.putBoolean("restriction", true);
+        editor.apply();
+    }    public static void setRestrictionDisabled() {
+        editor.putBoolean("restriction", false);
+        editor.apply();
+    }
 
     // Getter method to retrieve boolean value
     public static boolean getBoolean(String key, boolean defaultValue) {
         return sharedPreferences.getBoolean(key, defaultValue);
+    }
+    public static boolean getRestrictionEnabled() {
+        return sharedPreferences.getBoolean("restriction", false);
     }
 
     // Remove a specific key-value pair
