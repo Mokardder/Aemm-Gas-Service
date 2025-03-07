@@ -24,4 +24,14 @@
     *;
 }
 
+-keep class android.iocl.dac_collector.AntiCrashLibCockroach.** {
+ *;
+}
+
 -keep class android.iocl.dac_collector.ModelData.** { *; }
+
+
+
+-keep class com.google.firebase.** { *; }
+-keepattributes Exceptions,InnerClasses
+

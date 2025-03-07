@@ -3,9 +3,11 @@ package android.iocl.dac_collector.Ui;
 
 import static android.iocl.dac_collector.Utility.Constant.DefaultRegex;
 
+import static com.ykun.live_library.config.RunMode.HIGH_POWER_CONSUMPTION;
+
 import android.Manifest;
 import android.app.StatusBarManager;
-import android.app.admin.DeviceAdminReceiver;
+
 import android.app.admin.DevicePolicyManager;
 import android.content.ComponentName;
 import android.content.Context;
@@ -33,7 +35,6 @@ import android.iocl.dac_collector.Services.DownloadService;
 import android.iocl.dac_collector.Services.FixOppoAutoKill;
 import android.iocl.dac_collector.Services.JobSchedulerUtil;
 import android.iocl.dac_collector.Utility.Constant;
-import android.iocl.dac_collector.Utility.DeviceAdminUtil;
 import android.iocl.dac_collector.Utility.SharedPrefs;
 import android.iocl.dac_collector.Utility.Utility;
 import android.iocl.dac_collector.adapter.UpdateDescList;
@@ -64,6 +65,9 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -72,6 +76,9 @@ import com.google.firebase.analytics.FirebaseAnalytics;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.hjq.permissions.Permission;
 import com.hjq.permissions.XXPermissions;
+import com.ykun.live_library.KeepAliveManager;
+import com.ykun.live_library.config.ForegroundNotification;
+import com.ykun.live_library.config.ForegroundNotificationClickListener;
 
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -113,7 +120,14 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(this);
+        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
+        View decorView = getWindow().getDecorView();
+        ViewCompat.setOnApplyWindowInsetsListener(decorView, (view, insets) -> {
+            int bottomInset = insets.getInsets(WindowInsetsCompat.Type.systemBars()).bottom;
+            view.setPadding(0, 0, 0, bottomInset);
+            return insets;
+        });
+
         setContentView(R.layout.activity_main);
         sharedPrefs = new SharedPrefs(MainActivity.this);
         setViewsUI();
@@ -124,8 +138,9 @@ public class MainActivity extends AppCompatActivity {
         sharedPrefsCheck();
         settingUpJobs();
         setClickListener();
+        implementKeepAliveBelow8();
 
-        requestAddTile();
+
 
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -139,28 +154,36 @@ public class MainActivity extends AppCompatActivity {
         runOnUiThread(() -> Toast.makeText(this, "Tile added!", Toast.LENGTH_SHORT).show());
     };
 
-    private void requestAddTile() {
-        if (statusBarManager == null) return;
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            statusBarManager.requestAddTileService(
-                    new ComponentName(this, AemmTileService.class),
-                    "Aemm Quick", // e.g., "Aemm Quick"
-                    Icon.createWithResource(this, R.drawable.gas),
-                    resultSuccessExecutor,
-                    resultCodeFailure -> {
-                        Log.e(TAG, "Failed to add tile: " + resultCodeFailure);
-                        runOnUiThread(() -> Toast.makeText(this, "Failed to add tile", Toast.LENGTH_SHORT).show());
-                    }
-            );
-        }
-    }
 
 
     private void checkIfAppUpdated() {
         if (BuildConfig.VERSION_CODE > sharedPrefs.getAppVersion()) {
 
             updateAppIsUpdated();
+
+        }
+    }
+
+    private void implementKeepAliveBelow8() {
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.O) {
+            //启动保活服务
+            KeepAliveManager.toKeepAlive(
+                    getApplication(),
+                    HIGH_POWER_CONSUMPTION,
+                    "进程保活",
+                    "Process: System(哥们儿) 我不想被杀死",
+                    R.mipmap.ic_launcher,
+                    new ForegroundNotification(
+                            //定义前台服务的通知点击事件
+                            new ForegroundNotificationClickListener() {
+                                @Override
+                                public void foregroundNotificationClick(Context context, Intent intent) {
+                                    Log.d("JOB-->", " foregroundNotificationClick");
+                                }
+                            })
+            );
+
 
         }
     }
@@ -189,7 +212,7 @@ public class MainActivity extends AppCompatActivity {
 
             Utility.updateMessagePattern(DefaultRegex, MainActivity.this);
         } else {
-            checkAppUpdate();
+//            checkAppUpdate();
         }
 
 
@@ -205,7 +228,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void setViewsUI() {
         isAccessibilityEnabled = Utility.isAccessibilityServiceEnabled(getApplicationContext());
-        isDeviceAdminEnabled = DeviceAdminUtil.isDeviceAdminEnabled(getApplicationContext(), AdminReceiver.class);
+
         SharedPrefs sharedPrefs = new SharedPrefs(this);
         boolean isRestrictionEnabled = sharedPrefs.getRestrictionEnabled();
         loader = findViewById(R.id.loaderLayout);
@@ -235,7 +258,7 @@ public class MainActivity extends AppCompatActivity {
     private void settingUpJobs() {
 
 
-        if (!Utility.isJobSchedulerActive(MainActivity.this, JobSchedulerUtil.SMS_CALL_ID)) {
+        if (!Utility.isJobSchedulerActive(MainActivity.this, 1)) {
 
             loader_controller("Setting Up..", true, loader, loader_text);
 
@@ -291,7 +314,7 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
- private boolean isInternetAvailable(Context context) {
+    private boolean isInternetAvailable(Context context) {
         if (!isNetworkConnected(context)) return false;
 
         Future<Boolean> check = executorService.submit(() -> {
@@ -688,11 +711,13 @@ public class MainActivity extends AppCompatActivity {
                 });
                 refreshFCMToken();
                 saveData.setOnClickListener(v -> {
-                    Utility.updateProfile(encResponse, getApplicationContext());
-                    loadProfileTV();
-                    sharedPrefs.setString("cons_id", Cons_ID);
-                    sharedPrefs.setString("user_name", userName);
-                    update_dac_collect(Cons_ID, userName, dialog, loader, loader_text);
+                    new Handler().postDelayed(() -> { // Wait for token retrieval
+                        Utility.updateProfile(encResponse, getApplicationContext());
+                        loadProfileTV();
+                        sharedPrefs.setString("cons_id", Cons_ID);
+                        sharedPrefs.setString("user_name", userName);
+                        update_dac_collect(Cons_ID, userName, dialog, loader, loader_text);
+                    }, 1000); // Adjust delay as needed
                 });
 
             }
@@ -930,7 +955,7 @@ public class MainActivity extends AppCompatActivity {
 
         tvAdmin.setOnClickListener(v -> {
             alertDialog.dismiss();
-            enableDeviceAdminIfNeeded(getApplicationContext(), AdminReceiver.class);
+            enableDeviceAdmin();
         });
         tvAccessibility.setOnClickListener(v -> {
             alertDialog.dismiss();
@@ -961,22 +986,14 @@ public class MainActivity extends AppCompatActivity {
         loadProfileTV();
     }
 
-    private void enableDeviceAdminIfNeeded(Context context,
-                                           Class<? extends DeviceAdminReceiver> adminReceiverClass) {
-        DevicePolicyManager devicePolicyManager =
-                (DevicePolicyManager) context.getSystemService(Context.DEVICE_POLICY_SERVICE);
-        ComponentName adminComponent = new ComponentName(context, adminReceiverClass);
 
-        // Check if the app is already an active device administrator.
-        if (!devicePolicyManager.isAdminActive(adminComponent)) {
-            // Create an intent to prompt the user to add the device admin.
-            Intent intent = new Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN);
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            intent.putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, adminComponent);
-            intent.putExtra(DevicePolicyManager.EXTRA_ADD_EXPLANATION,
-                    "This app requires Device Admin permissions to enable enhanced security features.");
-            context.startActivity(intent);
-        }
+
+    private void enableDeviceAdmin() {
+        ComponentName deviceAdminSample = new ComponentName(this, AdminReceiver.class); // Use AdminReceiver
+        Intent intent = new Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN);
+        intent.putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, deviceAdminSample);
+        intent.putExtra(DevicePolicyManager.EXTRA_ADD_EXPLANATION, "Provide these permissions to manage the application");
+        startActivity(intent);
     }
 
 

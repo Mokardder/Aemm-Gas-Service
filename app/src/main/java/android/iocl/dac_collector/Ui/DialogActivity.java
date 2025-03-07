@@ -12,6 +12,7 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -39,6 +40,9 @@ public class DialogActivity extends AppCompatActivity {
         setContentView(R.layout.anti_uninstalle_layout);
         messageTV = findViewById(R.id.tv_relative_txt);
         SharedPrefs sharedPrefs = new SharedPrefs(this);
+
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED);
+
 
         go_home = findViewById(R.id.go_home);
         revealPassword = findViewById(R.id.revealPassword);

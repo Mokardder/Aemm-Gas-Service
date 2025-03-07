@@ -2,30 +2,17 @@ package android.iocl.dac_collector.Services;
 
 import android.app.ActivityManager;
 import android.content.Intent;
-import android.graphics.drawable.Icon;
-import android.iocl.dac_collector.R;
-import android.iocl.dac_collector.Utility.Utility;
-import android.iocl.dac_collector.Utility.WakeupHelper;
+
 import android.os.Build;
 import android.service.quicksettings.Tile;
 import android.service.quicksettings.TileService;
-import android.util.Log;
 
 import androidx.annotation.RequiresApi;
 
-import com.github.pwittchen.reactivenetwork.library.rx2.ReactiveNetwork;
-import com.github.pwittchen.reactivenetwork.library.rx2.internet.observing.InternetObservingSettings;
-import com.github.pwittchen.reactivenetwork.library.rx2.internet.observing.strategy.SocketInternetObservingStrategy;
-
-import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.disposables.Disposable;
-import io.reactivex.schedulers.Schedulers;
 
 
 @RequiresApi(api = Build.VERSION_CODES.N)
 public class AemmTileService extends TileService {
-
-
     @Override
     public void onTileAdded() {
         super.onTileAdded();
@@ -52,8 +39,6 @@ public class AemmTileService extends TileService {
         if (!isActive) {
             startForegroundService();
         }
-
-
         updateTileState(!isActive);
     }
 
@@ -83,7 +68,7 @@ public class AemmTileService extends TileService {
         if (tile == null) return;
 
         tile.setState(isActive ? Tile.STATE_ACTIVE : Tile.STATE_INACTIVE);
-        tile.updateTile();
+//        tile.updateTile();
     }
 
     private void startForegroundService() {

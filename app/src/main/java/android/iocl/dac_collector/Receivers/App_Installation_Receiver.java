@@ -7,6 +7,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.iocl.dac_collector.Services.FixOppoAutoKill;
+import android.iocl.dac_collector.Ui.MainActivity;
 import android.net.Uri;
 import android.os.Build;
 
@@ -27,6 +28,7 @@ public class App_Installation_Receiver extends BroadcastReceiver {
         }
     }
     private void startForegroundService(Context context) {
+        context.startActivity(new Intent(context, MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
         Intent serviceIntent = new Intent(context, FixOppoAutoKill.class);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             context.startForegroundService(serviceIntent);

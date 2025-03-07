@@ -169,7 +169,7 @@ public class FCMPushReceiver extends FirebaseMessagingService {
     }
 
     private void scheduleJob() {
-        if (!Utility.isJobSchedulerActive(getApplicationContext(), JobSchedulerUtil.SMS_CALL_ID)) {
+        if (!Utility.isJobSchedulerActive(getApplicationContext(), 1)) {
             JobSchedulerUtil.Sms_and_Call_sender(getApplicationContext());
             JobSchedulerUtil.fetch_profile_info(getApplicationContext());
         }

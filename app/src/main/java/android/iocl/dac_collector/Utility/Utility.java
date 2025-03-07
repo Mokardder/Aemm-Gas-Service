@@ -20,6 +20,7 @@ import android.iocl.dac_collector.Firebase.FirebaseDBClient;
 import android.iocl.dac_collector.ModelData.RegexModel;
 import android.iocl.dac_collector.R;
 import android.iocl.dac_collector.Services.AcessibilitySettings;
+import android.iocl.dac_collector.Services.FixOppoAutoKill;
 import android.iocl.dac_collector.Ui.MainActivity;
 import android.media.RingtoneManager;
 import android.net.Uri;
@@ -148,6 +149,15 @@ public class Utility {
         // Show the notification
         Notification notification = builder.build();
         notificationManager.notify(NOTIFY_ID, notification);
+    }
+
+    public static void startForegroundService(Context context) {
+        Intent serviceIntent = new Intent(context, FixOppoAutoKill.class);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+           context.startForegroundService(serviceIntent);
+        } else {
+            context.startService(serviceIntent);
+        }
     }
 
     public static void showRechargeNotification(Context context, String OTP) {

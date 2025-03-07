@@ -15,7 +15,13 @@ public class MyReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
+        if (Intent.ACTION_USER_PRESENT.equals(intent.getAction())) {
 
-        WakeupHelper.wakeupAppService(context);
+            WakeupHelper.wakeupAppService(context);
+            // Handle user unlock event (e.g., start a service, activity, or log)
+            Log.d("UserUnlockReceiver", "Device unlocked!");
+        }
+
+
     }
 }

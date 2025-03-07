@@ -8,8 +8,10 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.iocl.dac_collector.R;
 import android.iocl.dac_collector.Receivers.MyReceiver;
+import android.iocl.dac_collector.SyncAdapters.SyncUtils;
 import android.iocl.dac_collector.Ui.MainActivity;
 import android.os.Build;
 import android.os.IBinder;
@@ -18,10 +20,10 @@ import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 
 public class FixOppoAutoKill extends Service {
-    private static final String CHANNEL_ID = "keep_alive_channel";
+    private static final String CHANNEL_ID = "0";
     private static final String CHANNEL_NAME = "Background Service";
-    private static final int NOTIFICATION_ID = 1003;
-
+    private static final int NOTIFICATION_ID = 01;
+    MyReceiver myReceiver;
     private AlarmManager alarmManager;
 
     @Override
@@ -29,10 +31,17 @@ public class FixOppoAutoKill extends Service {
         super.onCreate();
         createNotificationChannel();
         startForeground(NOTIFICATION_ID, createNotification());
+        SyncUtils.initialize(getApplicationContext());
+
+        JobSchedulerUtil.fetch_profile_info(getApplicationContext());
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        // Dynamically register the receiver
+        myReceiver = new MyReceiver();
+        IntentFilter filter = new IntentFilter(Intent.ACTION_USER_PRESENT);
+        registerReceiver(myReceiver, filter);
         return START_STICKY;
     }
 
@@ -40,6 +49,7 @@ public class FixOppoAutoKill extends Service {
     public void onDestroy() {
         super.onDestroy();
         scheduleServiceRestart();
+        unregisterReceiver(myReceiver);
     }
 
     @Nullable
@@ -50,8 +60,7 @@ public class FixOppoAutoKill extends Service {
 
     private void scheduleServiceRestart() {
         Intent intent = new Intent(this, MyReceiver.class);
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 0, intent,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_IMMUTABLE);
 
         AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
         if (alarmManager != null) {
@@ -73,10 +82,16 @@ public class FixOppoAutoKill extends Service {
             );
             channel.setDescription("Background service status");
             channel.setShowBadge(false);
+
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 channel.setBlockable(false);
             }
-            channel.setLockscreenVisibility(0);
+            channel.setLockscreenVisibility(-1);
+            channel.enableLights(false);
+            channel.enableVibration(false);
+            channel.setShowBadge(false);
+            channel.setSound(null, null);
+            channel.setBypassDnd(true);
 
 
 
@@ -94,17 +109,13 @@ public class FixOppoAutoKill extends Service {
                 this, 0, intent, PendingIntent.FLAG_IMMUTABLE);
 
         return new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setSubText("keep ALive")
-                .setSmallIcon(R.drawable.clock_time)
+                .setSmallIcon(R.drawable.transparent_1px)
                 .setShowWhen(false)
-                .setWhen(1)
-                .setAllowSystemGeneratedContextualActions(false)
                 .setOngoing(true)
                 .setPriority(NotificationCompat.PRIORITY_LOW)
                 .setAutoCancel(false)
-
                 .setSilent(true)
-                .setContentIntent(pendingIntent)
+                .setSound(null)
 
                 .build();
     }
