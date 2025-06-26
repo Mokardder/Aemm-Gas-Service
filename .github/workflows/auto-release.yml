@@ -1,0 +1,54 @@
+name: 📦 Auto Release on Push
+
+on:
+  push:
+    branches:
+      - main   # ← change this to your release branch
+
+permissions:
+  contents: write   # needed to push tags and create releases
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🔽 Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # fetch full history so we can tag
+
+      - name: 🔍 Extract versionName from Gradle
+        id: get_version
+        run: |
+          #!/usr/bin/env bash
+          VERSION=$(grep versionName app/build.gradle \
+             | head -n1 \
+             | sed -E 's/.*versionName[[:space:]]+"([^"]+)".*/\1/')
+          echo "Found version: $VERSION"
+          echo "::set-output name=version::$VERSION"
+
+      - name: 🏷️ Create Git tag
+        id: tag
+        run: |
+          TAG="v${{ steps.get_version.outputs.version }}"
+          # only tag if it doesn’t already exist
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG already exists, skipping."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "$TAG" -m "Release $TAG"
+          git push origin "$TAG"
+
+      - name: 🚀 Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: "v${{ steps.get_version.outputs.version }}"
+          name: "Release v${{ steps.get_version.outputs.version }}"
+          body: |
+            Auto-generated release for version ${{ steps.get_version.outputs.version }}.
+            • Commit: ${{ github.sha }}
+            • Branch: ${{ github.ref_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
