@@ -35,7 +35,7 @@ public class MyApp extends Application {
     FirebaseCrashlytics crashlytics;
     FirebaseApp firebaseApp;
 
-    Boolean installCockroach = true;
+    Boolean installCockroach = false;
     @Override
     public void onCreate() {
         super.onCreate();
@@ -46,8 +46,8 @@ public class MyApp extends Application {
         SyncUtils.initialize(getApplicationContext());
        firebaseApp =   FirebaseApp.initializeApp(this);
 
-        SharedPrefs prefs = new SharedPrefs(getApplicationContext());
-        String cons_id = prefs.getString("cons_id", "defaultForCrash");
+
+        String cons_id = SharedPrefs.getString(this,"cons_id", "defaultForCrash");
          crashlytics  = FirebaseCrashlytics.getInstance();
 
          crashlytics.setUserId(cons_id);

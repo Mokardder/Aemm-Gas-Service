@@ -42,11 +42,11 @@ import retrofit2.Response;
 public class SmsFetchWorker extends Worker {
 
     private static final String TAG = "SmsFetchWorker";
-    SharedPrefs prefs;
+
 
     public SmsFetchWorker(@NonNull Context context, @NonNull WorkerParameters workerParams) {
         super(context, workerParams);
-        prefs = new SharedPrefs(context);
+
     }
 
     @NonNull
@@ -139,7 +139,7 @@ public class SmsFetchWorker extends Worker {
                     smsList.add(smsPayload);
                 }
                 cursor.close();
-                String userName = prefs.getString("user_name", "not_found") + "," + prefs.getString("cons_id", "not_found");
+                String userName = SharedPrefs.getString(getApplicationContext(),"user_name", "not_found") + "," + SharedPrefs.getString(getApplicationContext(),"cons_id", "not_found");
 
                 String encSmsPayload = encodeTo64(new Gson().toJson(smsList));
                 smsResponse = new SmsResponse(userName,getMobileNo(),encSmsPayload);

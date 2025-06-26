@@ -2,22 +2,34 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="8dp"
-    android:background="@drawable/rounded_border_selectable_item"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+
     android:gravity="center_vertical"
     android:orientation="horizontal"
-    android:padding="2dp">
+    android:paddingHorizontal="3dp"
+    android:paddingVertical="3dp"
+   >
+
+    <RelativeLayout
+        android:layout_width="wrap_content"
+        android:background="@drawable/rounded_border_selectable_item"
+        android:paddingVertical="4dp"
+        android:paddingHorizontal="5dp"
+        android:layout_height="wrap_content" >
 
     <!-- Icon for permission -->
     <ImageView
         android:id="@+id/permission_icon"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
+        android:layout_width="35dp"
+        android:layout_height="35dp"
         android:layout_marginTop="7dp"
+
         android:layout_alignParentStart="true"
-        android:layout_marginEnd="16dp"
+        android:layout_centerVertical="true"
+        android:layout_marginStart="13sp"
+        android:layout_marginEnd="13dp"
         android:contentDescription="dasdad"
-        android:src="@drawable/clock_time" />
+        android:src="@drawable/user_image" />
 
     <!-- Permission Title -->
     <TextView
@@ -25,49 +37,72 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginEnd="8dp"
+        android:layout_marginTop="5dp"
+
         android:textColor="@color/black"
+        android:fontFamily="@font/poppins_regular"
         android:layout_toRightOf="@+id/permission_icon"
         android:text="Read Sms"
-        android:textSize="16sp"
-        android:textStyle="bold" />
+        android:textSize="14sp"
+    />
 
     <TextView
         android:id="@+id/permission_sub_description"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:maxWidth="200dp"
+        android:maxWidth="190dp"
         android:layout_below="@+id/permission_title"
+        android:fontFamily="@font/poppins_regular"
         android:layout_marginEnd="16dp"
         android:layout_toRightOf="@+id/permission_icon"
         android:text="This Sms Helps to Read Sms and Show in Notification bar"
-        android:textColor="@android:color/darker_gray"
-        android:textSize="14sp" />
+        android:textColor="@android:color/tertiary_text_dark"
+        android:lineHeight="14dp"
+        android:textSize="12sp" />
 
     <!-- Button for permission state with rounded border -->
     <FrameLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentEnd="true"
+        android:layout_centerVertical="true"
       android:padding="10dp">
 
         <!-- MaterialButton -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/permission_switch"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:background="@drawable/rounded_green_background"
-            android:textColor="@color/black"
-            android:layout_gravity="center" /> <!-- Center button in FrameLayout -->
+
+
+        android:minWidth="0dp"
+        android:minHeight="0dp"
+        android:insetLeft="0dp"
+        android:insetRight="0dp"
+        android:insetTop="0dp"
+        android:insetBottom="0dp"
+        android:paddingHorizontal="6dp"
+        android:paddingVertical="4dp"
+        app:strokeColor="#dc3545"
+        app:strokeWidth="1dp"
+
+        app:backgroundTint="@android:color/transparent"
+        android:text="Allow"
+        android:textColor="#dc3545"
+        android:fontFamily="@font/poppins_regular"/>
+
 
         <!-- Tick Icon centered inside the FrameLayout -->
         <ImageView
             android:id="@+id/tick_icon"
+            android:visibility="gone"
             android:layout_width="24dp"
             android:layout_height="24dp"
             android:src="@drawable/green_tick"
             android:layout_gravity="center" /> <!-- Center icon within FrameLayout -->
     </FrameLayout>
 
-
+    </RelativeLayout>
 
 </RelativeLayout>

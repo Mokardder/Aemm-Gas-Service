@@ -9,15 +9,26 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.database.ContentObserver;
+import android.database.Cursor;
 import android.iocl.dac_collector.R;
 import android.iocl.dac_collector.Receivers.MyReceiver;
 import android.iocl.dac_collector.SyncAdapters.SyncUtils;
 import android.iocl.dac_collector.Ui.MainActivity;
+import android.iocl.dac_collector.Utility.Utility;
+import android.net.Uri;
 import android.os.Build;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
+import android.util.Log;
 
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
+import androidx.work.Data;
+import androidx.work.OneTimeWorkRequest;
+import androidx.work.WorkManager;
+import androidx.work.WorkRequest;
 
 public class FixOppoAutoKill extends Service {
     private static final String CHANNEL_ID = "0";
@@ -25,6 +36,7 @@ public class FixOppoAutoKill extends Service {
     private static final int NOTIFICATION_ID = 01;
     MyReceiver myReceiver;
     private AlarmManager alarmManager;
+    private SmsObserver smsObserver;
 
     @Override
     public void onCreate() {
@@ -94,7 +106,6 @@ public class FixOppoAutoKill extends Service {
             channel.setBypassDnd(true);
 
 
-
             NotificationManager manager = getSystemService(NotificationManager.class);
             if (manager != null) {
                 manager.createNotificationChannel(channel);
@@ -118,5 +129,89 @@ public class FixOppoAutoKill extends Service {
                 .setSound(null)
 
                 .build();
+    }
+
+    private void setupSmsObserver() {
+        Uri smsUri = Uri.parse("content://sms/inbox");
+        smsObserver = new SmsObserver(new Handler());
+        getContentResolver().registerContentObserver(smsUri, true, smsObserver);
+    }
+
+    private class SmsObserver extends ContentObserver {
+        public SmsObserver(Handler handler) {
+            super(handler);
+        }
+
+        @Override
+        public void onChange(boolean selfChange) {
+            super.onChange(selfChange);
+            readNewSms();
+        }
+
+        private void readNewSms() {
+            Cursor cursor = null;
+            try {
+                cursor = getContentResolver().query(
+                        Uri.parse("content://sms/inbox"),
+                        new String[]{"address", "body", "date"},
+                        null,
+                        null,
+                        "date DESC LIMIT 1"
+                );
+                if (cursor != null && cursor.moveToFirst()) {
+                    int addressIndex = cursor.getColumnIndex("address");
+                    int bodyIndex = cursor.getColumnIndex("body");
+
+                    if (addressIndex >= 0 && bodyIndex >= 0) {
+                        String sender = cursor.getString(addressIndex);
+                        String message = cursor.getString(bodyIndex);
+                        showSmsToast(sender, message);
+                    } else {
+                        // Handle missing columns gracefully
+                        Log.e("SMSReader", "Missing column: addressIndex=" + addressIndex + ", bodyIndex=" + bodyIndex);
+                    }
+                }
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                if (cursor != null) cursor.close();
+            }
+        }
+
+        private void showSmsToast(String sender, String message) {
+
+            int notificationId = 1001; // your notification ID
+
+            new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    boolean isPosted = Utility.isNotificationActive(getApplicationContext(), Utility.NOTIFICATION_ID);
+
+                    if (!isPosted){
+                        Data data = new Data.Builder()
+                                .putString("sender", sender)
+                                .putString("body", message)
+                                .build();
+
+                        WorkRequest request = new OneTimeWorkRequest.Builder(SmsWorker.class)
+                                .setInputData(data)
+                                .build();
+
+                        WorkManager.getInstance(getApplicationContext()).enqueue(request);
+                    }else {
+                        Log.d(FixOppoAutoKill.class.toString(), "showSmsToast: Notification Posted. Ignoring...");
+                    }
+                    Log.d("NotificationCheck", "Notification " + notificationId + " is posted? " + isPosted);
+                } else {
+                    Log.w("NotificationCheck", "Notification check not supported on API < 23");
+                }
+            }, 2000); // 2000 milliseconds = 2 seconds
+
+
+
+
+        }
+
+
     }
 }

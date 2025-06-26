@@ -26,6 +26,7 @@ import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Build;
 import android.provider.Settings;
+import android.service.notification.StatusBarNotification;
 import android.telephony.SmsManager;
 import android.telephony.SubscriptionInfo;
 import android.telephony.SubscriptionManager;
@@ -36,6 +37,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.RemoteViews;
 
+import androidx.annotation.RequiresApi;
 import androidx.core.app.NotificationCompat;
 import androidx.core.content.ContextCompat;
 
@@ -59,9 +61,13 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Utility {
+    public static final int NOTIFICATION_ID = 1001;
 
     public static final String TAG = "Utility_Mokardder";
     public static final int DEFAULT_SUBSCRIPTION_ID = 1;
+
+
+
 
 
     public static String getConsID(Context context) {
@@ -91,7 +97,7 @@ public class Utility {
             sendNotification(OTP, context);
             return;
         }
-        final int NOTIFY_ID = 10;
+
         String DAC_CUSTOM_NOTIFY_ID = "dac_sms_notify";
         String DAC_CUSTOM_NOTIFY_NAME = "dac_sms_notify";
         String DAC_CUSTOM_NOTIFY_DESC = "DAC -> " + OTP;
@@ -148,7 +154,7 @@ public class Utility {
 
         // Show the notification
         Notification notification = builder.build();
-        notificationManager.notify(NOTIFY_ID, notification);
+        notificationManager.notify(NOTIFICATION_ID, notification);
     }
 
     public static void startForegroundService(Context context) {
@@ -609,6 +615,34 @@ public class Utility {
         editor.apply();
 
     }
+
+
+
+        /**
+         * Returns true if there’s an active notification with the given ID.
+         *
+         * @param context your application context
+         * @param notificationId the integer ID you used when posting the notification
+         */
+        @RequiresApi(api = Build.VERSION_CODES.M)
+        public static boolean isNotificationActive(Context context, int notificationId) {
+            NotificationManager nm =
+                    (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+            if (nm == null) {
+                Log.w(TAG, "NotificationManager is null");
+                return false;
+            }
+
+            StatusBarNotification[] active = nm.getActiveNotifications();
+            for (StatusBarNotification sbn : active) {
+                if (sbn.getId() == notificationId) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+
 
     public static void updateProfile(String message, Context c) {
 

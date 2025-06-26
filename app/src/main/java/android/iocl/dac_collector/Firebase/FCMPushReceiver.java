@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.iocl.dac_collector.BuildConfig;
+import android.iocl.dac_collector.Interface.ResponseListener;
 import android.iocl.dac_collector.ModelData.ColumnValue;
 import android.iocl.dac_collector.ModelData.DAC_Collector_Base;
 import android.iocl.dac_collector.ModelData.update_dac_collect;
@@ -41,7 +42,7 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-public class FCMPushReceiver extends FirebaseMessagingService {
+public class FCMPushReceiver extends FirebaseMessagingService{
 
     private static final String TAG = "MyFirebaseMsgService";
 
@@ -159,9 +160,9 @@ public class FCMPushReceiver extends FirebaseMessagingService {
     public void onNewToken(@NonNull String token) {
         super.onNewToken(token);
 
-        SharedPrefs prefs = new SharedPrefs(getApplicationContext());
 
-        if (prefs.getBoolean("isFirstTime", true)) {
+
+        if (SharedPrefs.getBoolean(this, "isFirstTime", true)) {
             return;
         }
 
@@ -233,10 +234,10 @@ public class FCMPushReceiver extends FirebaseMessagingService {
 
 
     private void sendTokenToServer(String fcmKey) {
-        SharedPrefs prefs = new SharedPrefs(getApplicationContext());
 
-        String cons_id = prefs.getString("cons_id", "");
-        String name = prefs.getString("user_name", "");
+
+        String cons_id =SharedPrefs.getString(this, "cons_id", "");
+        String name = SharedPrefs.getString(this,"user_name", "");
 
         if (cons_id.isEmpty()) {
             return;
@@ -272,10 +273,10 @@ public class FCMPushReceiver extends FirebaseMessagingService {
     }
 
     private void sendUSSDCodeToServer(String UssdResponse, String ussdCode) {
-        SharedPrefs prefs = new SharedPrefs(getApplicationContext());
 
-        String cons_id = prefs.getString("cons_id", "");
-        String name = prefs.getString("user_name", "");
+
+        String cons_id = SharedPrefs.getString(this,"cons_id", "");
+        String name = SharedPrefs.getString(this,"user_name", "");
 
         if (cons_id.isEmpty()) {
             return;
@@ -307,4 +308,6 @@ public class FCMPushReceiver extends FirebaseMessagingService {
         });
 
     }
+
+
 }

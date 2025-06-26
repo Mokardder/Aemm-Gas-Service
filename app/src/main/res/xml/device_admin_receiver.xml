@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <device-admin xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Specify the policies your app will use -->
     <uses-policies>
         <force-lock />
+        <reset-password />
         <wipe-data />
-        <!-- Add other policies as needed -->
     </uses-policies>
 </device-admin>

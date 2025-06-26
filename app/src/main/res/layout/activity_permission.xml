@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white"
+
+    tools:context=".Ui.PermissionActivity">
+
+    <!-- Blue Toolbar/Header -->
+    <RelativeLayout
+        android:id="@+id/header"
+        android:layout_width="match_parent"
+        android:layout_height="66dp"
+        android:background="@color/blue"
+        android:gravity="center_vertical"
+        android:paddingStart="16dp"
+        android:paddingTop="18dp"
+        android:paddingEnd="16dp">
+
+        <!-- Title -->
+        <TextView
+            android:id="@+id/header_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_centerVertical="true"
+            android:fontFamily="@font/poppins_regular"
+            android:text="Permission Page"
+            android:textColor="@android:color/white"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <!-- Overflow Menu (Three-dot) -->
+        <ImageView
+            android:id="@+id/menu_button"
+            android:layout_width="34dp"
+            android:layout_height="34dp"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Menu"
+            android:clickable="true"
+            android:focusable="true"
+            android:padding="8dp"
+            android:src="@drawable/more_icon"
+            app:tint="@color/white" />
+
+    </RelativeLayout>
+
+    <!-- Subheading -->
+    <TextView
+        android:id="@+id/permission_description"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/header"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="8dp"
+        android:fontFamily="@font/poppins_regular"
+        android:text="Allow the permissions to enable all features of the app"
+        android:textColor="@color/black"
+        android:textSize="14sp" />
+
+    <!-- RecyclerView for listing permissions -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recycler_permissions"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/permission_description"
+        android:layout_marginTop="2dp"
+        android:clipToPadding="false"
+        android:padding="5dp"
+        android:scrollbars="vertical" />
+</RelativeLayout>

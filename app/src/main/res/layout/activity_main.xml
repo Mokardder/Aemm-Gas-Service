@@ -7,10 +7,10 @@
     tools:context=".Ui.MainActivity"
     tools:ignore="HardcodedText">
 
-    <!-- ScrollView for the main content -->
-<!--    <ScrollView-->
-<!--        android:layout_width="match_parent"-->
-<!--        android:layout_height="match_parent">-->
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -513,7 +513,7 @@
                     android:textColor="#0d6efd" />
             </RelativeLayout>
         </LinearLayout>
-<!--    </ScrollView>-->
+    </ScrollView>
 
     <!-- Loader Overlay -->
     <LinearLayout

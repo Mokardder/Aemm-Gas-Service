@@ -2,92 +2,94 @@ package android.iocl.dac_collector.Utility;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.content.Context;
-import android.content.SharedPreferences;
-import android.util.Base64;
 import android.util.Log;
-
-import javax.crypto.Cipher;
-import javax.crypto.KeyGenerator;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
-
-import java.security.Key;
-import android.content.Context;
-import android.content.SharedPreferences;
 
 public class SharedPrefs {
 
-    private static final String PREF_NAME = "AppsData";  // Name of the SharedPreferences file
+    private static final String PREF_NAME = "AppsData";
     private static SharedPreferences sharedPreferences;
     private static SharedPreferences.Editor editor;
 
-    public SharedPrefs(Context context) {
-        sharedPreferences = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
-        editor = sharedPreferences.edit();
+    // Initialize SharedPreferences once
+    private static void init(Context context) {
+        if (sharedPreferences == null || editor == null) {
+            sharedPreferences = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+            editor = sharedPreferences.edit();
+        }
     }
 
-    // Setter method to store string value
-    public static void setString(String key, String value) {
+    // Set a string
+    public static void setString(Context context, String key, String value) {
+        init(context);
         editor.putString(key, value);
         editor.apply();
     }
 
-    // Getter method to retrieve string value
-    public static String getString(String key, String defaultValue) {
+    // Get a string
+    public static String getString(Context context, String key, String defaultValue) {
+        init(context);
         return sharedPreferences.getString(key, defaultValue);
     }
 
-    // Setter method to store integer value
-    public static void setInt(String key, int value) {
-        editor.putInt(key, value);
+    // Set an int
+    public static void setAppVersion(Context context, int version) {
+        init(context);
+        editor.putInt("appVersion", version);
         editor.apply();
     }
 
-
-
-
-    // Getter method to retrieve integer value
-
-    public static int getAppVersion() {
-
-        return sharedPreferences.getInt("appVersion;", 0);
-    }
-    public static void setAppVersion(int currentVersion) {
-        editor.putInt("appVersion", currentVersion);
-        editor.apply();
+    // Get an int
+    public static int getAppVersion(Context context) {
+        init(context);
+        return sharedPreferences.getInt("appVersion", 0);
     }
 
-
-    // Setter method to store boolean value
-    public static void setBoolean(String key, boolean value) {
+    // Set a boolean
+    public static void setBoolean(Context context, String key, boolean value) {
+        init(context);
         editor.putBoolean(key, value);
         editor.apply();
     }
-    public static void setRestrictionEnabled() {
-        editor.putBoolean("restriction", true);
-        editor.apply();
-    }    public static void setRestrictionDisabled() {
-        editor.putBoolean("restriction", false);
-        editor.apply();
-    }
 
-    // Getter method to retrieve boolean value
-    public static boolean getBoolean(String key, boolean defaultValue) {
+    // Get a boolean
+    public static boolean getBoolean(Context context, String key, boolean defaultValue) {
+        init(context);
         return sharedPreferences.getBoolean(key, defaultValue);
     }
-    public static boolean getRestrictionEnabled() {
-        return sharedPreferences.getBoolean("restriction", false);
+
+    public static void setRestrictionEnabled(Context context) {
+        setBoolean(context, "restriction", true);
     }
 
-    // Remove a specific key-value pair
-    public void remove(String key) {
+    public static void setRestrictionDisabled(Context context) {
+        setBoolean(context, "restriction", false);
+    }
+
+    public static boolean getRestrictionEnabled(Context context) {
+        return getBoolean(context, "restriction", false);
+    }
+
+    public static void setTileAdded(Context context) {
+        setBoolean(context, "isTileAdded", true);
+        Log.d("Tiles", "setTileAdded: True");
+    }
+
+    public static boolean isTileAdded(Context context) {
+        boolean isAdded = getBoolean(context, "isTileAdded", false);
+        Log.d("Tiles", "getTileAdded: " + isAdded);
+        return isAdded;
+    }
+
+    // Remove a key
+    public static void remove(Context context, String key) {
+        init(context);
         editor.remove(key);
         editor.apply();
     }
 
-    // Clear all preferences
-    public void clear() {
+    // Clear all keys
+    public static void clear(Context context) {
+        init(context);
         editor.clear();
         editor.apply();
     }

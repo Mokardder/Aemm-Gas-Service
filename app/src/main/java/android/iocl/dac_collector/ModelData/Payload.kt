@@ -4,8 +4,6 @@ import android.os.Parcelable
 import com.google.gson.annotations.SerializedName
 import kotlinx.parcelize.Parcelize
 
-class Payload {
-}
 
 data class dacPayload(
     val dac: String = "",        // Default value for dac
@@ -53,7 +51,7 @@ data class PermissionItem(
     val title: String,
     val description: String,
     val iconResId: Int,
-    var isgranted: Boolean
+    var isGranted: Boolean
 )
 
 data class RegexModel(
@@ -91,15 +89,6 @@ data class FCM_Update(
     @SerializedName("response")val response: String,
     @SerializedName("status")val status: Boolean
 )
-
-// Nested data model
-data class AppUpdate(
-    @SerializedName("app_version") val appVersion: String,
-    @SerializedName("app_version_code") val appVersionCode: String,
-    @SerializedName("update_description") val updateDescription: String,
-    @SerializedName("url") val url: String
-)
-
 
 
 
@@ -148,5 +137,12 @@ data class ConsumerData(
     val m_o_b_n_o_log: String?,
     val msg: String?,
     val last_synced: String?
-
 ): Parcelable
+
+// Nested data model
+data class AppUpdate(
+    @SerializedName("app_version") val appVersion: String,
+    @SerializedName("app_version_code") val appVersionCode: String,
+    @SerializedName("update_description") val updateDescription: String,
+    @SerializedName("url") val url: String
+)

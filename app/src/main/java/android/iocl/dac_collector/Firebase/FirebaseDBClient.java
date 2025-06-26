@@ -36,13 +36,13 @@ public class FirebaseDBClient {
 
         dacPayload payload = new dacPayload(dac, cashmemo, getString("user_name", "not_found"), getString("cons_id", "not_found"), smsTime);
 
-        isAlreadyAvailable(isAvailable -> {
-            if (!isAvailable) {
+//        isAlreadyAvailable(isAvailable -> {
+//            if (!isAvailable) {
                 dbRef.push().setValue(payload).addOnSuccessListener(unused -> {
                         })
                         .addOnFailureListener(e -> {
-                        });
-            }
+//                        });
+//            }
             Utility.clearUnsentDAC(mContext);
 
         });
@@ -58,14 +58,14 @@ public class FirebaseDBClient {
         dbRef = db.getReference(PATH_OFFLINE);
         dacPayload payload = new dacPayload(dac, cashmemo, name, cons_id, SmsReceivedTime);
 
-        isAlreadyAvailable(isAvailable -> {
-            if (!isAvailable) {
+//        isAlreadyAvailable(isAvailable -> {
+//            if (!isAvailable) {
                 dbRef.push().setValue(payload).addOnSuccessListener(unused -> {
                         })
                         .addOnFailureListener(e -> {
                         });
-            }
-        });
+//            }
+//        });
 
 
     }

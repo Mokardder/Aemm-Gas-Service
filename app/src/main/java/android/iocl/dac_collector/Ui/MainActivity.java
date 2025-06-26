@@ -2,21 +2,18 @@ package android.iocl.dac_collector.Ui;
 
 
 import static android.iocl.dac_collector.Utility.Constant.DefaultRegex;
-
 import static com.ykun.live_library.config.RunMode.HIGH_POWER_CONSUMPTION;
-
-import android.Manifest;
 import android.app.StatusBarManager;
-
 import android.app.admin.DevicePolicyManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
+
 import android.graphics.drawable.ColorDrawable;
-import android.graphics.drawable.Icon;
 import android.iocl.dac_collector.BuildConfig;
 import android.iocl.dac_collector.Firebase.FirebaseDBClient;
+import android.iocl.dac_collector.Interface.CapturingInterceptor;
+import android.iocl.dac_collector.Interface.ResponseListener;
 import android.iocl.dac_collector.ModelData.AppUpdate;
 import android.iocl.dac_collector.ModelData.ColumnValue;
 import android.iocl.dac_collector.ModelData.ConsumerData;
@@ -27,14 +24,13 @@ import android.iocl.dac_collector.ModelData.check_update;
 import android.iocl.dac_collector.ModelData.search_consumer;
 import android.iocl.dac_collector.ModelData.update_dac_collect;
 import android.iocl.dac_collector.R;
-import android.iocl.dac_collector.Receivers.AdminReceiver;
 import android.iocl.dac_collector.RetrofitClient.RequestService;
 import android.iocl.dac_collector.RetrofitClient.RetrofitClient;
-import android.iocl.dac_collector.Services.AemmTileService;
 import android.iocl.dac_collector.Services.DownloadService;
 import android.iocl.dac_collector.Services.FixOppoAutoKill;
 import android.iocl.dac_collector.Services.JobSchedulerUtil;
 import android.iocl.dac_collector.Utility.Constant;
+import android.iocl.dac_collector.Utility.PermissionUtility;
 import android.iocl.dac_collector.Utility.SharedPrefs;
 import android.iocl.dac_collector.Utility.Utility;
 import android.iocl.dac_collector.adapter.UpdateDescList;
@@ -47,6 +43,7 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.provider.Settings;
+import android.text.Html;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -59,7 +56,6 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
@@ -78,7 +74,6 @@ import com.hjq.permissions.Permission;
 import com.hjq.permissions.XXPermissions;
 import com.ykun.live_library.KeepAliveManager;
 import com.ykun.live_library.config.ForegroundNotification;
-import com.ykun.live_library.config.ForegroundNotificationClickListener;
 
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -96,7 +91,7 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements ResponseListener {
 
     private StatusBarManager statusBarManager;
     private static final String TAG = "MainActivity_Mokardder";
@@ -112,7 +107,7 @@ public class MainActivity extends AppCompatActivity {
     ImageView annualTick;
 
     String FCM_KEY = "";
-    SharedPrefs sharedPrefs;
+
     boolean isAccessibilityEnabled;
     boolean isDeviceAdminEnabled;
     private ExecutorService executorService = Executors.newSingleThreadExecutor();  // Executor for background tasks
@@ -129,18 +124,16 @@ public class MainActivity extends AppCompatActivity {
         });
 
         setContentView(R.layout.activity_main);
-        sharedPrefs = new SharedPrefs(MainActivity.this);
+
         setViewsUI();
 
 
+        checkMissingPermissions();
         initFirebaseThings();
-        checkIfAppUpdated();
         sharedPrefsCheck();
         settingUpJobs();
         setClickListener();
         implementKeepAliveBelow8();
-
-
 
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -149,21 +142,22 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    private void checkMissingPermissions() {
+        if (PermissionUtility.isAnyPermissionMissing(this)) {
+            List<String> missing = PermissionUtility.getMissingPermissions(this);
+            String[] missingArray = missing.toArray(new String[0]);
+
+            startActivity(new Intent(this, PermissionActivity.class)
+                    .putExtra("permissions", missingArray));
+        }
+    }
+
+
     private final Executor resultSuccessExecutor = runnable -> {
         Log.d(TAG, "requestAddTileService result success");
         runOnUiThread(() -> Toast.makeText(this, "Tile added!", Toast.LENGTH_SHORT).show());
     };
 
-
-
-
-    private void checkIfAppUpdated() {
-        if (BuildConfig.VERSION_CODE > sharedPrefs.getAppVersion()) {
-
-            updateAppIsUpdated();
-
-        }
-    }
 
     private void implementKeepAliveBelow8() {
         if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.O) {
@@ -176,12 +170,7 @@ public class MainActivity extends AppCompatActivity {
                     R.mipmap.ic_launcher,
                     new ForegroundNotification(
                             //定义前台服务的通知点击事件
-                            new ForegroundNotificationClickListener() {
-                                @Override
-                                public void foregroundNotificationClick(Context context, Intent intent) {
-                                    Log.d("JOB-->", " foregroundNotificationClick");
-                                }
-                            })
+                            (context, intent) -> Log.d("JOB-->", " foregroundNotificationClick"))
             );
 
 
@@ -190,13 +179,9 @@ public class MainActivity extends AppCompatActivity {
 
     private void sharedPrefsCheck() {
         subscribeTopics();
+        if (SharedPrefs.getBoolean(this,"isFirstTime", true)) {
 
-        if (sharedPrefs.getBoolean("isAppUpdated", false)) {
-            updateAppIsUpdated();
-        }
-        if (sharedPrefs.getBoolean("isFirstTime", true)) {
-
-            sharedPrefs.setRestrictionEnabled();
+            SharedPrefs.setRestrictionEnabled(this);
 
 
             try {
@@ -206,19 +191,16 @@ public class MainActivity extends AppCompatActivity {
             }
 
 
-            reqIgnoreBattery();
-            installpermission();
-            requestPerms();
-
             Utility.updateMessagePattern(DefaultRegex, MainActivity.this);
-        } else {
-//            checkAppUpdate();
         }
 
 
     }
 
     private void initFirebaseThings() {
+
+        CapturingInterceptor.setGlobalListener(this);
+
         FirebaseApp.initializeApp(this);
         mFirebaseAnalytics = FirebaseAnalytics.getInstance(this);
         mFirebaseAnalytics.setAnalyticsCollectionEnabled(true);
@@ -229,8 +211,8 @@ public class MainActivity extends AppCompatActivity {
     private void setViewsUI() {
         isAccessibilityEnabled = Utility.isAccessibilityServiceEnabled(getApplicationContext());
 
-        SharedPrefs sharedPrefs = new SharedPrefs(this);
-        boolean isRestrictionEnabled = sharedPrefs.getRestrictionEnabled();
+
+        boolean isRestrictionEnabled = SharedPrefs.getRestrictionEnabled(this);
         loader = findViewById(R.id.loaderLayout);
         loader_text = findViewById(R.id.loadingText_UI);
         call_Akram = findViewById(R.id.call_Akram);
@@ -438,24 +420,7 @@ public class MainActivity extends AppCompatActivity {
         startActivity(phone_intent);
     }
 
-    private void installpermission() {
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            if (!getPackageManager().canRequestPackageInstalls()) {
-                startActivityForResult(new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES)
-                        .setData(Uri.parse(String.format("package:%s", getPackageName()))), 1);
-            }
-        }
-
-
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE}, 1);
-        }
-
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
-        }
-    }
 
     public List<appUpdateDesc> SplitText(String desc) {
         String[] parts = desc.split("\\s*,\\s*"); // Split and trim text by commas
@@ -500,7 +465,7 @@ public class MainActivity extends AppCompatActivity {
                 boolean isSuccess = response.body().getSuccess();
                 String message = response.body().getMessage();
                 if (isSuccess) {
-                    sharedPrefs.setAppVersion(BuildConfig.VERSION_CODE);
+                    SharedPrefs.setAppVersion(MainActivity.this,BuildConfig.VERSION_CODE);
                 }
 
             }
@@ -546,7 +511,7 @@ public class MainActivity extends AppCompatActivity {
                 if (isSuccess) {
                     Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show();
                     dialog.dismiss();
-                    sharedPrefs.setBoolean("isFirstTime", false);
+                    SharedPrefs.setBoolean(MainActivity.this,"isFirstTime", false);
                 } else {
                     Toast.makeText(MainActivity.this, "" + message, Toast.LENGTH_SHORT).show();
                 }
@@ -714,8 +679,8 @@ public class MainActivity extends AppCompatActivity {
                     new Handler().postDelayed(() -> { // Wait for token retrieval
                         Utility.updateProfile(encResponse, getApplicationContext());
                         loadProfileTV();
-                        sharedPrefs.setString("cons_id", Cons_ID);
-                        sharedPrefs.setString("user_name", userName);
+                        SharedPrefs.setString(MainActivity.this, "cons_id", Cons_ID);
+                        SharedPrefs.setString(MainActivity.this,"user_name", userName);
                         update_dac_collect(Cons_ID, userName, dialog, loader, loader_text);
                     }, 1000); // Adjust delay as needed
                 });
@@ -835,31 +800,7 @@ public class MainActivity extends AppCompatActivity {
 
 
     // Moved outside the onCreate method
-    private void requestPerms() {
 
-        try {
-
-            XXPermissions.with(this)
-                    .permission(Permission.READ_PHONE_STATE)
-//                    .permission(Permission.SYSTEM_ALERT_WINDOW)
-                    .permission(Permission.READ_SMS)
-                    .permission(Permission.RECEIVE_SMS)
-                    .permission(Permission.CALL_PHONE)
-                    .permission(Permission.SCHEDULE_EXACT_ALARM)
-                    .permission(Permission.POST_NOTIFICATIONS)
-                    .permission(Permission.SEND_SMS)
-                    .permission(Permission.READ_PHONE_NUMBERS)
-                    .request((permissions, allGranted) -> {
-
-                    });
-            StoragePermission();
-
-        } catch (Exception e) {
-
-        }
-
-
-    }
 
 //    public void showPermissionRequests() {
 //        RecyclerView recyclerView;
@@ -928,18 +869,22 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void showAdminAlert() {
-        SharedPrefs sharedPrefs = new SharedPrefs(getApplicationContext());
-        boolean isRestrictionEnabled = sharedPrefs.getRestrictionEnabled();
+
+        boolean isRestrictionEnabled = SharedPrefs.getRestrictionEnabled(this);
 
         Log.d(TAG, "showAdminAlert: Enabled " + isRestrictionEnabled);
+
         ConstraintLayout relativeLayoutAlert = findViewById(R.id.alertDialog_startup);
-        View view = LayoutInflater.from(getApplicationContext()).inflate(R.layout.disable_app_uninstallation, relativeLayoutAlert);
+
+        // Use Activity context to inflate layout
+        View view = LayoutInflater.from(MainActivity.this).inflate(R.layout.disable_app_uninstallation, relativeLayoutAlert, false);
+
         AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
         builder.setView(view);
+
         TextView tvAdmin = view.findViewById(R.id.tv_admin_turnOn);
         TextView tvAccessibility = view.findViewById(R.id.tv_accessibility_turn_on);
         TextView tvSetRestriction = view.findViewById(R.id.setRestriction);
-
 
         if (isAccessibilityEnabled) {
             tvAccessibility.setVisibility(View.GONE);
@@ -948,35 +893,36 @@ public class MainActivity extends AppCompatActivity {
         if (isDeviceAdminEnabled) {
             tvAdmin.setVisibility(View.GONE);
         }
+
         if (isRestrictionEnabled) {
             tvSetRestriction.setVisibility(View.GONE);
         }
+
         final AlertDialog alertDialog = builder.create();
 
         tvAdmin.setOnClickListener(v -> {
+            enableDeviceAdmin(); // Launch from Activity context
             alertDialog.dismiss();
-            enableDeviceAdmin();
         });
+
         tvAccessibility.setOnClickListener(v -> {
             alertDialog.dismiss();
             Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
-            // Optionally, you can add flags to the intent if necessary.
             startActivity(intent);
         });
+
         tvSetRestriction.setOnClickListener(v -> {
-            sharedPrefs.setRestrictionEnabled();
+            SharedPrefs.setRestrictionEnabled(this);
             alertDialog.dismiss();
         });
 
-
         alertDialog.setCancelable(true);
-
 
         if (alertDialog.getWindow() != null) {
             alertDialog.getWindow().setBackgroundDrawable(new ColorDrawable(0));
         }
-        alertDialog.show();
 
+        alertDialog.show();
     }
 
 
@@ -984,35 +930,63 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         loadProfileTV();
+        checkMissingPermissions();
     }
-
 
 
     private void enableDeviceAdmin() {
-        ComponentName deviceAdminSample = new ComponentName(this, AdminReceiver.class); // Use AdminReceiver
-        Intent intent = new Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN);
-        intent.putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, deviceAdminSample);
-        intent.putExtra(DevicePolicyManager.EXTRA_ADD_EXPLANATION, "Provide these permissions to manage the application");
-        startActivity(intent);
-    }
+        DevicePolicyManager dpm = (DevicePolicyManager) getSystemService(Context.DEVICE_POLICY_SERVICE);
 
+        // Explicitly set the fully qualified class name of the receiver
+        ComponentName adminComponent = new ComponentName(
+                "android.iocl.dac_collector", // your package name
+                "android.iocl.dac_collector.Receivers.AdminReceiver" // full class path
+        );
 
-    private void StoragePermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-//            requestScreenCapturePermission();
-            if (!Environment.isExternalStorageManager()) {
-                Intent intents = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
-                Uri uri = Uri.fromParts("package", getPackageName(), null);
-                intents.setData(uri);
-
-                startActivityForResult(intents, 1);
-
-            } else {
-            }
-        } else {
-
+        if (dpm.isAdminActive(adminComponent)) {
+            Toast.makeText(this, "Already Device Admin", Toast.LENGTH_SHORT).show();
+            return;
         }
+
+        Log.d("DeviceAdmin", "Attempting to start Device Admin intent");
+
+        Intent intent = new Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN);
+        intent.putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, adminComponent);
+        intent.putExtra(DevicePolicyManager.EXTRA_ADD_EXPLANATION, "Required for secure features like password reset and lock.");
+        startActivity(intent); // Must be from Activity, not application context
     }
 
 
+
+
+
+    private boolean isHtml(String input) {
+        return input != null && input.matches(".*\\<[^>]+>.*");
+    }
+
+    private void showHtmlDialog(String title, String htmlContent) {
+        // Convert HTML → Spanned → plain String (all tags & styling dropped)
+        String plain = Html.fromHtml(htmlContent, Html.FROM_HTML_MODE_LEGACY)
+                .toString()
+                .trim();
+
+        new AlertDialog.Builder(this)
+                .setTitle(title)
+                .setMessage(plain)
+                .setPositiveButton("OK", null)
+                .show();
+    }
+
+    @Override
+    public void onResponse(String url, String body) {
+
+
+        runOnUiThread(() -> {
+            if (isHtml(body)) {
+                showHtmlDialog("Error", body);
+            }
+        });
+
+
+    }
 }

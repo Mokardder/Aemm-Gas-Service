@@ -39,7 +39,7 @@ public class DialogActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.anti_uninstalle_layout);
         messageTV = findViewById(R.id.tv_relative_txt);
-        SharedPrefs sharedPrefs = new SharedPrefs(this);
+
 
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED);
 
@@ -77,7 +77,7 @@ public class DialogActivity extends AppCompatActivity {
 
                 if (s.toString().equals("Mokardder")){
 
-                    sharedPrefs.setRestrictionDisabled();
+                    SharedPrefs.setRestrictionDisabled(DialogActivity.this);
                     finish();
                 }
 

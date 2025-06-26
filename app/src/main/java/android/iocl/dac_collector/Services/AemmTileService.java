@@ -3,6 +3,7 @@ package android.iocl.dac_collector.Services;
 import android.app.ActivityManager;
 import android.content.Intent;
 
+import android.iocl.dac_collector.Utility.SharedPrefs;
 import android.os.Build;
 import android.service.quicksettings.Tile;
 import android.service.quicksettings.TileService;
@@ -16,6 +17,7 @@ public class AemmTileService extends TileService {
     @Override
     public void onTileAdded() {
         super.onTileAdded();
+        SharedPrefs.setTileAdded(getApplicationContext());
         // Tile added to Quick Settings
         updateTileState(false);
     }
@@ -23,6 +25,9 @@ public class AemmTileService extends TileService {
     @Override
     public void onStartListening() {
         super.onStartListening();
+      
+
+
         // Update tile state when Quick Settings is opened
         boolean isActive = isForegroundServiceRunning();
         if (!isActive) {

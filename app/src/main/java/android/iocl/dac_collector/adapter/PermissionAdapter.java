@@ -1,44 +1,86 @@
 package android.iocl.dac_collector.adapter;
+
+import android.app.Activity;
 import android.content.Context;
 import android.iocl.dac_collector.ModelData.PermissionItem;
 import android.iocl.dac_collector.R;
+import android.iocl.dac_collector.Utility.PermissionUtility;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
-import android.widget.Switch;
 import android.widget.TextView;
+import android.widget.Toast;
+
+import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+import com.google.android.material.button.MaterialButton;
+
 import java.util.List;
 
-public class PermissionAdapter extends RecyclerView.Adapter<PermissionAdapter.PermissionViewHolder> {
+public class PermissionAdapter
+        extends RecyclerView.Adapter<PermissionAdapter.PermissionViewHolder> {
 
-    private Context context;
+    private final Activity context;
     private List<PermissionItem> permissionList;
 
-    public PermissionAdapter(Context context, List<PermissionItem> permissionList) {
+    public PermissionAdapter(Activity context, List<PermissionItem> permissionList) {
         this.context = context;
         this.permissionList = permissionList;
     }
 
+    @NonNull
     @Override
-    public PermissionViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        View itemView = LayoutInflater.from(context).inflate(R.layout.permission_rv, parent, false);
+    public PermissionViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        View itemView = LayoutInflater.from(context)
+                .inflate(R.layout.permission_rv, parent, false);
         return new PermissionViewHolder(itemView);
     }
 
     @Override
-    public void onBindViewHolder(PermissionViewHolder holder, int position) {
-        PermissionItem permission = permissionList.get(position);
-        holder.permissionTitle.setText(permission.getTitle());
-        holder.permissionDescription.setText(permission.getDescription());
-        holder.permissionIcon.setImageResource(permission.getIconResId());
-        holder.permissionSwitch.setChecked(permission.getIsgranted());
+    public void onBindViewHolder(@NonNull PermissionViewHolder holder, int position) {
+        PermissionItem item = permissionList.get(position);
 
-        // Add listener for switch change
-        holder.permissionSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            permission.setIsgranted(isChecked);
-            // Optionally update the permission status here (e.g., save to SharedPreferences or database)
+        // 1) bind icon, title, description
+        holder.icon.setImageResource(item.getIconResId());
+        holder.title.setText(item.getTitle());
+        holder.description.setText(item.getDescription());
+
+        // 2) toggle between "Allow" button and green tick
+        if (item.isGranted()) {
+            holder.button.setVisibility(View.GONE);
+            holder.tick.setVisibility(View.VISIBLE);
+        } else {
+            holder.button.setVisibility(View.VISIBLE);
+            holder.tick.setVisibility(View.GONE);
+        }
+
+        // 3) on button click, mark granted and refresh item
+        holder.button.setOnClickListener(v -> {
+
+            Log.d("TAG--TEST", "onBindViewHolder: " + item.getTitle());
+            if (item.getTitle().equals("General Permissions")){
+                PermissionUtility.requestEssentialPermissions(context);
+
+            }
+
+            if (item.getTitle().contains("Storage Access Permission")){
+                PermissionUtility.requestStoragePermission(context);
+            } if (item.getTitle().contains("Add Tiles to Notification Bar")){
+                Toast.makeText(context, "Open Notification bar and add cylinder icon to first page.", Toast.LENGTH_LONG).show();
+            }if (item.getTitle().contains("Allow Installation of App")){
+                PermissionUtility.requestInstallPermission(context);
+            }  if (item.getTitle().toLowerCase().contains("accessibility")){
+                PermissionUtility.requestAccessibility(context);
+
+            }
+            if (item.getTitle().toLowerCase().contains("admin")){
+                PermissionUtility.requestDeviceAcmin(context);
+
+            }
+
+            notifyItemChanged(position);
         });
     }
 
@@ -47,18 +89,26 @@ public class PermissionAdapter extends RecyclerView.Adapter<PermissionAdapter.Pe
         return permissionList.size();
     }
 
-    public static class PermissionViewHolder extends RecyclerView.ViewHolder {
-        ImageView permissionIcon;
-        TextView permissionTitle;
-        TextView permissionDescription;
-        Switch permissionSwitch;
+    static class PermissionViewHolder extends RecyclerView.ViewHolder {
+        ImageView icon;
+        TextView title;
+        TextView description;
+        MaterialButton button;
+        ImageView tick;
 
-        public PermissionViewHolder(View itemView) {
+        PermissionViewHolder(@NonNull View itemView) {
             super(itemView);
-            permissionIcon = itemView.findViewById(R.id.permission_icon);
-            permissionTitle = itemView.findViewById(R.id.permission_title);
-            permissionDescription = itemView.findViewById(R.id.permission_sub_description);
-            permissionSwitch = itemView.findViewById(R.id.permission_switch);
+            icon        = itemView.findViewById(R.id.permission_icon);
+            title       = itemView.findViewById(R.id.permission_title);
+            description = itemView.findViewById(R.id.permission_sub_description);
+            button      = itemView.findViewById(R.id.permission_switch);
+            tick        = itemView.findViewById(R.id.tick_icon);
         }
+    }
+
+    // In PermissionAdapter.java
+    public void updateData(List<PermissionItem> newList) {
+        this.permissionList = newList;
+        notifyDataSetChanged();
     }
 }
