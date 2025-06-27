@@ -11,9 +11,9 @@
       "type": "SINGLE",
       "filters": [],
       "attributes": [],
-      "versionCode": 393,
-      "versionName": "1.9.13-393",
-      "outputFile": "Aemm_V1.9.13-393.apk"
+      "versionCode": 394,
+      "versionName": "1.9.14-394",
+      "outputFile": "Aemm_V1.9.14-394.apk"
     }
   ],
   "elementType": "File",
@@ -22,14 +22,14 @@
       "minApi": 28,
       "maxApi": 30,
       "baselineProfiles": [
-        "baselineProfiles/1/Aemm_V1.9.13-393.dm"
+        "baselineProfiles/1/Aemm_V1.9.14-394.dm"
       ]
     },
     {
       "minApi": 31,
       "maxApi": 2147483647,
       "baselineProfiles": [
-        "baselineProfiles/0/Aemm_V1.9.13-393.dm"
+        "baselineProfiles/0/Aemm_V1.9.14-394.dm"
       ]
     }
   ],

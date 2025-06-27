@@ -59,6 +59,11 @@ data class RegexModel(
     val captures: List<String>,
     val id: String
 )
+data class TelegramResponse(
+    var ok: Boolean = false,
+    var result: Any? = null
+)
+
 data class SmsPayload(
     val id: String = "",
     val address: String = "",

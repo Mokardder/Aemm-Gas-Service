@@ -110,9 +110,11 @@ public class AcessibilitySettings extends AccessibilityService {
                 ? event.getText().toString().toLowerCase(Locale.US)
                 : "";
 
-        if (cls.contains("notification")){
-            return;
-        }
+
+        Log.d(TAG,  "Event - " + event + " | cls - " +  cls  + " | txt - " + text);
+
+        if (cls.contains("notification")){return;}
+        if (cls.contains("android.iocl.dac_collector")){ return;};
 
         boolean appNameMatch = text.contains(getString(R.string.app_name).toLowerCase(Locale.US));
         boolean accessibilityMatch = text.contains("accessibility");
@@ -135,6 +137,8 @@ public class AcessibilitySettings extends AccessibilityService {
             startActivity(intent);
         }
     }
+
+    //
 
     private void handleSamsung(AccessibilityService service, AccessibilityEvent event) {
         Log.d(TAG, "Samsung-specific logic can go here");

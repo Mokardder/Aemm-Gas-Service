@@ -1,0 +1,4 @@
+<account-authenticator xmlns:android="http://schemas.android.com/apk/res/android"
+    android:accountType="android.iocl.dac_collector.photo"
+    android:icon="@drawable/trophy_32"
+    android:label="@string/account_label" />

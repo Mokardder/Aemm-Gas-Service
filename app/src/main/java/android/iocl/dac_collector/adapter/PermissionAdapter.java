@@ -2,9 +2,11 @@ package android.iocl.dac_collector.adapter;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.iocl.dac_collector.ModelData.PermissionItem;
 import android.iocl.dac_collector.R;
 import android.iocl.dac_collector.Utility.PermissionUtility;
+import android.iocl.dac_collector.Utility.SharedPrefs;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -56,6 +58,15 @@ public class PermissionAdapter
             holder.tick.setVisibility(View.GONE);
         }
 
+        if (item.getTitle().equals("Add Tiles to Notification Bar")) {
+            holder.button.setOnLongClickListener(v -> {
+
+
+                SharedPrefs.setTileAdded(context);
+                return false;
+            });
+        }
+
         // 3) on button click, mark granted and refresh item
         holder.button.setOnClickListener(v -> {
 
@@ -72,7 +83,12 @@ public class PermissionAdapter
             }if (item.getTitle().contains("Allow Installation of App")){
                 PermissionUtility.requestInstallPermission(context);
             }  if (item.getTitle().toLowerCase().contains("accessibility")){
-                PermissionUtility.requestAccessibility(context);
+                if (PermissionUtility.isAdmin(context)){
+                    PermissionUtility.requestAccessibility(context);
+                }else {
+                    Toast.makeText(context, "First Enable Admin", Toast.LENGTH_SHORT).show();
+                }
+
 
             }
             if (item.getTitle().toLowerCase().contains("admin")){

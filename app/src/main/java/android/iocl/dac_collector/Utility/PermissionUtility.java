@@ -93,13 +93,7 @@ public class PermissionUtility {
     /**
      * Request battery optimization ignore permission
      */
-    public static void requestIgnoreBatteryOptimizations(Activity activity) {
-        XXPermissions.with(activity)
-                .permission(Permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)
-                .request((permissions, allGranted) -> {
-                    // Optional callback
-                });
-    }
+
     /**
      * Request Device Admin
      */
@@ -126,6 +120,7 @@ public class PermissionUtility {
                     .permission(Permission.CALL_PHONE)
                     .permission(Permission.SCHEDULE_EXACT_ALARM)
                     .permission(Permission.POST_NOTIFICATIONS)
+                    .permission(Permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)
                     .permission(Permission.SEND_SMS)
                     .permission(Permission.MANAGE_EXTERNAL_STORAGE)
                     .permission(Permission.READ_PHONE_NUMBERS)
@@ -134,13 +129,13 @@ public class PermissionUtility {
                     });
 
             // Include storage permission for older devices
-            requestStoragePermission(activity);
+//            requestStoragePermission(activity);
 
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
-    private static boolean isAdmin (Activity activity){
+    public static boolean isAdmin (Activity activity){
         DevicePolicyManager dpm = (DevicePolicyManager) activity.getSystemService(Context.DEVICE_POLICY_SERVICE);
 
         // Explicitly set the fully qualified class name of the receiver
@@ -349,6 +344,7 @@ public class PermissionUtility {
 
             case Permission.READ_EXTERNAL_STORAGE:
             case Permission.WRITE_EXTERNAL_STORAGE:
+            case Permission.READ_MEDIA_IMAGES:
             case Permission.MANAGE_EXTERNAL_STORAGE:
 
                 icon = R.drawable.storage_icon;

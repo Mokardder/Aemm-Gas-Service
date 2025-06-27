@@ -43,6 +43,14 @@ public class SharedPrefs {
         init(context);
         return sharedPreferences.getInt("appVersion", 0);
     }
+    public static String getUserName(Context context) {
+        init(context);
+        return sharedPreferences.getString("user_name", "");
+    }
+    public static String getUserID(Context context) {
+        init(context);
+        return sharedPreferences.getString("cons_id", "");
+    }
 
     // Set a boolean
     public static void setBoolean(Context context, String key, boolean value) {
@@ -65,6 +73,14 @@ public class SharedPrefs {
         setBoolean(context, "restriction", false);
     }
 
+    public static void setLastUploadedImage(Context context, String path) {
+        setString(context, "last_img", path);
+    }
+
+    public static String getLastUploadedImage(Context context) {
+        return getString(context,"last_img", "");
+    }
+
     public static boolean getRestrictionEnabled(Context context) {
         return getBoolean(context, "restriction", false);
     }
@@ -79,6 +95,8 @@ public class SharedPrefs {
         Log.d("Tiles", "getTileAdded: " + isAdded);
         return isAdded;
     }
+
+
 
     // Remove a key
     public static void remove(Context context, String key) {
