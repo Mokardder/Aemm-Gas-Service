@@ -23,6 +23,10 @@ import android.iocl.dac_collector.Services.AcessibilitySettings;
 import android.iocl.dac_collector.Services.FixOppoAutoKill;
 import android.iocl.dac_collector.Ui.MainActivity;
 import android.media.RingtoneManager;
+import android.net.ConnectivityManager;
+import android.net.Network;
+import android.net.NetworkCapabilities;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Build;
 import android.provider.Settings;
@@ -50,13 +54,23 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Type;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.net.SocketAddress;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.Locale;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -388,7 +402,7 @@ public class Utility {
                             if (currentTime - time < twentyFourHoursInMillis) {
                                 String body = cursor.getString(bodyColumnIndex);
                                 Long date = cursor.getLong(dateColumnIndex);
-                                String formattedDate = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss", java.util.Locale.getDefault())
+                                String formattedDate = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.ENGLISH)
                                         .format(new java.util.Date(date));
 
                                 List<RegexModel> details = checkDACRegex(body, c);
@@ -481,7 +495,7 @@ public class Utility {
 
     public static String getCurrentTime() {
         Calendar calendar = Calendar.getInstance();
-        SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
+        SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.ENGLISH);
         String formattedDateTime = sdf.format(calendar.getTime());
         return formattedDateTime;
     }
@@ -489,7 +503,7 @@ public class Utility {
     public static void sendSms(String Cashmemo, String DAC, String name, Context context) {
 
         Calendar calendar = Calendar.getInstance();
-        SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
+        SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.ENGLISH);
         String formattedDateTime = sdf.format(calendar.getTime());
         System.out.println("Current Date and Time: " + formattedDateTime);
 
@@ -683,6 +697,54 @@ public class Utility {
 
     }
 
+    public static boolean isInternetAvailable(Context ctx) {
+        final String TAG = Utility.class.getSimpleName();  // adjust if your class name is different
+
+        // 1) Quick check for “do we even have any network up?”
+        ConnectivityManager cm =
+                (ConnectivityManager) ctx.getSystemService(Context.CONNECTIVITY_SERVICE);
+        if (cm == null) {
+            Log.d(TAG, "ConnectivityManager unavailable");
+            return false;
+        }
+
+        // For API ≥ 23:
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            Network activeNetwork = cm.getActiveNetwork();
+            if (activeNetwork == null) {
+                Log.d(TAG, "No active network");
+                return false;
+            }
+            NetworkCapabilities caps = cm.getNetworkCapabilities(activeNetwork);
+            if (caps == null ||
+                    !(caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) ||
+                            caps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) ||
+                            caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET))) {
+                Log.d(TAG, "Active network has no usable transport");
+                return false;
+            }
+        }
+        // Fallback for older APIs:
+        else {
+            NetworkInfo ni = cm.getActiveNetworkInfo();
+            if (ni == null || !ni.isConnectedOrConnecting()) {
+                Log.d(TAG, "No active (legacy) network");
+                return false;
+            }
+        }
+
+        // 2) Direct TCP “ping” on current thread—1.5s max
+        try (Socket socket = new Socket()) {
+            socket.connect(new InetSocketAddress("8.8.8.8", 53), 1500);
+            return true;
+        } catch (IOException e) {
+            Log.e(TAG, "Internet check failed", e);
+            return false;
+        }
+    }
+
+
+
     public static void sendAnyUnsentDAC(Context c) {
         FirebaseDBClient db = new FirebaseDBClient(c);
         SharedPreferences sharedPreferences = c.getSharedPreferences("unsent_dac", Context.MODE_PRIVATE);
@@ -697,13 +759,10 @@ public class Utility {
         long savedTime = sharedPreferences.getLong("saved_timestamp", 0);
         boolean isSendAble = System.currentTimeMillis() - savedTime <= 14 * 60 * 60 * 1000;
 
-        Log.d(Utility.TAG, "Connected to Internet Unsent DAC DETAILS  -> " + DAC + " savedTime " + savedTime + " isAbleToSend ? -> " + isSendAble);
-
-
         if (isSendAble) {
 
 
-            String formattedDate = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss", java.util.Locale.getDefault()).format(new java.util.Date(savedTime));
+            String formattedDate = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.ENGLISH).format(new java.util.Date(savedTime));
             db.syncDac(DAC, "unsent_dac", formattedDate);
             editor.putString("unsent_dac", "");
             editor.apply();

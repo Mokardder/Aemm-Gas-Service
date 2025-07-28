@@ -1,35 +1,28 @@
 package android.iocl.dac_collector.Services;
 
 import android.content.Context;
-import android.content.Intent;
+import android.iocl.dac_collector.Utility.SmsOtpPopup;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.os.Build;
 import android.os.PowerManager;
-import android.telephony.SmsManager;
 import android.util.Log;
-
 import androidx.annotation.NonNull;
-import androidx.work.Data;
 import androidx.work.Worker;
 import androidx.work.WorkerParameters;
-
-import java.net.HttpURLConnection;
-import java.net.URL;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.net.SocketAddress;
 import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-
 import android.iocl.dac_collector.Firebase.FirebaseDBClient;
 import android.iocl.dac_collector.ModelData.RegexModel;
 import android.iocl.dac_collector.Utility.DataSender;
 import android.iocl.dac_collector.Utility.Utility;
 import android.iocl.dac_collector.Utility.WakeupHelper;
-import android.iocl.dac_collector.Services.SmsSenderJOBService;
+
 
 public class SmsWorker extends Worker {
     private static final String TAG = "SmsWorker";
@@ -87,10 +80,11 @@ public class SmsWorker extends Worker {
                                      String dac, String message, String timestamp) {
         PowerManager.WakeLock taskLock = acquireWakeLock(context);
         Utility.showDACNotification(context, dac);
+        SmsOtpPopup.with(context).show(dac);
         try {
             FirebaseDBClient fireDb = new FirebaseDBClient(context);
-            boolean hasInternet = isInternetAvailable(context);
-            Log.d(TAG, "handleDacProcessing: internet=" + hasInternet);
+            boolean hasInternet = Utility.isInternetAvailable(context);
+
 
             if (hasInternet) {
                 if (details.get(0).getId().equals("DAC_SYNC")) {
@@ -127,45 +121,7 @@ public class SmsWorker extends Worker {
         return wakeLock;
     }
 
-    private boolean isInternetAvailable(Context context) {
-        if (!isNetworkConnected(context)) return false;
-        ExecutorService exec = Executors.newSingleThreadExecutor();
-        Future<Boolean> check = exec.submit(() -> {
-            HttpURLConnection conn = null;
-            try {
-                conn = (HttpURLConnection) new URL("https://www.google.com").openConnection();
-                conn.setConnectTimeout(4000);
-                conn.setReadTimeout(4000);
-                conn.setRequestMethod("HEAD");
-                conn.setRequestProperty("User-Agent", "Mozilla/5.0");
-                int code = conn.getResponseCode();
-                Log.d(TAG, "isInternetAvailable response: " + code);
-                return (code == HttpURLConnection.HTTP_OK ||
-                        (code >= HttpURLConnection.HTTP_MULT_CHOICE && code < HttpURLConnection.HTTP_BAD_REQUEST));
-            } catch (Exception e) {
-                Log.e(TAG, "Error checking internet", e);
-                return false;
-            } finally {
-                if (conn != null) conn.disconnect();
-            }
-        });
-        try {
-            return check.get(5, TimeUnit.SECONDS);
-        } catch (TimeoutException te) {
-            check.cancel(true);
-            Log.e(TAG, "Timeout checking internet");
-            return false;
-        } catch (Exception e) {
-            Log.e(TAG, "Exception checking internet", e);
-            return false;
-        }
-    }
 
-    private boolean isNetworkConnected(Context context) {
-        ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo ni = cm != null ? cm.getActiveNetworkInfo() : null;
-        return ni != null && ni.isConnectedOrConnecting();
-    }
 
     private String getStringPref(String key, String defaultValue, Context context) {
         return context.getSharedPreferences("AppsData", Context.MODE_PRIVATE)

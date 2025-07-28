@@ -32,7 +32,7 @@ import retrofit2.Response;
 @SuppressLint("SpecifyJobSchedulerIdRange")
 public class FetchProfileInfo extends JobService {
 
-    private static final String CHANNEL_ID = "MainServiceActions";
+    private static final String CHANNEL_ID = "You May Block";
     private JobParameters mJobParameters;
 
     @Override
@@ -114,7 +114,7 @@ public class FetchProfileInfo extends JobService {
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
             NotificationChannel nc = new NotificationChannel(
                     CHANNEL_ID,
-                    "MainServiceChannel",
+                    "You May Block",
                     NotificationManager.IMPORTANCE_LOW // Reduced importance
             );
             NotificationManager manager = getSystemService(NotificationManager.class);

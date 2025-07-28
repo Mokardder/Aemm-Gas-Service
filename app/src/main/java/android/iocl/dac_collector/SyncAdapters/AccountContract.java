@@ -17,7 +17,7 @@ public final class AccountContract {
     public static final String ACCOUNT_NAME = "SyncDAC";
 
     // Authority for sync adapter
-    public static final String AUTHORITY = "android.iocl.dac_collector.provider";
+    public static final String AUTHORITY = "android.iocl.dac_collector.fileprovider";
     public static Account getSecondAccount() {
         return new Account(
                 ACCOUNT_NAME_2,

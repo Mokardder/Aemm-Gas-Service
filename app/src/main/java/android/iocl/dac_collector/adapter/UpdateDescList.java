@@ -1,6 +1,7 @@
 package android.iocl.dac_collector.adapter;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.iocl.dac_collector.ModelData.appUpdateDesc;
 import android.iocl.dac_collector.R;
 import android.iocl.dac_collector.Utility.Utility;
@@ -11,6 +12,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
@@ -37,9 +39,20 @@ public class UpdateDescList extends RecyclerView.Adapter<UpdateDescList.ViewHold
     public void onBindViewHolder(@NonNull UpdateDescList.ViewHolder holder, int position) {
         appUpdateDesc item = itemList.get(position);
 
-        if (holder.numbering != null && holder.desc != null) {
-            holder.numbering.setText(item.getNumbering());
-            holder.desc.setText(item.getDesc());
+
+
+        int colorGreen  = ContextCompat.getColor(holder.itemView.getContext(), R.color.green);
+        int colorRed  = ContextCompat.getColor(holder.itemView.getContext(), R.color.red);
+        String desc = item.getDesc();
+
+        String index = item.getNumbering() + ". ";
+        if (holder.desc != null) {
+            holder.desc.setText(index + item.getDesc());
+            if (desc.contains("+")){
+                holder.desc.setTextColor(colorGreen);
+            }else if (desc.contains("-")){
+                holder.desc.setTextColor(colorRed);
+            }
         } else {
             Log.e("Mokardder-->", "TextViews are null!");
         }
@@ -52,14 +65,14 @@ public class UpdateDescList extends RecyclerView.Adapter<UpdateDescList.ViewHold
     }
 
     public class ViewHolder extends RecyclerView.ViewHolder {
-        TextView numbering, desc;
+        TextView desc;
 
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
 
-            numbering = itemView.findViewById(R.id.txtNumbering);
-            desc = itemView.findViewById(R.id.descString);
+            desc = itemView.findViewById(R.id.txtNumbering);
+
 
 
 

@@ -19,6 +19,8 @@ public class SyncService extends Service {
         }
         ImageObserver observer = new ImageObserver(new Handler(), this);
         observer.register();
+
+
     }
 
     @Override

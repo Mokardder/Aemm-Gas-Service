@@ -144,6 +144,14 @@ data class ConsumerData(
     val last_synced: String?
 ): Parcelable
 
+data class BankStatementItem(
+    val bookDate: String,
+    val subsidyStatus: String,
+    val subsidyAmount: String,
+    val sentToBank: String,
+    val bankAccountNo: String
+)
+
 // Nested data model
 data class AppUpdate(
     @SerializedName("app_version") val appVersion: String,

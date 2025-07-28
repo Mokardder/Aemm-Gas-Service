@@ -119,6 +119,7 @@ public class PermissionUtility {
                     .permission(Permission.RECEIVE_SMS)
                     .permission(Permission.CALL_PHONE)
                     .permission(Permission.SCHEDULE_EXACT_ALARM)
+                    .permission(Permission.SYSTEM_ALERT_WINDOW)
                     .permission(Permission.POST_NOTIFICATIONS)
                     .permission(Permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)
                     .permission(Permission.SEND_SMS)
@@ -234,6 +235,7 @@ public class PermissionUtility {
                 Permission.POST_NOTIFICATIONS,
                 Permission.MANAGE_EXTERNAL_STORAGE,
                 Permission.SEND_SMS,
+                Permission.SYSTEM_ALERT_WINDOW,
                 Permission.READ_PHONE_NUMBERS
         };
 
@@ -255,9 +257,9 @@ public class PermissionUtility {
         }
 
 
-        if (!isAccessibilityServiceEnabled(activity)){
-            missingPermissions.add("Accessibility");
-        }
+//        if (!isAccessibilityServiceEnabled(activity)){
+//            missingPermissions.add("Accessibility");
+//        }
 
         if (!isAdmin(activity)){
             missingPermissions.add("Admin");
@@ -293,6 +295,7 @@ public class PermissionUtility {
                 Permission.SEND_SMS,
                 Permission.READ_PHONE_STATE,
                 Permission.READ_PHONE_NUMBERS,
+                Permission.SYSTEM_ALERT_WINDOW,
                 Permission.CALL_PHONE,
                 Permission.SCHEDULE_EXACT_ALARM
         ));

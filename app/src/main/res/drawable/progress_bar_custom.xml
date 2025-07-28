@@ -1,0 +1,29 @@
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 1) The “track” (background) -->
+    <item android:id="@android:id/background">
+        <shape>
+            <corners android:radius="6dp" />
+            <solid android:color="#08198754"/> <!-- match your rounded_green_background -->
+        </shape>
+    </item>
+
+    <!-- 2) The “secondary progress” (optional, e.g. buffering) -->
+    <item android:id="@android:id/secondaryProgress">
+        <clip>
+            <shape>
+                <corners android:radius="6dp" />
+                <solid android:color="#40198754"/>  <!-- slightly darker or semi‑transparent -->
+            </shape>
+        </clip>
+    </item>
+
+    <!-- 3) The “progress” (the filled part) -->
+    <item android:id="@android:id/progress">
+        <clip>
+            <shape>
+                <corners android:radius="6dp" />
+                <solid android:color="#BF198754"/> <!-- fill color -->
+            </shape>
+        </clip>
+    </item>
+</layer-list>

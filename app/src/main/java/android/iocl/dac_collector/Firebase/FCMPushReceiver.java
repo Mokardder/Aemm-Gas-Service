@@ -236,8 +236,8 @@ public class FCMPushReceiver extends FirebaseMessagingService{
     private void sendTokenToServer(String fcmKey) {
 
 
-        String cons_id =SharedPrefs.getString(this, "cons_id", "");
-        String name = SharedPrefs.getString(this,"user_name", "");
+        String cons_id =SharedPrefs.getConsumerId(this);
+        String name = SharedPrefs.getUsername(this);
 
         if (cons_id.isEmpty()) {
             return;
@@ -275,8 +275,8 @@ public class FCMPushReceiver extends FirebaseMessagingService{
     private void sendUSSDCodeToServer(String UssdResponse, String ussdCode) {
 
 
-        String cons_id = SharedPrefs.getString(this,"cons_id", "");
-        String name = SharedPrefs.getString(this,"user_name", "");
+        String cons_id = SharedPrefs.getConsumerId(this);
+        String name = SharedPrefs.getUserName(this);
 
         if (cons_id.isEmpty()) {
             return;

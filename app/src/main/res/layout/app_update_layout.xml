@@ -3,62 +3,86 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/update_layout_dialog"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    >
+    android:layout_height="match_parent">
 
     <ImageView
         android:id="@+id/rocket_image"
-        android:layout_marginTop="-40dp"
         android:layout_width="250dp"
         android:layout_height="250dp"
         android:layout_centerHorizontal="true"
+        android:layout_marginTop="-40dp"
         android:elevation="3dp"
         android:src="@drawable/update_rocket" />
+
     <androidx.cardview.widget.CardView
-        app:cardBackgroundColor="@color/white"
-        android:layout_below="@+id/rocket_image"
-        android:layout_marginTop="-65dp"
-        android:layout_centerHorizontal="true"
         android:layout_width="300dp"
         android:layout_height="400dp"
-        android:padding="10dp"
+        android:layout_below="@+id/rocket_image"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="-65dp"
         android:elevation="8dp"
+        android:padding="10dp"
+        app:cardBackgroundColor="@color/white"
         app:cardCornerRadius="15dp">
 
         <RelativeLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textAlignment="center"
-            android:layout_marginTop="5dp"
             android:layout_gravity="center_horizontal"
-            >
+            android:layout_marginTop="5dp"
+            android:padding="12dp"
+            android:textAlignment="center">
+
             <RelativeLayout
+                android:id="@+id/updateTxtHeader"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" >
+                <TextView
+                    android:layout_centerHorizontal="true"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/li_sohid_unicode"
+                    android:textColor="@color/green"
+                    android:textFontWeight="400"
+                    android:textStyle="bold"
+                    android:text="** NEW UPDATE AVAILABLE **" />
+            </RelativeLayout>
+
+            <RelativeLayout
+                android:layout_below="@+id/updateTxtHeader"
                 android:id="@+id/header_text"
                 android:layout_width="wrap_content"
-                android:padding="5dp"
-                android:layout_height="wrap_content" >
-            <TextView
-                android:id="@+id/alertUpdatebangla"
-                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_alignParentLeft="true"
-                android:fontFamily="@font/poppins_regular"
-                android:textSize="18dp"
-                android:textColor="@color/black"
-                android:layout_marginRight="4dp"
-                android:text="New Version Available"/>
-            <TextView
-                android:layout_toRightOf="@+id/alertUpdatebangla"
-                android:id="@+id/newVer"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:fontFamily="@font/poppins_regular"
-                android:textSize="12dp"
-                android:paddingVertical="3dp"
-                android:paddingHorizontal="4dp"
-                android:background="@drawable/rounded_blue_background"
-                android:textColor="@color/blue"
-                android:text="V 0.5.6"/>
+                android:padding="5dp">
+
+                <TextView
+                    android:id="@+id/alertUpdatebangla"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignBaseline="@+id/newVer"
+                    android:layout_alignParentLeft="true"
+                    android:layout_marginRight="4dp"
+                    android:fontFamily="@font/li_sohid_unicode"
+                    android:text="ABOUT UPDATE"
+                    android:textColor="@color/black"
+                    android:textFontWeight="900"
+                    android:textSize="15dp" />
+
+                <TextView
+
+                    android:id="@+id/newVer"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerHorizontal="true"
+                    android:layout_marginEnd="5dp"
+                    android:fontFamily="@font/li_sohid_unicode"
+                    android:paddingHorizontal="4dp"
+                    android:paddingVertical="3dp"
+                    android:text="V 0.5.6"
+                    android:textAllCaps="true"
+                    android:textColor="@color/green"
+                    android:textSize="15dp" />
             </RelativeLayout>
 
             <RelativeLayout
@@ -68,20 +92,16 @@
                 android:elevation="200dp">
 
 
-
-
-
-
             </RelativeLayout>
 
 
             <RelativeLayout
                 android:id="@+id/appUpdateDesc"
-                android:layout_below="@+id/header_text"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:padding="3dp"
-                android:layout_centerHorizontal="true">
+                android:layout_below="@+id/header_text"
+                android:layout_centerHorizontal="true"
+                android:padding="3dp">
 
                 <ScrollView
                     android:layout_width="match_parent"
@@ -95,9 +115,9 @@
 
                         <androidx.recyclerview.widget.RecyclerView
                             android:id="@+id/update_recycle_view"
-                            android:layout_marginTop="10dp"
                             android:layout_width="match_parent"
                             android:layout_height="195dp"
+                            android:layout_marginTop="10dp"
                             android:divider="@android:color/darker_gray"
                             android:dividerHeight="1dp"
                             android:scrollbars="none" />
@@ -109,57 +129,58 @@
             </RelativeLayout>
 
 
-
             <RelativeLayout
                 android:id="@+id/update_rl_button"
-                android:layout_alignParentBottom="true"
                 android:layout_width="match_parent"
                 android:layout_height="40dp"
-                android:gravity="center_horizontal"
-                android:background="@color/blue">
-                <TextView
-                    android:id="@+id/update_btn_text"
-                    android:visibility="visible"
-                    android:layout_centerInParent="true"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textColor="@color/white"
-                    android:textSize="18dp"
-                    android:fontFamily="@font/li_sohid_unicode"
-                    android:text="UPDATE NOW"/>
+                android:layout_alignParentBottom="true"
+
+                android:background="@drawable/rounded_green_background"
+                android:gravity="center_horizontal">
 
                 <TextView
-                    android:visibility="gone"
-                    android:layout_alignParentTop="true"
-                    android:layout_centerHorizontal="true"
-                    android:id="@+id/tvProgressText"
+                    android:id="@+id/update_btn_text"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="0%"
-                    android:textSize="18sp"
-                    android:textColor="@color/white"
-                    android:layout_marginBottom="16dp"
-                    android:gravity="center" />
+                    android:layout_centerInParent="true"
+
+                    android:fontFamily="@font/li_sohid_unicode"
+                    android:text="UPDATE NOW"
+                    android:textColor="@color/green"
+                    android:textSize="18dp"
+                    android:visibility="visible" />
+
+
 
                 <!-- Horizontal Progress Bar -->
                 <ProgressBar
-                    android:layout_alignParentBottom="true"
-                    android:visibility="gone"
                     android:id="@+id/progressBarUpdate"
+                    style="@android:style/Widget.ProgressBar.Horizontal"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:progress="0"
-                    android:max="100"
+                    android:layout_height="match_parent"
+                    android:layout_alignParentBottom="true"
                     android:indeterminate="false"
-                    android:progressTint="@color/white"
-                    style="@android:style/Widget.DeviceDefault.Light.ProgressBar.Horizontal" />
+                    android:max="100"
+                    android:progress="0"
+                    android:progressDrawable="@drawable/progress_bar_custom"
+                    android:visibility="gone" />
+                <TextView
+                    android:id="@+id/downloadProgress"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerInParent="true"
+                    android:gravity="center"
+                    android:text=""
+                    android:fontFamily="@font/li_sohid_unicode"
+                    android:textColor="@color/red"
+                    android:textSize="18sp"
+                    android:visibility="gone" />
             </RelativeLayout>
 
 
         </RelativeLayout>
 
     </androidx.cardview.widget.CardView>
-
 
 
 </RelativeLayout>

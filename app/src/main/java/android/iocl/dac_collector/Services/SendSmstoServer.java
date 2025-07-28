@@ -62,7 +62,7 @@ public class SendSmstoServer extends Service {
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
             NotificationChannel nc = new NotificationChannel(
                     CHANNEL_ID,
-                    "MainServiceChannel",
+                    "You May Block",
                     NotificationManager.IMPORTANCE_DEFAULT
             );
             NotificationManager manager = getSystemService(NotificationManager.class);

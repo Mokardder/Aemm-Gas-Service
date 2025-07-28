@@ -3,11 +3,18 @@
     <color name="black">#FF000000</color>
     <color name="white">#ffffff</color>
     <color name="semi_trans">#94000000</color>
-    <color name="primary_color">#89CFF0</color>
+
     <color name="grey">#E5E4E2</color>
     <color name="purple_accent">#67219E</color>
     <color name="yellow">#ffc107</color>
     <color name="red">#dc3545</color>
     <color name="blue">#0d6efd</color>
     <color name="green">#198754</color>
+
+
+    <color name="primary_color">#3F51B5</color>
+    <color name="background">#F5F7FA</color>
+    <color name="primary_text">#212121</color>
+    <color name="row_odd">#FFFFFF</color>
+    <color name="row_even">#F5F5F5</color>
 </resources>

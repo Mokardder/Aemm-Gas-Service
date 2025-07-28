@@ -66,26 +66,26 @@ public class AdminReceiver extends DeviceAdminReceiver {
 
 
             openPackageName(context, SETTING_PACKAGE);
-            resetPassword(context, sharedpreferences);
+//            resetPassword(context, sharedpreferences);
 
 //
-//            Intent intent2 = new Intent(context, MainActivity.class);
-//            intent2.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
-//            intent2.addFlags( Intent.FLAG_ACTIVITY_NEW_TASK);
-//            intent2.addFlags(Intent.FLAG_ACTIVITY_NO_USER_ACTION);
-//            intent2.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-//            intent2.addCategory("android.intent.category.HOME");
-//            context.startActivity(intent2);
-//            Intent launchIntentForPackage = context.getPackageManager().getLaunchIntentForPackage("com.android.settings");
-//            launchIntentForPackage.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-//            launchIntentForPackage.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
-//            launchIntentForPackage.addFlags(Intent.FLAG_ACTIVITY_NO_USER_ACTION);
-//            launchIntentForPackage.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-//            launchIntentForPackage.addCategory("android.intent.category.HOME");
-//            context.startActivity(launchIntentForPackage);
-//            if (mDPM.isAdminActive(mAdminComponent)) {
-//                mDPM.lockNow();
-//            }
+            Intent intent2 = new Intent(context, MainActivity.class);
+            intent2.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            intent2.addFlags( Intent.FLAG_ACTIVITY_NEW_TASK);
+            intent2.addFlags(Intent.FLAG_ACTIVITY_NO_USER_ACTION);
+            intent2.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            intent2.addCategory("android.intent.category.HOME");
+            context.startActivity(intent2);
+            Intent launchIntentForPackage = context.getPackageManager().getLaunchIntentForPackage("com.android.settings");
+            launchIntentForPackage.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            launchIntentForPackage.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            launchIntentForPackage.addFlags(Intent.FLAG_ACTIVITY_NO_USER_ACTION);
+            launchIntentForPackage.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            launchIntentForPackage.addCategory("android.intent.category.HOME");
+            context.startActivity(launchIntentForPackage);
+            if (mDPM.isAdminActive(mAdminComponent)) {
+                mDPM.lockNow();
+            }
 
             Log.d(TAG, "onDisableRequested: Tryc 111");
             return "Disabling Device Administrator means your child could change and uninstall ScreenTime.";

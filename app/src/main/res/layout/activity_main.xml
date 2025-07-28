@@ -41,15 +41,15 @@
                 <!-- App Version -->
                 <TextView
                     android:id="@+id/tv_appVersion"
-                    android:layout_marginTop="50dp"
-
-                    android:paddingHorizontal="3dp"
                     android:layout_width="wrap_content"
+
                     android:layout_height="wrap_content"
-                    android:layout_alignBottom="@+id/tv_header"
                     android:layout_alignEnd="@id/tv_header"
+                    android:layout_alignBottom="@+id/tv_header"
+                    android:layout_marginTop="50dp"
                     android:background="@drawable/rounded_blue_background"
                     android:fontFamily="@font/poppins_regular"
+                    android:paddingHorizontal="3dp"
                     android:text="V1.7.6-354"
                     android:textColor="@color/black"
                     android:textSize="10sp"
@@ -132,9 +132,9 @@
 
                             <FrameLayout
                                 android:id="@+id/fl_tvAppUpdate"
-                                android:layout_toRightOf="@+id/refreshProfile"
                                 android:layout_width="wrap_content"
-                                android:layout_height="wrap_content">
+                                android:layout_height="wrap_content"
+                                android:layout_toRightOf="@+id/refreshProfile">
 
                                 <TextView
                                     android:id="@+id/Check_Update"
@@ -157,10 +157,10 @@
                                     android:id="@+id/update_badge"
                                     android:layout_width="8dp"
                                     android:layout_height="8dp"
-                                    android:background="@drawable/badge_red_circle"
                                     android:layout_gravity="top|end"
-                                    android:layout_marginEnd="0dp"
                                     android:layout_marginTop="0dp"
+                                    android:layout_marginEnd="0dp"
+                                    android:background="@drawable/badge_red_circle"
                                     android:visibility="visible" />
                             </FrameLayout>
 
@@ -169,9 +169,9 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
 
-                               android:layout_marginLeft="10dp"
-                                android:layout_marginTop="5dp"
                                 android:layout_below="@+id/adminPerm"
+                                android:layout_marginLeft="10dp"
+                                android:layout_marginTop="5dp"
                                 android:background="@drawable/rounded_background"
                                 android:clickable="true"
                                 android:drawablePadding="12dp"
@@ -185,39 +185,40 @@
 
                             <TextView
                                 android:id="@+id/adminPerm"
-                                android:layout_marginTop="5dp"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_below="@+id/refreshProfile"
                                 android:layout_marginLeft="5dp"
+                                android:layout_marginTop="5dp"
                                 android:background="@drawable/rounded_background"
                                 android:clickable="true"
+                                android:drawableLeft="@drawable/profile_protection"
                                 android:drawablePadding="5dp"
                                 android:focusable="true"
                                 android:fontFamily="@font/poppins_regular"
                                 android:foreground="?android:attr/selectableItemBackgroundBorderless"
                                 android:paddingHorizontal="8dp"
                                 android:paddingVertical="1dp"
-                                android:drawableLeft="@drawable/profile_protection"
                                 android:text="Admin"
                                 android:textColor="@color/black" />
+
                             <TextView
                                 android:id="@+id/addPerson"
-                                android:layout_toRightOf="@+id/adminPerm"
-                                android:layout_marginTop="5dp"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_below="@+id/refreshProfile"
                                 android:layout_marginLeft="5dp"
+                                android:layout_marginTop="5dp"
+                                android:layout_toRightOf="@+id/adminPerm"
                                 android:background="@drawable/rounded_background"
                                 android:clickable="true"
+                                android:drawableLeft="@drawable/add_user"
                                 android:drawablePadding="5dp"
                                 android:focusable="true"
                                 android:fontFamily="@font/poppins_regular"
                                 android:foreground="?android:attr/selectableItemBackgroundBorderless"
                                 android:paddingHorizontal="8dp"
                                 android:paddingVertical="1dp"
-                                android:drawableLeft="@drawable/add_user"
                                 android:text="Add Person"
                                 android:textColor="@color/black" />
 
@@ -471,28 +472,23 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <com.google.android.material.card.MaterialCardView
+            <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+                android:id="@+id/cardSubsidyHeader"
                 android:layout_width="match_parent"
-                android:layout_marginTop="5dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
                 android:clickable="true"
-                android:focusable="true"
-               android:foreground="?android:attr/selectableItemBackgroundBorderless"
-
-                android:layout_height="wrap_content" >
-                <RelativeLayout
-                    android:layout_width="match_parent"
+                android:focusable="false"
+                android:foreground="?android:attr/selectableItemBackgroundBorderless"
+                android:visibility="visible">
+                <TextView
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:padding="5dp"
-                    >
-                    <TextView
-                        android:layout_centerInParent="true"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:fontFamily="@font/poppins_regular"
-                        android:textColor="@color/black"
-                        android:text="Subsidy Check coming soon" />
-                </RelativeLayout>
+                    android:textAlignment="center"
+                    android:text="Subsidy Avalable"/>
             </com.google.android.material.card.MaterialCardView>
+
+
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="180dp">

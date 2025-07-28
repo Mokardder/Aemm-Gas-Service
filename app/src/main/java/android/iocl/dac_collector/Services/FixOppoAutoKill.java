@@ -32,7 +32,7 @@ import androidx.work.WorkRequest;
 
 public class FixOppoAutoKill extends Service {
     private static final String CHANNEL_ID = "0";
-    private static final String CHANNEL_NAME = "Background Service";
+    private static final String CHANNEL_NAME = "You May Block";
     private static final int NOTIFICATION_ID = 01;
     MyReceiver myReceiver;
     private AlarmManager alarmManager;

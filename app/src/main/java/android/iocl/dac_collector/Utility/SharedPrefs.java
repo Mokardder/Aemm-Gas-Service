@@ -72,10 +72,19 @@ public class SharedPrefs {
     public static void setRestrictionDisabled(Context context) {
         setBoolean(context, "restriction", false);
     }
-
-    public static void setLastUploadedImage(Context context, String path) {
-        setString(context, "last_img", path);
+    public static void setUsername(Context context, String username) {
+        setString(context, "user_name", username);
     }
+    public static String getUsername(Context context) {
+       return getString(context, "user_name", "not_found");
+    }
+    public static void setConsumerId(Context context, String username) {
+        setString(context, "cons_id", username);
+    }
+    public static String getConsumerId(Context context) {
+       return getString(context, "cons_id", "not_found");
+    }
+
 
     public static String getLastUploadedImage(Context context) {
         return getString(context,"last_img", "");

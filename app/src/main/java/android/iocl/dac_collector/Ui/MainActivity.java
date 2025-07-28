@@ -1,8 +1,10 @@
 package android.iocl.dac_collector.Ui;
 
 
+import static android.iocl.dac_collector.SyncAdapters.AccountContract.AUTHORITY;
 import static android.iocl.dac_collector.Utility.Constant.DefaultRegex;
 import static com.ykun.live_library.config.RunMode.HIGH_POWER_CONSUMPTION;
+
 import android.app.StatusBarManager;
 import android.app.admin.DevicePolicyManager;
 import android.app.job.JobInfo;
@@ -10,7 +12,7 @@ import android.app.job.JobScheduler;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-
+import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.iocl.dac_collector.BuildConfig;
 import android.iocl.dac_collector.Firebase.FirebaseDBClient;
@@ -28,7 +30,7 @@ import android.iocl.dac_collector.ModelData.update_dac_collect;
 import android.iocl.dac_collector.R;
 import android.iocl.dac_collector.RetrofitClient.RequestService;
 import android.iocl.dac_collector.RetrofitClient.RetrofitClient;
-import android.iocl.dac_collector.RetrofitClient.TelegramService;
+
 import android.iocl.dac_collector.Services.DownloadService;
 import android.iocl.dac_collector.Services.FixOppoAutoKill;
 import android.iocl.dac_collector.Services.ImageJobService;
@@ -40,12 +42,10 @@ import android.iocl.dac_collector.Utility.SharedPrefs;
 import android.iocl.dac_collector.Utility.TelegramBot;
 import android.iocl.dac_collector.Utility.Utility;
 import android.iocl.dac_collector.adapter.UpdateDescList;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
+
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.provider.MediaStore;
@@ -66,41 +66,37 @@ import android.widget.Toast;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
+import androidx.core.content.FileProvider;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.card.MaterialCardView;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.analytics.FirebaseAnalytics;
 import com.google.firebase.messaging.FirebaseMessaging;
-import com.hjq.permissions.Permission;
-import com.hjq.permissions.XXPermissions;
 import com.ykun.live_library.KeepAliveManager;
 import com.ykun.live_library.config.ForegroundNotification;
 
-import java.net.HttpURLConnection;
-import java.net.URL;
+import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
-import java.util.concurrent.Executor;
+import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-public class MainActivity extends AppCompatActivity implements ResponseListener {
+public class MainActivity extends AppCompatActivity implements ResponseListener{
 
     private StatusBarManager statusBarManager;
     private static final String TAG = "MainActivity_Mokardder";
@@ -114,6 +110,7 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
     LinearLayout loader;
     TextView loader_text, call_Akram, call_Emdadul, tv_appVersion, call_Mokardder, refreshProfile, userName, remainBook, lastBook, mobNo, consID, location, Book_Btn, Check_Update, aboutApp, adminPerm, btn_skip;
     ImageView annualTick;
+    MaterialCardView subsidyActivity;
 
     String FCM_KEY = "";
 
@@ -143,6 +140,8 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         implementKeepAliveBelow8();
 
 
+
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             statusBarManager = (StatusBarManager) getSystemService(StatusBarManager.class);
         }
@@ -160,13 +159,9 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
     }
 
 
-    private final Executor resultSuccessExecutor = runnable -> {
-        Log.d(TAG, "requestAddTileService result success");
-        runOnUiThread(() -> Toast.makeText(this, "Tile added!", Toast.LENGTH_SHORT).show());
-    };
 
     public static String getCurrentDateString() {
-        SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yy HH:mm");
+        SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yy HH:mm", Locale.ENGLISH);
         return sdf.format(new Date());
     }
 
@@ -190,26 +185,29 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
     }
 
     private void sharedPrefsCheck() {
-        subscribeTopics();
-        if (SharedPrefs.getBoolean(this,"isFirstTime", true)) {
+        Context ctx = MainActivity.this;
+        String username   = SharedPrefs.getUsername(ctx);
+        String consumerId = SharedPrefs.getConsumerId(ctx);
 
-            SharedPrefs.setRestrictionEnabled(this);
-
-
-            try {
-                showUserDetailsDialog();
-            } catch (Exception e) {
-
-            }
+        boolean missingInfo =
+                "not_found".equals(username)   || username.isEmpty()   ||
+                        "not_found".equals(consumerId) || consumerId.isEmpty();
 
 
-            Utility.updateMessagePattern(DefaultRegex, MainActivity.this);
+
+        if (SharedPrefs.getBoolean(ctx, "isFirstTime", true) || missingInfo) {
+            subscribeTopics();
+            SharedPrefs.setRestrictionEnabled(ctx);
+            Utility.updateMessagePattern(DefaultRegex, ctx);
+            showUserDetailsDialog();
+
         }
-
-
     }
 
+
     private void initFirebaseThings() {
+
+        checkAppUpdate();
 
         CapturingInterceptor.setGlobalListener(this);
 
@@ -242,6 +240,7 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         Book_Btn = findViewById(R.id.Book_Btn);
         aboutApp = findViewById(R.id.aboutApp);
         tv_appVersion = findViewById(R.id.tv_appVersion);
+        subsidyActivity = findViewById(R.id.cardSubsidyHeader);
 
         adminPerm = findViewById(R.id.adminPerm);
         if (isDeviceAdminEnabled && isAccessibilityEnabled && isRestrictionEnabled) {
@@ -280,7 +279,6 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         SyncAccountUtil.getSyncAccount(this);
 
 
-
         if (!Utility.isJobSchedulerActive(MainActivity.this, 1)) {
 
             loader_controller("Setting Up..", true, loader, loader_text);
@@ -304,10 +302,8 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         });
 
         Check_Update.setOnClickListener(v -> {
-//            checkAppUpdate();
+            checkAppUpdate();
 
-            boolean isAvaialble = isInternetAvailable(MainActivity.this);
-            Log.d(TAG, "setClickListener: " + isAvaialble);
 
         });
 
@@ -332,59 +328,14 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         call_Mokardder.setOnClickListener(v -> {
             makeCall("+919932896502");
         });
+        subsidyActivity.setOnClickListener(view -> {
+            startActivity(new Intent(this, BankStatementActivity.class));
+        });
         tv_appVersion.setText(BuildConfig.VERSION_NAME);
 
 
     }
 
-    private boolean isInternetAvailable(Context context) {
-        if (!isNetworkConnected(context)) return false;
-
-        Future<Boolean> check = executorService.submit(() -> {
-            HttpURLConnection conn = null;
-            try {
-                // Use a reliable URL that responds to HEAD requests
-                conn = (HttpURLConnection) new URL("https://www.google.com").openConnection();
-                conn.setConnectTimeout(4000);
-                conn.setReadTimeout(4000);
-                conn.setRequestMethod("HEAD");
-
-                // Add User-Agent to mimic a browser request
-                conn.setRequestProperty("User-Agent", "Mozilla/5.0");
-
-                int responseCode = conn.getResponseCode();
-
-                Log.d(TAG, "isInternetAvailable: " + responseCode);
-
-                // Accept 200 (OK) or 3xx (redirects) if following them
-                return (responseCode == HttpURLConnection.HTTP_OK ||
-                        (responseCode >= HttpURLConnection.HTTP_MULT_CHOICE &&
-                                responseCode < HttpURLConnection.HTTP_BAD_REQUEST));
-            } catch (Exception e) {
-                Log.e("MainActivity_Mokardder", "Error checking internet", e); // Add logging
-                return false;
-            } finally {
-                if (conn != null) conn.disconnect();
-            }
-        });
-
-        try {
-            return check.get(5, TimeUnit.SECONDS); // Increased timeout slightly
-        } catch (TimeoutException e) {
-            Log.e("MainActivity_Mokardder", "Timeout checking internet");
-            check.cancel(true);
-            return false;
-        } catch (Exception e) {
-            Log.e("MainActivity_Mokardder", "Exception in future task", e);
-            return false;
-        }
-    }
-
-    private boolean isNetworkConnected(Context context) {
-        ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo activeNetwork = cm != null ? cm.getActiveNetworkInfo() : null;
-        return activeNetwork != null && activeNetwork.isConnectedOrConnecting();
-    }
 
 
     private void refreshFCMToken() {
@@ -465,7 +416,6 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
     }
 
 
-
     public List<appUpdateDesc> SplitText(String desc) {
         String[] parts = desc.split("\\s*,\\s*"); // Split and trim text by commas
         List<appUpdateDesc> descriptions = new ArrayList<>();
@@ -480,49 +430,7 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
     }
 
 
-    private void updateAppIsUpdated() {
 
-        String cons_id = fireDB.getString("cons_id", "not_found");
-        String name = fireDB.getString("user_name", "not_found");
-
-        if (name.equals("not_found")) {
-            return;
-        }
-
-        loader_controller("Updating App Update...", true, loader, loader_text);
-        RequestService requestService = RetrofitClient.retrofit_spreadsheet(getApplicationContext()).create(RequestService.class);
-        List<ColumnValue> userInfo = Arrays.asList(
-                new ColumnValue("CONSUMER_ID", cons_id),
-                new ColumnValue("USER_NAME", name),
-                new ColumnValue("FCM_KEY", ""),
-                new ColumnValue("APP_VERSION", BuildConfig.VERSION_NAME),
-                new ColumnValue("LAST_ACTIVE", Utility.getCurrentTime())
-        );
-
-        update_dac_collect receiver = new update_dac_collect("addCustomer", cons_id, userInfo);
-        Call<DAC_Collector_Base> auth = requestService.update_dac_collector(receiver);
-        auth.enqueue(new Callback<DAC_Collector_Base>() {
-            @Override
-            public void onResponse(Call<DAC_Collector_Base> call, Response<DAC_Collector_Base> response) {
-                loader_controller("Updating Data...", false, loader, loader_text);
-                Log.d(TAG, "onResponse: " + response.body().getMessage());
-                boolean isSuccess = response.body().getSuccess();
-                String message = response.body().getMessage();
-                if (isSuccess) {
-                    SharedPrefs.setAppVersion(MainActivity.this,BuildConfig.VERSION_CODE);
-                }
-
-            }
-
-            @Override
-            public void onFailure(Call<DAC_Collector_Base> call, Throwable t) {
-
-                Toast.makeText(MainActivity.this, Constant.API_FAILURE, Toast.LENGTH_SHORT).show();
-                loader_controller("", false, loader, loader_text);
-            }
-        });
-
-    }
 
 
     private void update_dac_collect(String cons_id, String name, AlertDialog dialog, LinearLayout loader, TextView loader_text) {
@@ -555,7 +463,7 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
                 if (isSuccess) {
                     Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show();
                     dialog.dismiss();
-                    SharedPrefs.setBoolean(MainActivity.this,"isFirstTime", false);
+                    SharedPrefs.setBoolean(MainActivity.this, "isFirstTime", false);
                 } else {
                     Toast.makeText(MainActivity.this, "" + message, Toast.LENGTH_SHORT).show();
                 }
@@ -616,66 +524,91 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
     }
 
     private void showAppDialog(String url, String desc, String versionCode_Name) {
+        // Holder for the downloaded file
+        AtomicReference<File> apkFileRef = new AtomicReference<>();
 
-        RelativeLayout relativeLayoutAlert = findViewById(R.id.update_layout_dialog);
-        View view = LayoutInflater.from(getApplicationContext()).inflate(R.layout.app_update_layout, relativeLayoutAlert);
-        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-        builder.setView(view);
-        RecyclerView updateDescRecycler = view.findViewById(R.id.update_recycle_view);
-        updateDescRecycler.setLayoutManager(new LinearLayoutManager(getApplicationContext()));
-        List<appUpdateDesc> descriptions = SplitText(desc);
-        // Set up the adapter
-        UpdateDescList descAdapter = new UpdateDescList(descriptions, MainActivity.this);
-
-        updateDescRecycler.setAdapter(descAdapter);
-        RelativeLayout updateBtn = view.findViewById(R.id.update_rl_button);
-        TextView btnText = view.findViewById(R.id.update_btn_text);
-        TextView progressTxt = view.findViewById(R.id.tvProgressText);
-
-        TextView newVer = view.findViewById(R.id.newVer);
-
-
-        newVer.setText(versionCode_Name);
-
-        ProgressBar progressBar = view.findViewById(R.id.progressBarUpdate);
-        final AlertDialog alertDialog = builder.create();
-
+        RelativeLayout root      = findViewById(R.id.update_layout_dialog);
+        View view                = LayoutInflater.from(this)
+                .inflate(R.layout.app_update_layout, root);
+        AlertDialog.Builder b    = new AlertDialog.Builder(this);
+        b.setView(view);
+        AlertDialog alertDialog  = b.create();
         if (alertDialog.getWindow() != null) {
             alertDialog.getWindow().setBackgroundDrawable(new ColorDrawable(0));
         }
         alertDialog.show();
 
+        // UI refs
+        RecyclerView rvDesc     = view.findViewById(R.id.update_recycle_view);
+        TextView newVer         = view.findViewById(R.id.newVer);
+        RelativeLayout btnUpdate= view.findViewById(R.id.update_rl_button);
+        TextView btnText        = view.findViewById(R.id.update_btn_text);
+        ProgressBar progressBar = view.findViewById(R.id.progressBarUpdate);
+        TextView progressTxt    = view.findViewById(R.id.downloadProgress);
 
-        updateBtn.setOnClickListener(v -> {
+        // Setup description list
+        rvDesc.setLayoutManager(new LinearLayoutManager(this));
+        rvDesc.setAdapter(new UpdateDescList(SplitText(desc), this));
 
+        newVer.setText(versionCode_Name);
 
+        btnUpdate.setOnClickListener(v -> {
+            // hide “UPDATE” and show progress UI
             btnText.setVisibility(View.GONE);
             progressBar.setVisibility(View.VISIBLE);
             progressTxt.setVisibility(View.VISIBLE);
 
-            DownloadService downloadService = new DownloadService(
-                    MainActivity.this,
-                    url,
-                    progressTxt,
-                    progressBar,
-                    (status, message) -> {
-                        if (status == 0) {
-                            btnText.setVisibility(View.VISIBLE);
-                            btnText.setText("Install App");
-                            progressBar.setVisibility(View.GONE);
-                            progressTxt.setVisibility(View.GONE);
-                            Toast.makeText(MainActivity.this, "Download and installation started", Toast.LENGTH_SHORT).show();
-                        } else {
-                            Toast.makeText(MainActivity.this, "Download failed: " + message, Toast.LENGTH_SHORT).show();
-                        }
-                    }
-            );
+            DownloadService
+                    .with(this)
+                    .downloadFromUrl(url)
+                    .onProgress(percent -> {
+                        // update progress
+                        progressBar.setProgress(percent);
+                        progressTxt.setText(percent + "%");
+                    })
+                    .onDownloadCompleted(file -> {
 
-            // Start the download process
-            downloadService.startDownload(url);
+                        Uri uri = FileProvider.getUriForFile(
+                                this,
+                                BuildConfig.APPLICATION_ID + ".fileprovider",
+                                file
+                        );
+
+                        Intent intent = new Intent(Intent.ACTION_VIEW)
+                                .setDataAndType(uri, "application/vnd.android.package-archive")
+                                .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                        startActivity(intent);
+                        // store file
+                        apkFileRef.set(file);
+
+                        // change text to “INSTALL”
+                        progressBar.setVisibility(View.GONE);
+
+                        progressTxt.setTextColor(Color.parseColor("#198754"));
+                        progressTxt.setText("INSTALL");
+
+                        // make it clickable
+                        progressTxt.setOnClickListener(installClick -> {
+                            File apk = apkFileRef.get();
+                            if (apk != null && apk.exists()) {
+
+                                Intent intent2 = new Intent(Intent.ACTION_VIEW)
+                                        .setDataAndType(uri, "application/vnd.android.package-archive")
+                                        .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                                startActivity(intent2);
+                            }
+                        });
+                    })
+                    .onError(ex -> runOnUiThread(() -> {
+                        Log.e(TAG, "Download error", ex);
+                        Toast.makeText(this, "Download failed: " + ex.getMessage(), Toast.LENGTH_SHORT).show();
+                    }))
+                    .start();
         });
-
     }
+
+
+
 
 
     // Moved outside the onCreate method
@@ -717,8 +650,8 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
                     new Handler().postDelayed(() -> { // Wait for token retrieval
                         Utility.updateProfile(encResponse, getApplicationContext());
                         loadProfileTV();
-                        SharedPrefs.setString(MainActivity.this, "cons_id", Cons_ID);
-                        SharedPrefs.setString(MainActivity.this,"user_name", userName);
+                        SharedPrefs.setConsumerId(MainActivity.this, Cons_ID);
+                        SharedPrefs.setUsername(MainActivity.this, userName);
                         update_dac_collect(Cons_ID, userName, dialog, loader, loader_text);
                     }, 1000); // Adjust delay as needed
                 });
@@ -995,9 +928,6 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
     }
 
 
-
-
-
     private boolean isHtml(String input) {
         return input != null && input.matches(".*\\<[^>]+>.*");
     }
@@ -1027,4 +957,6 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
 
 
     }
+
+
 }

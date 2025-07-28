@@ -23,12 +23,6 @@ public interface TelegramApi {
             @Query("text") String text
     );
 
-    @POST("sendMessage")
-    Call<TelegramResponse> sendMDMessage(
-            @Query("chat_id") String chatId,
-            @Query("text") String text,
-            @Query("parse_mode") String parseMode
-    );
 
     @Multipart
     @POST("sendPhoto")
