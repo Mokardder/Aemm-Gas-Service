@@ -32,6 +32,7 @@ import android.view.WindowInsetsController;
 import android.widget.ImageView;
 import android.widget.PopupMenu;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.firebase.messaging.FirebaseMessaging;
 
@@ -49,6 +50,7 @@ public class PermissionActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
             setContentView(R.layout.activity_permission);
+
 
         refreshFCMToken();
             populateMenuBar();
@@ -79,6 +81,8 @@ public class PermissionActivity extends AppCompatActivity {
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
                         FCM_KEY = task.getResult();
+                        showFCMKeyDailog();
+                        SharedPrefs.setFCMKey(getApplicationContext(), FCM_KEY);
                     }
                 });
     }

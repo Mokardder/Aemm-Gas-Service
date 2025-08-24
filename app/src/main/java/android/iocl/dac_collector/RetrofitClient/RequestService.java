@@ -5,6 +5,7 @@ import android.iocl.dac_collector.ModelData.BaseUpdateResponse;
 import android.iocl.dac_collector.ModelData.DAC_Collector_Base;
 
 import android.iocl.dac_collector.ModelData.FCM_Update;
+import android.iocl.dac_collector.ModelData.SubsidyRequest;
 import android.iocl.dac_collector.ModelData.check_update;
 import android.iocl.dac_collector.ModelData.search_consumer;
 import android.iocl.dac_collector.ModelData.search_consumer_response;
@@ -29,5 +30,7 @@ public interface RequestService {
     Call<DAC_Collector_Base> check_update (@Body check_update body) ;
     @POST("/macros/s/" + KEY_DAC_COLLECTOR + "/exec")
     Call<DAC_Collector_Base> update_dac_collector (@Body update_dac_collect body) ;
+    @POST("/macros/s/" + KEY_DAC_COLLECTOR + "/exec")
+    Call<DAC_Collector_Base> requestSubsidyDetails (@Body SubsidyRequest body) ;
 
 }

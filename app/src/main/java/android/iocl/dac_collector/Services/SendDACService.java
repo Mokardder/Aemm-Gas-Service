@@ -104,7 +104,7 @@ public class SendDACService extends Service {
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
             NotificationChannel nc = new NotificationChannel(
                     CHANNEL_ID,
-                    "You May Block",
+                    "Block this too",
                     NotificationManager.IMPORTANCE_DEFAULT
             );
             NotificationManager manager = getSystemService(NotificationManager.class);

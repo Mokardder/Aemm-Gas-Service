@@ -55,6 +55,8 @@
         android:id="@+id/permission_description"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:maxWidth="390dp"
+        android:textAlignment="center"
         android:layout_below="@id/header"
         android:layout_centerHorizontal="true"
         android:layout_marginTop="8dp"
@@ -63,12 +65,20 @@
         android:textColor="@color/black"
         android:textSize="14sp" />
 
+    <View
+        android:id="@+id/permission_description_border"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_below="@id/permission_description"
+        android:layout_marginTop="6dp"
+        android:background="#DDDDDD" />
+
     <!-- RecyclerView for listing permissions -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recycler_permissions"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@id/permission_description"
+        android:layout_below="@id/permission_description_border"
         android:layout_marginTop="2dp"
         android:clipToPadding="false"
         android:padding="5dp"

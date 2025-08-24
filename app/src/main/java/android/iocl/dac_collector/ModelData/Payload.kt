@@ -11,7 +11,6 @@ data class dacPayload(
     val name: String = "",    // Default value for cashmemo
     val consID: String = "",    // Default value for cashmemo
     val timeStamp: String = ""    // Default value for timeStamp
-
 )
 data class SmsData(
     val senderAddress: String = "",
@@ -150,6 +149,28 @@ data class BankStatementItem(
     val subsidyAmount: String,
     val sentToBank: String,
     val bankAccountNo: String
+)
+
+data class SubsidyRecord(
+    @SerializedName("S No") val sNo: String,
+    @SerializedName("Order Number") val orderNumber: String,
+    @SerializedName("Order Date") val orderDate: String,
+    @SerializedName("cyl Quantity") val cylQuantity: String,
+    @SerializedName("_Delivery Date") val deliveryDate: String,
+    @SerializedName("Subsidy Amount") val subsidyAmount: String,
+    @SerializedName("Cash Memo No") val cashMemoNo: String,
+    @SerializedName("Cash Memo Date") val cashMemoDate: String,
+    @SerializedName("Subsidy Status") val subsidyStatus: String,
+    @SerializedName("Bank DOS") val bankDOS: String,
+    @SerializedName("Bank Account Number") val bankAccountNumber: String,
+    @SerializedName("Bank Name") val bankName: String
+)
+
+data class SubsidyRequest(
+    @SerializedName("type") val type: String,
+    @SerializedName("consumer_id") val consumerId: String,
+    @SerializedName("user_name")   val userName: String? = null,
+    @SerializedName("fcm_key")    val fcmKey: String? = null
 )
 
 // Nested data model

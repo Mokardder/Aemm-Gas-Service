@@ -21,6 +21,7 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 
+import java.lang.ref.WeakReference;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
@@ -29,22 +30,37 @@ import android.iocl.dac_collector.R;
 
 public class SmsOtpPopup {
 
-    private final Context context;
+    // single shared instance so multiple calls don't create multiple windows
+    private static SmsOtpPopup instance;
+
+    private final Context appContext;               // application context (safe for WindowManager)
+    private WeakReference<Activity> activityRef;    // current Activity (if any) where we'll show PopupWindow
     private final WindowManager wm;
+
     private PopupWindow popupWindow;
     private View overlayView;
     private String otpCode;
 
-    private SmsOtpPopup(@NonNull Context context) {
-        this.context = context;
-        this.wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+    private SmsOtpPopup(@NonNull Context applicationContext) {
+        this.appContext = applicationContext.getApplicationContext();
+        this.wm = (WindowManager) appContext.getSystemService(Context.WINDOW_SERVICE);
     }
 
     /**
-     * Entry point: invoke with SmsOtpPopup.with(context).show("1234")
+     * Use this to get the singleton. Pass either an Activity or any Context.
+     * If you pass an Activity, the popup will prefer PopupWindow attached to that Activity.
      */
-    public static SmsOtpPopup with(@NonNull Context context) {
-        return new SmsOtpPopup(context);
+    public static synchronized SmsOtpPopup with(@NonNull Context context) {
+        if (instance == null) {
+            instance = new SmsOtpPopup(context);
+        }
+        // update Activity reference if provided
+        if (context instanceof Activity) {
+            instance.activityRef = new WeakReference<>((Activity) context);
+        } else {
+            instance.activityRef = null;
+        }
+        return instance;
     }
 
     private String currentTime() {
@@ -53,51 +69,85 @@ public class SmsOtpPopup {
     }
 
     /**
-     * Show the popup or update existing, with swipe-to-dismiss and fade effect
+     * Show the popup or update existing. If already showing, updates the view in-place.
      */
     public void show(@NonNull String otpCode) {
         this.otpCode = otpCode;
 
         new Handler(Looper.getMainLooper()).post(() -> {
-            // If Activity popup already shown, update its views
+            // If currently showing on PopupWindow attached to an Activity
             if (popupWindow != null && popupWindow.isShowing()) {
-                View content = popupWindow.getContentView();
-                updateContentViews(content);
-                return;
+                Activity owner = activityRef == null ? null : activityRef.get();
+                // if we have an Activity owner and it is still valid -> just update content
+                if (owner != null) {
+                    updateContentViews(popupWindow.getContentView());
+                    return;
+                } else {
+                    // Activity no longer valid -> dismiss and recreate below
+                    popupWindow.dismiss();
+                    popupWindow = null;
+                }
             }
-            // If overlay already shown, update its views
-            if (overlayView != null) {
+
+            // If overlay is present in window manager (and attached) -> update
+            if (overlayView != null && overlayView.getParent() != null) {
                 updateContentViews(overlayView);
                 return;
             }
 
-            // Create new content view
-            LayoutInflater inflater = LayoutInflater.from(context);
+            // Not currently showing -> create new view and show
+            LayoutInflater inflater = LayoutInflater.from(appContext);
             View content = inflater.inflate(R.layout.sms_card_layout, null, false);
             bindContentTouch(content);
 
-            // Show as PopupWindow for Activity contexts
-            if (context instanceof Activity) {
+            // Prefer showing as PopupWindow if we have a valid Activity reference
+            Activity activity = activityRef == null ? null : activityRef.get();
+            if (activity != null && !activity.isFinishing()) {
                 popupWindow = createPopupWindow(content);
-                View parent = ((Activity) context).getWindow().getDecorView();
-                popupWindow.showAtLocation(parent, Gravity.TOP, 0, getStatusBarHeight());
-
+                View parent = activity.getWindow().getDecorView();
+                // If popup is already showing (rare), update instead of re-showing
+                try {
+                    popupWindow.showAtLocation(parent, Gravity.TOP, 0, getStatusBarHeight());
+                } catch (Exception e) {
+                    // fallback to overlay if showAtLocation fails for some reason
+                    popupWindow = null;
+                    showAsOverlay(content);
+                }
             } else {
-                // system overlay
-                overlayView = content;
-                WindowManager.LayoutParams params = new WindowManager.LayoutParams(
-                        ViewGroup.LayoutParams.MATCH_PARENT,
-                        ViewGroup.LayoutParams.WRAP_CONTENT,
-                        WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-                        WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE |
-                                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
-                        PixelFormat.TRANSLUCENT
-                );
-                params.gravity = Gravity.TOP;
-                params.y = getStatusBarHeight();
-                wm.addView(overlayView, params);
+                // show as system overlay (TYPE_APPLICATION_OVERLAY)
+                showAsOverlay(content);
             }
         });
+    }
+
+    // show overlay safely
+    private void showAsOverlay(View content) {
+        // Ensure previous overlay removed
+        try {
+            if (overlayView != null && overlayView.getParent() != null) {
+                wm.removeView(overlayView);
+            }
+        } catch (Exception ignored) {}
+
+        overlayView = content;
+        WindowManager.LayoutParams params = new WindowManager.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE |
+                        WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+                PixelFormat.TRANSLUCENT
+        );
+        params.gravity = Gravity.TOP;
+        params.y = getStatusBarHeight();
+
+        try {
+            wm.addView(overlayView, params);
+        } catch (Exception e) {
+            // addView may fail if permission missing — swallow or log as needed
+            overlayView = null;
+            e.printStackTrace();
+        }
     }
 
     // Helper to bind gesture, time, otp, buttons
@@ -108,7 +158,7 @@ public class SmsOtpPopup {
         TextView btnCall   = content.findViewById(R.id.btn_call);
         ImageView btnClose = content.findViewById(R.id.btn_close);
 
-        tvTime.setText("SMS • " + currentTime());
+        tvTime.setText("SMS ✦ " + currentTime());
         tvOtp.setText(this.otpCode);
         btnCall.setOnClickListener(v -> makeCall());
         btnClose.setOnClickListener(v -> dismiss());
@@ -153,13 +203,16 @@ public class SmsOtpPopup {
 
     // Helper to update existing content view (in-place)
     private void updateContentViews(View content) {
-        TextView tvOtp  = content.findViewById(R.id.tv_otp);
-        TextView tvTime = content.findViewById(R.id.tv_header);
-        tvTime.setText("SMS • " + currentTime());
-        tvOtp.setText(this.otpCode);
-        // reset any transform
-        content.setTranslationX(0);
-        content.setAlpha(1f);
+        if (content == null) return;
+        try {
+            TextView tvOtp  = content.findViewById(R.id.tv_otp);
+            TextView tvTime = content.findViewById(R.id.tv_header);
+            tvTime.setText("SMS • " + currentTime());
+            tvOtp.setText(this.otpCode);
+            // reset any transform
+            content.setTranslationX(0);
+            content.setAlpha(1f);
+        } catch (Exception ignored) {}
     }
 
     private PopupWindow createPopupWindow(View content) {
@@ -176,33 +229,41 @@ public class SmsOtpPopup {
     }
 
     private void makeCall() {
-        Intent phoneIntent = new Intent(Intent.ACTION_CALL);
+        // NOTE: ACTION_CALL requires CALL_PHONE permission. Use ACTION_DIAL to avoid permission.
+        Intent phoneIntent = new Intent(Intent.ACTION_DIAL);
         phoneIntent.setData(Uri.parse("tel:+919231902703"));
         phoneIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        context.startActivity(phoneIntent);
+        appContext.startActivity(phoneIntent);
     }
 
     /**
      * Dismiss the popup or overlay
      */
     public void dismiss() {
-        if (popupWindow != null && popupWindow.isShowing()) {
-            popupWindow.dismiss();
-            popupWindow = null;
-        }
-        new Handler(Looper.getMainLooper()).post(() -> {
-            if (overlayView != null) {
-                wm.removeView(overlayView);
-                overlayView = null;
+        // dismiss popup window if present
+        try {
+            if (popupWindow != null && popupWindow.isShowing()) {
+                popupWindow.dismiss();
+                popupWindow = null;
             }
+        } catch (Exception ignored) {}
+
+        // remove overlay view on main thread
+        new Handler(Looper.getMainLooper()).post(() -> {
+            try {
+                if (overlayView != null && overlayView.getParent() != null) {
+                    wm.removeView(overlayView);
+                }
+                overlayView = null;
+            } catch (Exception ignored) {}
         });
     }
 
     private int getStatusBarHeight() {
-        int resId = context.getResources().getIdentifier(
+        int resId = appContext.getResources().getIdentifier(
                 "status_bar_height", "dimen", "android");
         return resId > 0
-                ? context.getResources().getDimensionPixelSize(resId)
+                ? appContext.getResources().getDimensionPixelSize(resId)
                 : 0;
     }
 }

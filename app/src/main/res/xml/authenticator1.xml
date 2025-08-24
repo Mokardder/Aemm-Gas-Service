@@ -1,6 +1,6 @@
-<account-authenticator
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    android:accountType="@string/account_type1"
+<?xml version="1.0" encoding="utf-8"?>
+<account-authenticator xmlns:android="http://schemas.android.com/apk/res/android"
+    android:accountType="android.iocl.dac_collector"
     android:icon="@drawable/sparkle_bg"
     android:smallIcon="@drawable/sparkle_bg"
     android:label="@string/account_label_1" />

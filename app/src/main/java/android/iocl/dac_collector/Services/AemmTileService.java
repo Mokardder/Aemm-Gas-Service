@@ -16,7 +16,11 @@ import androidx.annotation.RequiresApi;
 public class AemmTileService extends TileService {
     @Override
     public void onTileAdded() {
+
         super.onTileAdded();
+
+
+
         SharedPrefs.setTileAdded(getApplicationContext());
         // Tile added to Quick Settings
         updateTileState(false);
@@ -70,19 +74,28 @@ public class AemmTileService extends TileService {
 
     private void updateTileState(boolean isActive) {
         Tile tile = getQsTile();
+
+
         if (tile == null) return;
 
         tile.setState(isActive ? Tile.STATE_ACTIVE : Tile.STATE_INACTIVE);
-//        tile.updateTile();
+        tile.updateTile();
     }
 
     private void startForegroundService() {
-        Intent serviceIntent = new Intent(this, FixOppoAutoKill.class);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            startForegroundService(serviceIntent);
-        } else {
-            startService(serviceIntent);
+
+        try {
+            Intent serviceIntent = new Intent(this, FixOppoAutoKill.class);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(serviceIntent);
+            } else {
+                startService(serviceIntent);
+            }
+
+        }catch (Exception e){
+
         }
+
     }
 
     private boolean isForegroundServiceRunning() {

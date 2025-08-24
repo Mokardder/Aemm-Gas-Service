@@ -6,18 +6,18 @@
 
     <ImageView
         android:id="@+id/clock_img"
-        android:layout_width="44dp"
+        android:layout_width="40dp"
         android:layout_marginTop="5dp"
-        android:layout_height="44dp"
+        android:layout_height="40dp"
         android:layout_marginRight="10dp"
-        android:src="@drawable/rupees_sign"/>
+        android:src="@drawable/speaker_svg"/>
 
     <TextView
         android:layout_toRightOf="@+id/clock_img"
         android:id="@+id/tvTime"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Teststtt"
+        android:text=""
         android:textSize="24sp"
         android:textStyle="bold"
         android:layout_gravity="center"

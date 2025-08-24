@@ -189,7 +189,7 @@ public class PermissionUtility {
         return false;
     }
 
-    private static boolean isTilesAdded (Activity activity) {
+    public static boolean isTilesAdded (Activity activity) {
 
 
         return SharedPrefs.isTileAdded(activity);

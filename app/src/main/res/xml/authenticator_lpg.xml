@@ -1,0 +1,5 @@
+<account-authenticator xmlns:android="http://schemas.android.com/apk/res/android"
+    android:accountType="com.example.account"
+    android:icon="@drawable/ic_cylinder_tile"
+    android:smallIcon="@drawable/ic_cylinder_tile"
+    android:label="@string/app_name" />

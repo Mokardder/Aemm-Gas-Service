@@ -101,75 +101,7 @@ public class Utility {
         return false; // Job is not active
     }
 
-    public static void showDACNotification(Context context, String OTP) {
-        if (context == null) {
-            Log.e("NotificationError", "Context is null");
-            return;
-        }
 
-        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.M) {
-            sendNotification(OTP, context);
-            return;
-        }
-
-        String DAC_CUSTOM_NOTIFY_ID = "dac_sms_notify";
-        String DAC_CUSTOM_NOTIFY_NAME = "dac_sms_notify";
-        String DAC_CUSTOM_NOTIFY_DESC = "DAC -> " + OTP;
-
-        // NotificationManager
-        NotificationManager notificationManager =
-                (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-
-        if (notificationManager == null) {
-            Log.e("NotificationError", "NotificationManager is null");
-            return;
-        }
-        // Custom layout
-        RemoteViews customLayout = new RemoteViews(context.getPackageName(), R.layout.dac_notification_bar);
-        customLayout.setTextViewText(R.id.dac_val_eng, OTP);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            customLayout.setViewVisibility(R.id.call_Aemm, View.VISIBLE);
-            customLayout.setOnClickResponse(R.id.call_Aemm, makeCall("+919231902703", context));
-
-        } else {
-            customLayout.setViewVisibility(R.id.call_Aemm, View.GONE);
-        }
-        // Notification Channel for Android 8.0+
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel mChannel = notificationManager.getNotificationChannel(DAC_CUSTOM_NOTIFY_ID);
-            if (mChannel == null) {
-                mChannel = new NotificationChannel(DAC_CUSTOM_NOTIFY_ID, DAC_CUSTOM_NOTIFY_NAME, NotificationManager.IMPORTANCE_HIGH);
-                mChannel.setDescription(DAC_CUSTOM_NOTIFY_DESC);
-                mChannel.enableVibration(true);
-                notificationManager.createNotificationChannel(mChannel);
-            }
-        }
-
-        // Notification Builder
-        Intent intent = new Intent(context, MainActivity.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_IMMUTABLE);
-
-
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, DAC_CUSTOM_NOTIFY_ID)
-                .setSmallIcon(R.drawable.gas_cylinder_icon)
-                .setCustomContentView(customLayout)
-                .setStyle(new NotificationCompat.DecoratedCustomViewStyle())
-                .setCustomBigContentView(customLayout)
-                .setCustomHeadsUpContentView(customLayout)
-
-                .setColorized(true)
-                .setColor(Color.WHITE)
-                .setContentIntent(pendingIntent)
-
-                .setDefaults(NotificationCompat.DEFAULT_ALL)
-                .setPriority(NotificationCompat.PRIORITY_DEFAULT);
-
-
-        // Show the notification
-        Notification notification = builder.build();
-        notificationManager.notify(NOTIFICATION_ID, notification);
-    }
 
     public static void startForegroundService(Context context) {
         Intent serviceIntent = new Intent(context, FixOppoAutoKill.class);
@@ -180,77 +112,7 @@ public class Utility {
         }
     }
 
-    public static void showRechargeNotification(Context context, String OTP) {
-        if (context == null) {
-            Log.e("NotificationError", "Context is null");
-            return;
-        }
 
-        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.M) {
-            sendNotification(OTP, context);
-            return;
-        }
-
-        final int NOTIFY_ID = 1004;
-        String DAC_CUSTOM_NOTIFY_ID = "recharge_sms_notify";
-        String DAC_CUSTOM_NOTIFY_NAME = "recharge_sms_notify";
-        String DAC_CUSTOM_NOTIFY_DESC = "DAC -> " + OTP;
-
-        // NotificationManager
-        NotificationManager notificationManager =
-                (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-
-        if (notificationManager == null) {
-            Log.e("NotificationError", "NotificationManager is null");
-            return;
-        }
-
-
-        // Custom layout
-        RemoteViews customLayout = new RemoteViews(context.getPackageName(), R.layout.annual_end_notificationbar);
-        customLayout.setTextViewText(R.id.tvTime, OTP);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            customLayout.setViewVisibility(R.id.call_Aemm, View.VISIBLE);
-            customLayout.setOnClickResponse(R.id.call_Aemm, makeCall("+919932896502", context));
-
-        } else {
-            customLayout.setViewVisibility(R.id.call_Aemm, View.GONE);
-
-        }
-
-
-        // Notification Channel for Android 8.0+
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel mChannel = notificationManager.getNotificationChannel(DAC_CUSTOM_NOTIFY_ID);
-            if (mChannel == null) {
-                mChannel = new NotificationChannel(DAC_CUSTOM_NOTIFY_ID, DAC_CUSTOM_NOTIFY_NAME, NotificationManager.IMPORTANCE_HIGH);
-                mChannel.setDescription(DAC_CUSTOM_NOTIFY_DESC);
-                mChannel.enableVibration(true);
-                notificationManager.createNotificationChannel(mChannel);
-            }
-        }
-
-        // Notification Builder
-        Intent intent = new Intent(context, MainActivity.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_IMMUTABLE);
-
-
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, DAC_CUSTOM_NOTIFY_ID)
-                .setSmallIcon(R.drawable.gas_cylinder_icon)
-                .setCustomContentView(customLayout)
-                .setStyle(new NotificationCompat.DecoratedCustomViewStyle())
-                .setAutoCancel(true)
-                .setColor(Color.parseColor("#14A44D"))
-                .setColorized(true)
-                .setContentIntent(pendingIntent)
-                .setDefaults(Notification.DEFAULT_ALL)
-                .setPriority(NotificationCompat.PRIORITY_HIGH);
-
-        // Show the notification
-        Notification notification = builder.build();
-        notificationManager.notify(NOTIFY_ID, notification);
-    }
 
     public static boolean isServiceRunning(Context context, Class<?> serviceClass) {
         ActivityManager manager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
@@ -265,54 +127,10 @@ public class Utility {
     }
 
 
-    public static void sendNotification(String messageBody, Context context) {
-        Intent intent = new Intent(context, MainActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        PendingIntent pendingIntent = PendingIntent.getActivity(context, 0 /* Request code */, intent,
-                PendingIntent.FLAG_IMMUTABLE);
-
-        String channelId = "fcm_default_channel";
-        Uri defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
-        NotificationCompat.Builder notificationBuilder =
-                new NotificationCompat.Builder(context, channelId)
-                        .setSmallIcon(R.drawable.gas_cylinder_icon)
-                        .setContentTitle("GAS MESSAGE")
-                        .setContentText("DAC -> " + messageBody)
-                        .setAutoCancel(true)
-                        .setAllowSystemGeneratedContextualActions(false)
-
-                        .setSound(defaultSoundUri)
-                        .setContentIntent(pendingIntent);
-
-        NotificationManager notificationManager =
-                (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-
-        // Since android Oreo notification channel is needed.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(channelId,
-                    "Channel human readable title",
-                    NotificationManager.IMPORTANCE_DEFAULT);
-            notificationManager.createNotificationChannel(channel);
-        }
-
-        notificationManager.notify(0 /* ID of notification */, notificationBuilder.build());
-    }
 
 
-    @SuppressLint("NewApi")
-    private static RemoteViews.RemoteResponse makeCall(String phoneNumber, Context context) {
-        Intent intent = new Intent(Intent.ACTION_DIAL); // ACTION_CALL requires permissions
-        intent.setData(Uri.parse("tel:" + phoneNumber));
-        PendingIntent pendingIntent = PendingIntent.getActivity(
-                context,
-                0,
-                intent,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-        );
 
-        return RemoteViews.RemoteResponse.fromPendingIntent(pendingIntent);
 
-    }
 
 
     public static String getMyPhoneNumber(Context context) {
@@ -499,6 +317,13 @@ public class Utility {
         String formattedDateTime = sdf.format(calendar.getTime());
         return formattedDateTime;
     }
+    public static String getStandardDate() {
+        Calendar calendar = Calendar.getInstance();
+        SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy", Locale.ENGLISH);
+        String formattedDateTime = sdf.format(calendar.getTime());
+        return formattedDateTime;
+    }
+
 
     public static void sendSms(String Cashmemo, String DAC, String name, Context context) {
 
@@ -631,30 +456,6 @@ public class Utility {
     }
 
 
-
-        /**
-         * Returns true if there’s an active notification with the given ID.
-         *
-         * @param context your application context
-         * @param notificationId the integer ID you used when posting the notification
-         */
-        @RequiresApi(api = Build.VERSION_CODES.M)
-        public static boolean isNotificationActive(Context context, int notificationId) {
-            NotificationManager nm =
-                    (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-            if (nm == null) {
-                Log.w(TAG, "NotificationManager is null");
-                return false;
-            }
-
-            StatusBarNotification[] active = nm.getActiveNotifications();
-            for (StatusBarNotification sbn : active) {
-                if (sbn.getId() == notificationId) {
-                    return true;
-                }
-            }
-            return false;
-        }
 
 
 

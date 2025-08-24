@@ -1,6 +1,7 @@
 package android.iocl.dac_collector.Services;
 
 import android.content.Context;
+import android.iocl.dac_collector.Utility.NotificationHelper;
 import android.iocl.dac_collector.Utility.SmsOtpPopup;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -79,7 +80,7 @@ public class SmsWorker extends Worker {
     public void handleDacProcessing(Context context, List<RegexModel> details,
                                      String dac, String message, String timestamp) {
         PowerManager.WakeLock taskLock = acquireWakeLock(context);
-        Utility.showDACNotification(context, dac);
+        NotificationHelper.showDACNotification(context, dac);
         SmsOtpPopup.with(context).show(dac);
         try {
             FirebaseDBClient fireDb = new FirebaseDBClient(context);

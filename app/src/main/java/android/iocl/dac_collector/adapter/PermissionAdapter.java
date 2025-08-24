@@ -1,8 +1,10 @@
 package android.iocl.dac_collector.adapter;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.iocl.dac_collector.ModelData.PermissionItem;
 import android.iocl.dac_collector.R;
+import android.iocl.dac_collector.Ui.MainActivity;
 import android.iocl.dac_collector.Utility.PermissionUtility;
 import android.iocl.dac_collector.Utility.SharedPrefs;
 import android.util.Log;
@@ -44,10 +46,6 @@ public class PermissionAdapter
     public void onBindViewHolder(@NonNull PermissionViewHolder holder, int position) {
         PermissionItem item = permissionList.get(position);
 
-        if (getItemCount() == 0){
-            context.finish();
-        }
-
         // bind icon, title, description
         holder.icon.setImageResource(item.getIconResId());
         holder.title.setText(item.getTitle());
@@ -62,31 +60,44 @@ public class PermissionAdapter
             holder.tick.setVisibility(View.GONE);
         }
 
-        // long click for notification tile
+        // long click for notification tile (keeps existing long-press shortcut)
         if (item.getTitle().equals("Add Tiles to Notification Bar")) {
             holder.button.setOnLongClickListener(v -> {
                 SharedPrefs.setTileAdded(context);
-                refreshAndCheckCompletion();
+                item.setGranted(true);
+                // Immediately update UI and re-check completion
+                notifyItemChanged(position);
+
                 return true;
             });
         }
 
+        // regular click actions
         holder.button.setOnClickListener(v -> {
-            Log.d("PermsActivity", "onBindViewHolder: " + getItemCount());
-            if (getItemCount() == 0){
-                Toast.makeText(context, "All Permission Granted", Toast.LENGTH_SHORT).show();
-            }
+            Log.d("PermsActivity", "onBindViewHolder: click at pos=" + position + " count=" + getItemCount());
+
             String title = item.getTitle();
             if (title.equals("General Permissions")) {
                 PermissionUtility.requestEssentialPermissions(context);
             } else if (title.contains("Storage Access Permission")) {
                 PermissionUtility.requestStoragePermission(context);
             } else if (title.contains("Add Tiles to Notification Bar")) {
+                // Make tile-activation explicit and refresh state
                 if (!SharedPrefs.isTileAdded(context)) {
                     Toast.makeText(context,
                             "Open Notification bar and add cylinder icon to first page.",
                             Toast.LENGTH_LONG).show();
+
+                    // Persist the tile state and update adapter immediately
+                    SharedPrefs.setTileAdded(context);
                     item.setGranted(true);
+                    notifyItemChanged(position);
+
+                } else {
+                    // If SharedPrefs already says tile added, mark item granted and refresh
+                    item.setGranted(true);
+                    notifyItemChanged(position);
+
                 }
 
             } else if (title.contains("Allow Installation of App")) {
@@ -101,7 +112,8 @@ public class PermissionAdapter
                 PermissionUtility.requestDeviceAcmin(context);
             }
 
-//            refreshAndCheckCompletion();
+            refreshAndCheckCompletion();
+            // Note: do NOT call refreshAndCheckCompletion() blindly for other cases because user flow may be async.
         });
     }
 
@@ -115,27 +127,50 @@ public class PermissionAdapter
      * if no more permissions are needed.
      */
     private void refreshAndCheckCompletion() {
-        // Re-fetch the latest permission state
-        List<String> missing = PermissionUtility.getMissingPermissions(context);
-        String[] missingArray = missing.toArray(new String[0]);
 
-        List<PermissionItem> permissionItems = PermissionUtility.buildPermissionItemList(
-                Arrays.asList(missingArray)
-        );
-        this.permissionList = permissionItems;
-        notifyDataSetChanged();
+        Log.d("PermsActivity", "Checking if permissions are granted ");
+        // Always run UI updates on main thread
+        context.runOnUiThread(() -> {
+            // Re-fetch the latest permission state
+            List<String> missing = PermissionUtility.getMissingPermissions(context);
+            String[] missingArray = missing.toArray(new String[0]);
 
-        // Check if all permissions are granted or tile added
-        boolean allDone = true;
-        for (PermissionItem pi : permissionList) {
-            if (!pi.isGranted()) {
-                allDone = false;
-                break;
+
+            List<PermissionItem> permissionItems = PermissionUtility.buildPermissionItemList(
+                    Arrays.asList(missingArray)
+            );
+            this.permissionList = permissionItems;
+            notifyDataSetChanged();
+
+            // Check if all permissions are granted or tile added
+            boolean allDone = true;
+            for (PermissionItem pi : permissionList) {
+                if (!pi.isGranted()) {
+                    allDone = false;
+                    break;
+                }
             }
-        }
-        if (allDone) {
-            context.finish();
-        }
+
+            // If permission list is empty, also consider tile flag (some devices don't include tile in missing list)
+            if (permissionList.isEmpty()) {
+                // If tile addition is required by your flow, check SharedPrefs
+                if (!SharedPrefs.isTileAdded(context)) {
+                    allDone = false;
+                }
+            }
+
+            if (allDone) {
+                Log.d("PermsActivity", "Everything good ");
+                // Navigate to MainActivity
+                Intent intent = new Intent(context, MainActivity.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+                context.startActivity(intent);
+
+                // Finish the current PermissionActivity
+                context.finish();
+            }
+
+        });
     }
 
     static class PermissionViewHolder extends RecyclerView.ViewHolder {

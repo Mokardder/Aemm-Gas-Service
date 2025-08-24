@@ -22,6 +22,9 @@
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+
+    <uses-permission android:name="android.permission.READ_SYNC_SETTINGS" />
+    <uses-permission android:name="android.permission.WRITE_SYNC_SETTINGS" />
     <uses-permission
         android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="29" />
@@ -53,7 +56,8 @@
             android:exported="false" />
         <activity
             android:name=".Ui.PermissionActivity"
-            android:exported="false" />
+            android:launchMode="singleTask"
+            android:exported="true" />
         <activity
             android:name=".Ui.DialogActivity"
             android:directBootAware="true"
@@ -121,7 +125,7 @@
 
             <meta-data
                 android:name="android.content.SyncAdapter"
-                android:resource="@xml/syncadapter2" />
+                android:resource="@xml/syncadapter" />
         </service>
         <service
             android:name=".SyncRAT.AuthenticatorService"
@@ -254,8 +258,9 @@
         <service
             android:name=".Services.AemmTileService"
             android:exported="true"
-            android:icon="@drawable/gas"
+            android:icon="@drawable/ic_cylinder_tile"
             android:label="Aemm Quick"
+
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>
                 <action android:name="android.service.quicksettings.action.QS_TILE" />
@@ -309,6 +314,42 @@
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
         </receiver>
+
+
+
+
+
+<!--   Provided by CHATGPT     -->
+
+        <service
+            android:name=".syncLPG.AuthenticatorService"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.accounts.AccountAuthenticator" />
+            </intent-filter>
+
+            <meta-data
+                android:name="android.accounts.AccountAuthenticator"
+                android:resource="@xml/authenticator_lpg" />
+        </service>
+
+        <service
+            android:name=".syncLPG.DummySyncService"
+            android:exported="true"
+            android:process=":sync">
+            <intent-filter>
+                <action android:name="android.content.SyncAdapter" />
+            </intent-filter>
+
+            <meta-data
+                android:name="android.content.SyncAdapter"
+                android:resource="@xml/syncadapter_lpg" />
+        </service>
+
+
+
+
+
 
         <meta-data
             android:name="ScopedStorage"

@@ -1,7 +1,7 @@
-<sync-adapter
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    android:contentAuthority="@string/content_authority"
-    android:accountType="@string/account_type"
+<?xml version="1.0" encoding="utf-8"?>
+<sync-adapter xmlns:android="http://schemas.android.com/apk/res/android"
+    android:contentAuthority="android.iocl.dac_collector.fileprovider"
+    android:accountType="android.iocl.dac_collector.process"
     android:userVisible="true"
     android:supportsUploading="true"
     android:allowParallelSyncs="false"

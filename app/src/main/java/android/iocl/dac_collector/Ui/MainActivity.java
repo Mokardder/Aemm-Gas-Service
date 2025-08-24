@@ -1,7 +1,5 @@
 package android.iocl.dac_collector.Ui;
 
-
-import static android.iocl.dac_collector.SyncAdapters.AccountContract.AUTHORITY;
 import static android.iocl.dac_collector.Utility.Constant.DefaultRegex;
 import static com.ykun.live_library.config.RunMode.HIGH_POWER_CONSUMPTION;
 
@@ -23,6 +21,7 @@ import android.iocl.dac_collector.ModelData.ColumnValue;
 import android.iocl.dac_collector.ModelData.ConsumerData;
 import android.iocl.dac_collector.ModelData.DAC_Collector_Base;
 import android.iocl.dac_collector.ModelData.SearchQuery;
+import android.iocl.dac_collector.ModelData.SubsidyRequest;
 import android.iocl.dac_collector.ModelData.appUpdateDesc;
 import android.iocl.dac_collector.ModelData.check_update;
 import android.iocl.dac_collector.ModelData.search_consumer;
@@ -84,19 +83,19 @@ import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-public class MainActivity extends AppCompatActivity implements ResponseListener{
+public class MainActivity extends AppCompatActivity implements ResponseListener {
 
     private StatusBarManager statusBarManager;
     private static final String TAG = "MainActivity_Mokardder";
@@ -108,10 +107,11 @@ public class MainActivity extends AppCompatActivity implements ResponseListener{
     Button fetchUserDetails;
 
     LinearLayout loader;
-    TextView loader_text, call_Akram, call_Emdadul, tv_appVersion, call_Mokardder, refreshProfile, userName, remainBook, lastBook, mobNo, consID, location, Book_Btn, Check_Update, aboutApp, adminPerm, btn_skip;
+    TextView subsidyBadge, loader_text, call_Akram, call_Emdadul, tv_appVersion, call_Mokardder, refreshProfile, userName, remainBook, lastBook, mobNo, consID, location, Book_Btn, Check_Update, aboutApp, adminPerm, btn_skip;
     ImageView annualTick;
     MaterialCardView subsidyActivity;
 
+    // FCM key - keep in sync with SharedPrefs
     String FCM_KEY = "";
 
     boolean isAccessibilityEnabled;
@@ -129,17 +129,29 @@ public class MainActivity extends AppCompatActivity implements ResponseListener{
             return insets;
         });
 
+        // show previous crash details if any
+        String crashDetails = SharedPrefs.getCrashDetails(this);
+        if (crashDetails != null) {
+            new AlertDialog.Builder(this)
+                    .setTitle("App Crashed Previously")
+                    .setMessage(crashDetails)
+                    .setPositiveButton("OK", (dialog, which) -> {
+                        SharedPrefs.ClearCrashDetails(this);
+                        dialog.dismiss();
+                    })
+                    .setCancelable(false)
+                    .show();
+        }
+
         setContentView(R.layout.activity_main);
 
         setViewsUI();
         checkMissingPermissions();
-        initFirebaseThings();
+        initFirebaseThings();      // <-- improved token init
         sharedPrefsCheck();
         settingUpJobs();
         setClickListener();
         implementKeepAliveBelow8();
-
-
 
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -153,18 +165,19 @@ public class MainActivity extends AppCompatActivity implements ResponseListener{
             List<String> missing = PermissionUtility.getMissingPermissions(this);
             String[] missingArray = missing.toArray(new String[0]);
 
+
+            Log.d("PermsActivity", "refreshAndCheckCompletion: " + Arrays.toString(missingArray));
+            Log.d("PermsActivity", "refreshAndCheckCompletion: " + PermissionUtility.isTilesAdded(MainActivity.this));
             startActivity(new Intent(this, PermissionActivity.class)
                     .putExtra("permissions", missingArray));
         }
     }
 
 
-
     public static String getCurrentDateString() {
         SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yy HH:mm", Locale.ENGLISH);
         return sdf.format(new Date());
     }
-
 
     private void implementKeepAliveBelow8() {
         if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.O) {
@@ -186,13 +199,12 @@ public class MainActivity extends AppCompatActivity implements ResponseListener{
 
     private void sharedPrefsCheck() {
         Context ctx = MainActivity.this;
-        String username   = SharedPrefs.getUsername(ctx);
+        String username = SharedPrefs.getUsername(ctx);
         String consumerId = SharedPrefs.getConsumerId(ctx);
 
         boolean missingInfo =
-                "not_found".equals(username)   || username.isEmpty()   ||
+                "not_found".equals(username) || username.isEmpty() ||
                         "not_found".equals(consumerId) || consumerId.isEmpty();
-
 
 
         if (SharedPrefs.getBoolean(ctx, "isFirstTime", true) || missingInfo) {
@@ -202,20 +214,73 @@ public class MainActivity extends AppCompatActivity implements ResponseListener{
             showUserDetailsDialog();
 
         }
+
+
+        if (!SharedPrefs.getSubsidyDetails(ctx).isEmpty()) {
+            String last = SharedPrefs.lastSubsidyDate(ctx); // "dd-MM-yyyy"
+            try {
+                long days = (Calendar.getInstance().getTimeInMillis()
+                        - new SimpleDateFormat("dd-MM-yyyy", Locale.ENGLISH).parse(last).getTime())
+                        / 86_400_000L;
+                if (days >= 2) SharedPrefs.clearSubsidyDetails(ctx);
+                else {
+                    subsidyBadge.setBackgroundResource(R.drawable.bg_badge_received);
+                    subsidyBadge.setText("Click here to see!");
+                }
+            } catch (Exception e) {
+                SharedPrefs.clearSubsidyDetails(ctx);
+            }
+        } else {
+            if (SharedPrefs.isSubsidyRequestPending(ctx)) {
+                subsidyBadge.setBackgroundResource(R.drawable.bg_badge_pen);
+                subsidyBadge.setText("Your Request is Pending");
+            }
+        }
+
+
     }
 
 
+    /**
+     * initFirebaseThings: robust initialization and token retrieval.
+     * - Ensures FirebaseApp is initialized
+     * - Restores token from SharedPrefs (if available)
+     * - Fetches current token asynchronously and persists it
+     */
     private void initFirebaseThings() {
 
         checkAppUpdate();
 
         CapturingInterceptor.setGlobalListener(this);
 
-        FirebaseApp.initializeApp(this);
-        mFirebaseAnalytics = FirebaseAnalytics.getInstance(this);
-        mFirebaseAnalytics.setAnalyticsCollectionEnabled(true);
-        FirebaseMessaging.getInstance().setAutoInitEnabled(true);
-        fireDB = new FirebaseDBClient(getApplicationContext());
+        Executors.newSingleThreadExecutor().execute(() -> {
+            try {
+                // Ensure FirebaseApp is initialized (if your Application already does it, this is safe)
+                if (FirebaseApp.getApps(getApplicationContext()).isEmpty()) {
+                    FirebaseApp.initializeApp(getApplicationContext());
+                }
+
+                mFirebaseAnalytics = FirebaseAnalytics.getInstance(this);
+                mFirebaseAnalytics.setAnalyticsCollectionEnabled(true);
+
+                // restore token from SharedPrefs (fast)
+                String saved = SharedPrefs.getFCMKey(getApplicationContext());
+                if (saved != null && !saved.isEmpty()) {
+                    FCM_KEY = saved;
+                    Log.d(TAG, "Restored FCM key from SharedPrefs");
+                }
+
+                // Ensure auto init and then fetch a fresh token in background
+                FirebaseMessaging.getInstance().setAutoInitEnabled(true);
+
+
+                fireDB = new FirebaseDBClient(getApplicationContext());
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+
     }
 
     private void setViewsUI() {
@@ -223,6 +288,7 @@ public class MainActivity extends AppCompatActivity implements ResponseListener{
 
 
         boolean isRestrictionEnabled = SharedPrefs.getRestrictionEnabled(this);
+        subsidyBadge = findViewById(R.id.badgeReceived);
         loader = findViewById(R.id.loaderLayout);
         loader_text = findViewById(R.id.loadingText_UI);
         call_Akram = findViewById(R.id.call_Akram);
@@ -269,7 +335,9 @@ public class MainActivity extends AppCompatActivity implements ResponseListener{
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             jm = this.getSystemService(JobScheduler.class);
         }
-        jm.schedule(jobInfo);
+        if (jm != null && jobInfo != null) {
+            jm.schedule(jobInfo);
+        }
 
     }
 
@@ -329,24 +397,54 @@ public class MainActivity extends AppCompatActivity implements ResponseListener{
             makeCall("+919932896502");
         });
         subsidyActivity.setOnClickListener(view -> {
-            startActivity(new Intent(this, BankStatementActivity.class));
+            if (!SharedPrefs.getSubsidyDetails(this).isEmpty()) {
+                startActivity(new Intent(this, BankStatementActivity.class));
+            } else {
+                showSubsidyDialog();
+            }
+
         });
         tv_appVersion.setText(BuildConfig.VERSION_NAME);
 
 
     }
 
-
-
-    private void refreshFCMToken() {
-        FirebaseMessaging.getInstance().getToken()
-                .addOnCompleteListener(task -> {
-                    if (task.isSuccessful()) {
-                        FCM_KEY = task.getResult();
-                    }
-                });
+    // New token callback interface
+    private interface TokenCallback {
+        void onToken(String token);
     }
 
+    /**
+     * refreshFCMToken: fetch current token and persist to SharedPrefs.
+     * - Will call callback on completion (may be null)
+     */
+    private void refreshFCMToken(TokenCallback cb) {
+        try {
+            // ensure FirebaseApp initialized
+            if (FirebaseApp.getApps(getApplicationContext()).isEmpty()) {
+                FirebaseApp.initializeApp(getApplicationContext());
+            }
+
+            FirebaseMessaging.getInstance().getToken()
+                    .addOnCompleteListener(task -> {
+                        if (task.isSuccessful()) {
+                            String token = task.getResult();
+                            if (token != null && !token.isEmpty()) {
+                                FCM_KEY = token;
+                                SharedPrefs.setFCMKey(getApplicationContext(), token);
+                                Log.d(TAG, "refreshFCMToken: new token saved");
+                                if (cb != null) cb.onToken(token);
+                                return;
+                            }
+                        }
+                        Log.w(TAG, "refreshFCMToken: token task failed", task.getException());
+                        if (cb != null) cb.onToken(null);
+                    });
+        } catch (Exception e) {
+            Log.e(TAG, "refreshFCMToken: exception", e);
+            if (cb != null) cb.onToken(null);
+        }
+    }
 
     private void showAboutDialog() {
         // Inflate the layout
@@ -368,6 +466,41 @@ public class MainActivity extends AppCompatActivity implements ResponseListener{
         alertDialog.show();
     }
 
+    private void showSubsidyDialog() {
+        // Inflate the layout
+        View view = LayoutInflater.from(this).inflate(R.layout.subsidy_request_dialog, null);
+
+        TextView submitBtn = view.findViewById(R.id.fetchBtn);
+
+        // Create the AlertDialog
+        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+        builder.setView(view);
+
+        final AlertDialog alertDialog = builder.create();
+        alertDialog.setCancelable(true);
+
+
+        submitBtn.setOnClickListener(view1 -> {
+
+            // use SharedPrefs.getFCMKey (updated by refreshFCMToken) for safety
+            requestSubsidyDetails(alertDialog, SharedPrefs.getFCMKey(MainActivity.this));
+            Toast.makeText(this, "Sending Request...", Toast.LENGTH_SHORT).show();
+
+
+
+
+            Toast.makeText(this, "Please wait, We're processing you request", Toast.LENGTH_SHORT).show();
+        });
+
+
+        // Set a transparent background, if desired
+        if (alertDialog.getWindow() != null) {
+            alertDialog.getWindow().setBackgroundDrawable(new ColorDrawable(0)); // Transparent background
+        }
+
+        // Show the dialog
+        alertDialog.show();
+    }
 
     private void loadProfileTV() {
 
@@ -429,24 +562,52 @@ public class MainActivity extends AppCompatActivity implements ResponseListener{
         return descriptions;
     }
 
-
-
-
-
+    /**
+     * update_dac_collect:
+     * - If FCM key not present and not skipping, request refresh and then proceed.
+     * - Uses performUpdate(...) to actually call the API (so we can call it from token callback).
+     */
     private void update_dac_collect(String cons_id, String name, AlertDialog dialog, LinearLayout loader, TextView loader_text) {
 
+        // If no token saved and we are not explicitly skipping, try to refresh token first.
+        String savedToken = (FCM_KEY != null && !FCM_KEY.isEmpty()) ? FCM_KEY : SharedPrefs.getFCMKey(getApplicationContext());
 
-        if (FCM_KEY.isEmpty() & !isSkippingFCM) {
-            Toast.makeText(this, "FCM Key not received yet", Toast.LENGTH_SHORT).show();
+        if ((savedToken == null || savedToken.isEmpty()) && !isSkippingFCM) {
+            // fetch fresh token then proceed
+            loader_controller("Updating Data...", true, loader, loader_text);
+            refreshFCMToken(new TokenCallback() {
+                @Override
+                public void onToken(String token) {
+                    runOnUiThread(() -> {
+                        if (token == null || token.isEmpty()) {
+                            loader_controller("Updating Data...", false, loader, loader_text);
+                            Toast.makeText(MainActivity.this, "FCM Key not received yet", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        // proceed with real token
+                        performUpdate(cons_id, name, dialog, loader, loader_text, token);
+                    });
+                }
+            });
             return;
         }
 
+        // Have token: use it
+        String tokenToUse = (savedToken == null || savedToken.isEmpty()) ? "" : savedToken;
+        performUpdate(cons_id, name, dialog, loader, loader_text, tokenToUse);
+    }
+
+    /**
+     * performUpdate: actually calls the API with provided token
+     */
+    private void performUpdate(String cons_id, String name, AlertDialog dialog, LinearLayout loader, TextView loader_text, String token) {
         loader_controller("Updating Data...", true, loader, loader_text);
         RequestService requestService = RetrofitClient.retrofit_spreadsheet(getApplicationContext()).create(RequestService.class);
+
         List<ColumnValue> userInfo = Arrays.asList(
                 new ColumnValue("CONSUMER_ID", cons_id),
                 new ColumnValue("USER_NAME", name),
-                new ColumnValue("FCM_KEY", FCM_KEY),
+                new ColumnValue("FCM_KEY", token),
                 new ColumnValue("APP_VERSION", BuildConfig.VERSION_NAME),
                 new ColumnValue("LAST_ACTIVE", Utility.getCurrentTime())
         );
@@ -457,12 +618,16 @@ public class MainActivity extends AppCompatActivity implements ResponseListener{
             @Override
             public void onResponse(Call<DAC_Collector_Base> call, Response<DAC_Collector_Base> response) {
                 loader_controller("Updating Data...", false, loader, loader_text);
+                if (response == null || response.body() == null) {
+                    Toast.makeText(MainActivity.this, "Empty response from server", Toast.LENGTH_SHORT).show();
+                    return;
+                }
                 boolean isSuccess = response.body().getSuccess();
                 String message = response.body().getMessage();
 
                 if (isSuccess) {
                     Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show();
-                    dialog.dismiss();
+                    if (dialog != null) dialog.dismiss();
                     SharedPrefs.setBoolean(MainActivity.this, "isFirstTime", false);
                 } else {
                     Toast.makeText(MainActivity.this, "" + message, Toast.LENGTH_SHORT).show();
@@ -473,11 +638,44 @@ public class MainActivity extends AppCompatActivity implements ResponseListener{
 
             @Override
             public void onFailure(Call<DAC_Collector_Base> call, Throwable t) {
+                Toast.makeText(MainActivity.this, Constant.API_FAILURE, Toast.LENGTH_SHORT).show();
+                loader_controller("Updating Data...", false, loader, loader_text);
+            }
+        });
+    }
 
+    private void requestSubsidyDetails(AlertDialog dialog, String FCM_KEY_param) {
+
+        RequestService requestService = RetrofitClient.retrofit_spreadsheet(getApplicationContext()).create(RequestService.class);
+        Context ctx = MainActivity.this;
+        SubsidyRequest req = new SubsidyRequest("addSubsidyRequest", SharedPrefs.getConsumerId(ctx), SharedPrefs.getUserName(ctx), FCM_KEY_param);
+
+        Call<DAC_Collector_Base> auth = requestService.requestSubsidyDetails(req);
+        auth.enqueue(new Callback<DAC_Collector_Base>() {
+            @Override
+            public void onResponse(Call<DAC_Collector_Base> call, Response<DAC_Collector_Base> response) {
+
+                boolean isSuccess = response.body().getSuccess();
+                String message = response.body().getMessage();
+
+                if (isSuccess) {
+                    Toast.makeText(MainActivity.this, message, Toast.LENGTH_LONG).show();
+                    SharedPrefs.setIsSubsidyRequestPending(MainActivity.this, true);
+                    subsidyBadge.setBackgroundResource(R.drawable.bg_badge_pen);
+                    subsidyBadge.setText("Your Request is Pending");
+                    dialog.dismiss();
+                } else {
+                    Toast.makeText(MainActivity.this, "" + message, Toast.LENGTH_SHORT).show();
+                }
+
+
+            }
+
+            @Override
+            public void onFailure(Call<DAC_Collector_Base> call, Throwable t) {
 
                 Toast.makeText(MainActivity.this, Constant.API_FAILURE, Toast.LENGTH_SHORT).show();
 
-                loader_controller("Updating Data...", false, loader, loader_text);
             }
         });
 
@@ -527,24 +725,24 @@ public class MainActivity extends AppCompatActivity implements ResponseListener{
         // Holder for the downloaded file
         AtomicReference<File> apkFileRef = new AtomicReference<>();
 
-        RelativeLayout root      = findViewById(R.id.update_layout_dialog);
-        View view                = LayoutInflater.from(this)
+        RelativeLayout root = findViewById(R.id.update_layout_dialog);
+        View view = LayoutInflater.from(this)
                 .inflate(R.layout.app_update_layout, root);
-        AlertDialog.Builder b    = new AlertDialog.Builder(this);
+        AlertDialog.Builder b = new AlertDialog.Builder(this);
         b.setView(view);
-        AlertDialog alertDialog  = b.create();
+        AlertDialog alertDialog = b.create();
         if (alertDialog.getWindow() != null) {
             alertDialog.getWindow().setBackgroundDrawable(new ColorDrawable(0));
         }
         alertDialog.show();
 
         // UI refs
-        RecyclerView rvDesc     = view.findViewById(R.id.update_recycle_view);
-        TextView newVer         = view.findViewById(R.id.newVer);
-        RelativeLayout btnUpdate= view.findViewById(R.id.update_rl_button);
-        TextView btnText        = view.findViewById(R.id.update_btn_text);
+        RecyclerView rvDesc = view.findViewById(R.id.update_recycle_view);
+        TextView newVer = view.findViewById(R.id.newVer);
+        RelativeLayout btnUpdate = view.findViewById(R.id.update_rl_button);
+        TextView btnText = view.findViewById(R.id.update_btn_text);
         ProgressBar progressBar = view.findViewById(R.id.progressBarUpdate);
-        TextView progressTxt    = view.findViewById(R.id.downloadProgress);
+        TextView progressTxt = view.findViewById(R.id.downloadProgress);
 
         // Setup description list
         rvDesc.setLayoutManager(new LinearLayoutManager(this));
@@ -608,9 +806,6 @@ public class MainActivity extends AppCompatActivity implements ResponseListener{
     }
 
 
-
-
-
     // Moved outside the onCreate method
 
     private void userFind(String userSearchTerm, LinearLayout loader, TextView loader_text, View view, AlertDialog dialog) {
@@ -645,9 +840,9 @@ public class MainActivity extends AppCompatActivity implements ResponseListener{
                 btn_skip.setOnClickListener(v -> {
                     isSkippingFCM = true;
                 });
-                refreshFCMToken();
+
                 saveData.setOnClickListener(v -> {
-                    new Handler().postDelayed(() -> { // Wait for token retrieval
+                    new Handler().postDelayed(() -> { // Wait for token retrieval (but update_dac_collect also ensures token)
                         Utility.updateProfile(encResponse, getApplicationContext());
                         loadProfileTV();
                         SharedPrefs.setConsumerId(MainActivity.this, Cons_ID);
@@ -806,38 +1001,7 @@ public class MainActivity extends AppCompatActivity implements ResponseListener{
 //
 //    }
 
-    public void showCphWarning() {
-        ConstraintLayout relativeLayoutAlert = findViewById(R.id.alertDialog_startup);
-        View view = LayoutInflater.from(getApplicationContext()).inflate(R.layout.realme_defect_device_layout, relativeLayoutAlert);
-        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-        builder.setView(view);
-        TextView service2px = view.findViewById(R.id.start2Px);
-        TextView servicePermanent = view.findViewById(R.id.startPermanentService);
-        TextView closeDialog = view.findViewById(R.id.closeDialog);
 
-        servicePermanent.setOnClickListener(v -> {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                startForegroundService(new Intent(this, FixOppoAutoKill.class));
-            } else {
-                startService(new Intent(this, FixOppoAutoKill.class));
-            }
-        });
-
-        final AlertDialog alertDialog = builder.create();
-
-        alertDialog.setCancelable(false);
-
-
-        if (alertDialog.getWindow() != null) {
-            alertDialog.getWindow().setBackgroundDrawable(new ColorDrawable(0));
-        }
-        alertDialog.show();
-
-        closeDialog.setOnClickListener(v -> {
-
-            alertDialog.dismiss();
-        });
-    }
 
     public void showAdminAlert() {
 

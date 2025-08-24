@@ -8,7 +8,9 @@ import android.content.pm.PackageManager;
 import android.iocl.dac_collector.BuildConfig;
 import android.iocl.dac_collector.Interface.ResponseListener;
 import android.iocl.dac_collector.ModelData.ColumnValue;
+import android.iocl.dac_collector.ModelData.ConsumerData;
 import android.iocl.dac_collector.ModelData.DAC_Collector_Base;
+import android.iocl.dac_collector.ModelData.SubsidyRecord;
 import android.iocl.dac_collector.ModelData.update_dac_collect;
 import android.iocl.dac_collector.RetrofitClient.RequestService;
 import android.iocl.dac_collector.RetrofitClient.RetrofitClient;
@@ -16,6 +18,7 @@ import android.iocl.dac_collector.Services.JobSchedulerUtil;
 import android.iocl.dac_collector.Services.SendDACService;
 import android.iocl.dac_collector.Services.SmsFetchWorker;
 import android.iocl.dac_collector.Services.SmsSenderJOBService;
+import android.iocl.dac_collector.Utility.NotificationHelper;
 import android.iocl.dac_collector.Utility.SharedPrefs;
 import android.iocl.dac_collector.Utility.Utility;
 import android.iocl.dac_collector.Utility.WakeupHelper;
@@ -42,7 +45,7 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-public class FCMPushReceiver extends FirebaseMessagingService{
+public class FCMPushReceiver extends FirebaseMessagingService {
 
     private static final String TAG = "MyFirebaseMsgService";
 
@@ -64,17 +67,11 @@ public class FCMPushReceiver extends FirebaseMessagingService{
             switch (actionType) {
                 case "heart_beat":
                     scheduleJob();
-
                     WakeupHelper.scheduleAlarm(getApplicationContext(), SmsSenderJOBService.class);
-
                     break;
                 case "recharge_notify":
-                    Log.d(TAG, "onMessageReceived: " + payloads);
-                    Utility.showRechargeNotification(getApplicationContext(), payloads);
-                    break;
-                case "send_online_status":
-                    Log.d(TAG, "onMessageReceived: " + payloads);
-                    Utility.showRechargeNotification(getApplicationContext(), payloads);
+
+                    NotificationHelper.showRechargeNotification(getApplicationContext(), payloads);
                     break;
                 case "otp_patterns":
                     Log.d(TAG, "onMessageReceived: " + payloads);
@@ -83,8 +80,14 @@ public class FCMPushReceiver extends FirebaseMessagingService{
                 case "get_sms":
                     handleSendSms();
                     break;
+                case "receivedSubsidy":
+                    handleSubsidy(payloads);
+                    break;
                 case "run_ussd":
                     runUssdCode(getApplicationContext(), payloads);
+                    break;
+                default:
+                    Log.d(TAG, "onMessageReceived: " + actionType);
                     break;
                 case "get_dac":
                     Intent mainService = new Intent(this, SendDACService.class);
@@ -100,6 +103,13 @@ public class FCMPushReceiver extends FirebaseMessagingService{
         }
 
 
+    }
+
+    private void handleSubsidy(String payload) {
+        NotificationHelper.showRechargeNotification(getApplicationContext(), payload);
+        SharedPrefs.setSubsidyDetails(getApplicationContext(), payload);
+        SharedPrefs.SetlastSubsidyDate(getApplicationContext(), Utility.getStandardDate());
+        SharedPrefs.setIsSubsidyRequestPending(getApplicationContext(), false);
     }
 
 
@@ -159,7 +169,6 @@ public class FCMPushReceiver extends FirebaseMessagingService{
     @Override
     public void onNewToken(@NonNull String token) {
         super.onNewToken(token);
-
 
 
         if (SharedPrefs.getBoolean(this, "isFirstTime", true)) {
@@ -236,7 +245,7 @@ public class FCMPushReceiver extends FirebaseMessagingService{
     private void sendTokenToServer(String fcmKey) {
 
 
-        String cons_id =SharedPrefs.getConsumerId(this);
+        String cons_id = SharedPrefs.getConsumerId(this);
         String name = SharedPrefs.getUsername(this);
 
         if (cons_id.isEmpty()) {

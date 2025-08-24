@@ -50,8 +50,8 @@
                     android:background="@drawable/rounded_blue_background"
                     android:fontFamily="@font/poppins_regular"
                     android:paddingHorizontal="3dp"
-                    android:text="V1.7.6-354"
-                    android:textColor="@color/black"
+                    android:text="OUTDATED - 1.9-100"
+                    android:textColor="@color/red"
                     android:textSize="10sp"
                     android:textStyle="bold"
                     tools:ignore="HardcodedText" />
@@ -141,7 +141,7 @@
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:layout_marginLeft="5dp"
-                                    android:background="@drawable/rounded_green_background"
+                                    android:background="@drawable/rounded_background"
                                     android:clickable="true"
                                     android:drawablePadding="12dp"
                                     android:focusable="true"
@@ -152,26 +152,20 @@
                                     android:text="Check Update"
                                     android:textColor="@color/black" />
 
+
+
                                 <!-- Badge View -->
-                                <View
-                                    android:id="@+id/update_badge"
-                                    android:layout_width="8dp"
-                                    android:layout_height="8dp"
-                                    android:layout_gravity="top|end"
-                                    android:layout_marginTop="0dp"
-                                    android:layout_marginEnd="0dp"
-                                    android:background="@drawable/badge_red_circle"
-                                    android:visibility="visible" />
+
                             </FrameLayout>
 
                             <TextView
                                 android:id="@+id/aboutApp"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-
-                                android:layout_below="@+id/adminPerm"
+                                android:layout_below="@+id/fl_tvAppUpdate"
                                 android:layout_marginLeft="10dp"
                                 android:layout_marginTop="5dp"
+                                android:layout_toRightOf="@+id/adminPerm"
                                 android:background="@drawable/rounded_background"
                                 android:clickable="true"
                                 android:drawablePadding="12dp"
@@ -202,25 +196,26 @@
                                 android:text="Admin"
                                 android:textColor="@color/black" />
 
-                            <TextView
-                                android:id="@+id/addPerson"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_below="@+id/refreshProfile"
-                                android:layout_marginLeft="5dp"
-                                android:layout_marginTop="5dp"
-                                android:layout_toRightOf="@+id/adminPerm"
-                                android:background="@drawable/rounded_background"
-                                android:clickable="true"
-                                android:drawableLeft="@drawable/add_user"
-                                android:drawablePadding="5dp"
-                                android:focusable="true"
-                                android:fontFamily="@font/poppins_regular"
-                                android:foreground="?android:attr/selectableItemBackgroundBorderless"
-                                android:paddingHorizontal="8dp"
-                                android:paddingVertical="1dp"
-                                android:text="Add Person"
-                                android:textColor="@color/black" />
+                            <!--                            <TextView-->
+                            <!--                                android:visibility="gone"-->
+                            <!--                                android:id="@+id/addPerson"-->
+                            <!--                                android:layout_width="wrap_content"-->
+                            <!--                                android:layout_height="wrap_content"-->
+                            <!--                                android:layout_below="@+id/refreshProfile"-->
+                            <!--                                android:layout_marginLeft="5dp"-->
+                            <!--                                android:layout_marginTop="5dp"-->
+                            <!--                                android:layout_toRightOf="@+id/adminPerm"-->
+                            <!--                                android:background="@drawable/rounded_background"-->
+                            <!--                                android:clickable="true"-->
+                            <!--                                android:drawableLeft="@drawable/add_user"-->
+                            <!--                                android:drawablePadding="5dp"-->
+                            <!--                                android:focusable="true"-->
+                            <!--                                android:fontFamily="@font/poppins_regular"-->
+                            <!--                                android:foreground="?android:attr/selectableItemBackgroundBorderless"-->
+                            <!--                                android:paddingHorizontal="8dp"-->
+                            <!--                                android:paddingVertical="1dp"-->
+                            <!--                                android:text="Add Person"-->
+                            <!--                                android:textColor="@color/black" />-->
 
                         </RelativeLayout>
                     </RelativeLayout>
@@ -481,11 +476,63 @@
                 android:focusable="false"
                 android:foreground="?android:attr/selectableItemBackgroundBorderless"
                 android:visibility="visible">
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textAlignment="center"
-                    android:text="Subsidy Avalable"/>
+
+                <!-- Use FrameLayout so we can stack the badge and dot -->
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <!-- your existing content -->
+                    <RelativeLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content">
+
+                        <RelativeLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_centerInParent="true"
+                            android:padding="5dp">
+
+                            <ImageView
+                                android:id="@+id/img_lpg_subsidy"
+                                android:layout_width="80dp"
+                                android:layout_height="100dp"
+                                android:src="@drawable/lpg_subsidy_img" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_centerVertical="true"
+                                android:layout_marginLeft="20dp"
+                                android:layout_toRightOf="@+id/img_lpg_subsidy"
+                                android:fontFamily="@font/li_sohid_unicode"
+                                android:text="গ্যাসের সাবসিডি চেক করুন"
+                                android:textAlignment="center"
+                                android:textColor="@color/blue"
+                                android:textSize="18dp" />
+                        </RelativeLayout>
+
+                    </RelativeLayout>
+
+                    <!-- RECEIVED badge in top-right -->
+                    <TextView
+                        android:id="@+id/badgeReceived"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="top|end"
+                        android:layout_margin="8dp"
+                        android:background="@drawable/bg_badge_req"
+                        android:elevation="4dp"
+                        android:paddingHorizontal="8dp"
+                        android:paddingVertical="4dp"
+                        android:text="REQUEST"
+                        android:textColor="@android:color/white"
+                        android:textFontWeight="900"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+
+
+                </FrameLayout>
             </com.google.android.material.card.MaterialCardView>
 
 

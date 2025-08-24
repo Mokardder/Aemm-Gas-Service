@@ -1,6 +1,9 @@
 package android.iocl.dac_collector.Ui;
 
 import android.iocl.dac_collector.ModelData.BankStatementItem;
+import android.iocl.dac_collector.ModelData.SubsidyRecord;
+import android.iocl.dac_collector.Utility.SharedPrefs;
+import android.iocl.dac_collector.Utility.Utility;
 import android.iocl.dac_collector.adapter.StatementAdapter;
 import android.os.Bundle;
 
@@ -14,6 +17,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.iocl.dac_collector.R;
+import android.util.Log;
 import android.view.View;
 
 import java.util.ArrayList;
@@ -42,15 +46,46 @@ public class BankStatementActivity extends AppCompatActivity {
     }
 
     private void setupRecyclerView() {
-        // Sample data - replace with your actual data
+
+        String enc = SharedPrefs.getSubsidyDetails(BankStatementActivity.this);
+
+        Object result = Utility.decodeApiResponse(enc, SubsidyRecord.class);
+
         List<BankStatementItem> items = new ArrayList<>();
-        items.add(new BankStatementItem("2023-07-15", "HOLD", "₹319.57", "2023-07-20", "**** 4567"));
-        items.add(new BankStatementItem("2023-07-10", "Start", "₹319.57", "2023-07-15", "**** 8910"));
-        items.add(new BankStatementItem("2023-07-05", "Start", "₹319.57", "2023-07-10", "**** 1122"));
-        items.add(new BankStatementItem("2023-07-01", "Start", "₹319.57", "2023-07-05", "**** 3344"));
+
+        if (result instanceof List) {
+            List<SubsidyRecord> orders = (List<SubsidyRecord>) result;
+
+            for (SubsidyRecord order : orders) {
+                // Map SubsidyRecord to BankStatementItem
+                String bookDate = order.getOrderDate(); // or deliveryDate
+                String status = order.getSubsidyStatus();
+                String amount = "₹" + order.getSubsidyAmount();
+                String Dos = order.getBankDOS();
+                String account = order.getBankAccountNumber();
+
+                items.add(new BankStatementItem(bookDate, status, amount, Dos, account));
+            }
+
+        } else if (result instanceof SubsidyRecord) {
+            SubsidyRecord order = (SubsidyRecord) result;
+
+            String bookDate = order.getOrderDate(); // or deliveryDate
+            String status = order.getSubsidyStatus();
+            String amount = "₹" + order.getSubsidyAmount();
+            String Dos = order.getBankDOS();
+            String account = order.getBankAccountNumber();
+
+            items.add(new BankStatementItem(bookDate, status, amount, Dos, account));
+
+        } else {
+            Log.e("Decode", "Failed to decode response");
+            return;
+        }
 
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(new StatementAdapter(items));
         recyclerView.addItemDecoration(new DividerItemDecoration(this, DividerItemDecoration.VERTICAL));
     }
+
 }
