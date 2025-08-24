@@ -1,0 +1,30 @@
+name: Auto Draft Release
+
+on:
+  push:
+    branches:
+      - master   # change this if your default branch is 'master' or something else
+
+jobs:
+  create_release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Get current date
+        id: date
+        run: echo "DATE=$(date +'%Y-%m-%d %H:%M:%S')" >> $GITHUB_ENV
+
+      - name: Create draft release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          tag_name: auto-${{ github.sha }}
+          name: "Auto Release - ${{ env.DATE }}"
+          body: |
+            🚀 Automated draft release created from push.
+            Commit: ${{ github.sha }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
