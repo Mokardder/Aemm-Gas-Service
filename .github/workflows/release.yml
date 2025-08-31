@@ -3,7 +3,11 @@ name: Auto Draft Release
 on:
   push:
     branches:
-      - master   # change this if your default branch is 'master' or something else
+      - master   # adjust if your default branch is different
+
+permissions:                        # <-- add this section
+  contents: write
+  releases: write
 
 jobs:
   create_release:
