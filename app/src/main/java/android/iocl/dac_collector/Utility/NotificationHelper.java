@@ -9,6 +9,7 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
+import android.content.res.Resources;
 import android.graphics.Color;
 import android.iocl.dac_collector.R;
 import android.iocl.dac_collector.Ui.MainActivity;
@@ -21,6 +22,7 @@ import android.view.View;
 import android.widget.RemoteViews;
 
 import androidx.annotation.RequiresApi;
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.core.app.NotificationCompat;
 import androidx.core.content.ContextCompat;
 
@@ -50,13 +52,20 @@ public final class NotificationHelper {
         // custom RemoteViews
         RemoteViews customLayout = new RemoteViews(context.getPackageName(), R.layout.dac_notification_bar);
         customLayout.setTextViewText(R.id.dac_val_eng, otp);
-        if (isSystemInDarkMode(context)) {
-            customLayout.setTextColor(R.id.tvTime, Color.WHITE);
-            customLayout.setInt(R.id.clock_img, "setColorFilter", Color.WHITE);
-        } else {
-            customLayout.setTextColor(R.id.tvTime, Color.BLACK);
-            customLayout.setInt(R.id.clock_img, "setColorFilter", Color.BLACK);
-        }
+
+
+
+        boolean dark = isDarkMode();
+
+        Log.d("GGGGG", "showDACNotification: isDarkMode ? " + dark);
+
+        int textColor = dark ? Color.WHITE : Color.BLACK;
+        int text2 = dark ? Color.parseColor("#ABD7E6") : ContextCompat.getColor(context, com.google.android.material.R.color.design_default_color_error);
+
+
+        customLayout.setTextColor(R.id.tv_DAC, textColor);
+        customLayout.setTextColor(R.id.dac_val_eng, text2);
+
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             customLayout.setViewVisibility(R.id.call_Aemm, View.VISIBLE);
@@ -81,16 +90,15 @@ public final class NotificationHelper {
         PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, getPendingIntentFlags());
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_DAC_ID)
-                .setSmallIcon(R.drawable.gas_cylinder_icon)
+                .setSmallIcon(R.drawable.ic_cylinder_tile)
                 .setCustomContentView(customLayout)
                 .setStyle(new NotificationCompat.DecoratedCustomViewStyle())
                 .setCustomBigContentView(customLayout)
                 .setCustomHeadsUpContentView(customLayout)
-                .setColorized(true)
-                .setColor(Color.WHITE)
+
                 .setContentIntent(pendingIntent)
                 .setDefaults(NotificationCompat.DEFAULT_ALL)
-                .setPriority(NotificationCompat.PRIORITY_DEFAULT);
+                .setPriority(NotificationCompat.PRIORITY_HIGH);
 
         Notification notification = builder.build();
         notificationManager.notify(NOTIFICATION_ID_DAC, notification);
@@ -102,23 +110,19 @@ public final class NotificationHelper {
     public static void showRechargeNotification(Context context, String text) {
 
         if (context == null) return;
-        Log.d("MyFirebaseMsgService", "showRechargeNotification: " + text);
+
         NotificationManager notificationManager =
                 (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         if (notificationManager == null) return;
 
         RemoteViews customLayout = new RemoteViews(context.getPackageName(), R.layout.annual_end_notificationbar);
-        customLayout.setTextViewText(R.id.tvTime, text);
+        customLayout.setTextViewText(R.id.alert_text, text);
+        boolean dark = isDarkMode();
 
+        int textColor = dark ? Color.WHITE : Color.BLACK;
 
-        if (isSystemInDarkMode(context)) {
-            customLayout.setTextColor(R.id.tvTime, Color.WHITE);
-
-            customLayout.setInt(R.id.clock_img, "setColorFilter", Color.WHITE);
-        } else {
-            customLayout.setTextColor(R.id.tvTime, Color.BLACK);
-            customLayout.setInt(R.id.clock_img, "setColorFilter", Color.BLACK);
-        }
+        customLayout.setTextColor(R.id.alert_text, textColor);
+        customLayout.setInt(R.id.speaker_img, "setColorFilter", textColor);
 
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -143,24 +147,17 @@ public final class NotificationHelper {
         PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, getPendingIntentFlags());
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_RECHARGE_ID)
-                .setSmallIcon(R.drawable.gas_cylinder_icon)
+                .setSmallIcon(R.drawable.ic_cylinder_tile)
                 .setCustomContentView(customLayout)
                 .setStyle(new NotificationCompat.DecoratedCustomViewStyle())
                 .setAutoCancel(true)
-                .setColor(Color.parseColor("#14A44D"))
-                .setColorized(true)
+
                 .setContentIntent(pendingIntent)
                 .setDefaults(Notification.DEFAULT_ALL)
                 .setPriority(NotificationCompat.PRIORITY_HIGH);
 
         Notification notification = builder.build();
         notificationManager.notify(NOTIFICATION_ID_RECHARGE, notification);
-    }
-
-    public static boolean isSystemInDarkMode(Context ctx) {
-        int uiMode = ctx.getResources().getConfiguration().uiMode;
-        int nightModeFlags = uiMode & Configuration.UI_MODE_NIGHT_MASK;
-        return nightModeFlags == Configuration.UI_MODE_NIGHT_YES;
     }
 
     /**
@@ -216,6 +213,17 @@ public final class NotificationHelper {
             e.printStackTrace();
         }
         return false;
+    }
+
+
+    public static boolean isDarkMode() {
+        int mode = AppCompatDelegate.getDefaultNightMode();
+        if (mode == AppCompatDelegate.MODE_NIGHT_YES) return true;
+        if (mode == AppCompatDelegate.MODE_NIGHT_NO) return false;
+
+        // MODE_NIGHT_FOLLOW_SYSTEM or MODE_NIGHT_UNSPECIFIED → fall back to system
+        int systemMode = Resources.getSystem().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK;
+        return systemMode == Configuration.UI_MODE_NIGHT_YES;
     }
 
     /**

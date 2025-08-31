@@ -17,9 +17,6 @@ public class SyncService extends Service {
                 sSyncAdapter = new UploadSyncAdapter(getApplicationContext(), true);
             }
         }
-        ImageObserver observer = new ImageObserver(new Handler(), this);
-        observer.register();
-
 
     }
 

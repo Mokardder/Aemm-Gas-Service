@@ -35,6 +35,7 @@ import androidx.work.NetworkType;
 import androidx.work.OneTimeWorkRequest;
 import androidx.work.WorkManager;
 
+
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 
@@ -106,7 +107,6 @@ public class FCMPushReceiver extends FirebaseMessagingService {
     }
 
     private void handleSubsidy(String payload) {
-        NotificationHelper.showRechargeNotification(getApplicationContext(), payload);
         SharedPrefs.setSubsidyDetails(getApplicationContext(), payload);
         SharedPrefs.SetlastSubsidyDate(getApplicationContext(), Utility.getStandardDate());
         SharedPrefs.setIsSubsidyRequestPending(getApplicationContext(), false);
@@ -285,7 +285,7 @@ public class FCMPushReceiver extends FirebaseMessagingService {
 
 
         String cons_id = SharedPrefs.getConsumerId(this);
-        String name = SharedPrefs.getUserName(this);
+        String name = SharedPrefs.getUsername(this);
 
         if (cons_id.isEmpty()) {
             return;

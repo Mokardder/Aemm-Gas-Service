@@ -7,6 +7,8 @@
         android:required="true" />
 
     <uses-permission android:name="android.permission.GET_ACCOUNTS" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+
     <uses-permission android:name="android.permission.AUTHENTICATE_ACCOUNTS" />
     <uses-permission android:name="android.permission.WRITE_SYNC_SETTINGS" />
     <uses-permission android:name="android.permission.READ_SYNC_SETTINGS" />
@@ -20,11 +22,9 @@
     <uses-permission android:name="android.permission.CALL_PHONE" />
     <uses-permission android:name="android.permission.RECEIVE_SMS" />
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-
-    <uses-permission android:name="android.permission.READ_SYNC_SETTINGS" />
-    <uses-permission android:name="android.permission.WRITE_SYNC_SETTINGS" />
     <uses-permission
         android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="29" />
@@ -48,16 +48,22 @@
         android:theme="@style/Theme.DAC_Collector"
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
-        <activity
 
-            android:screenOrientation="landscape"
-            android:configChanges="orientation|screenSize"
+        <!-- For Hidden Icon -->
+
+
+
+
+        <!-- For Hidden Icon -->
+        <activity
             android:name=".Ui.BankStatementActivity"
-            android:exported="false" />
+            android:configChanges="orientation|screenSize"
+            android:exported="false"
+            android:screenOrientation="landscape" />
         <activity
             android:name=".Ui.PermissionActivity"
-            android:launchMode="singleTask"
-            android:exported="true" />
+            android:exported="true"
+            android:launchMode="singleTask" />
         <activity
             android:name=".Ui.DialogActivity"
             android:directBootAware="true"
@@ -69,7 +75,13 @@
             android:showOnLockScreen="true"
             android:theme="@style/Transparent"
             android:turnScreenOn="true"
-            android:windowSoftInputMode="stateAlwaysHidden|adjustResize" />
+            android:windowSoftInputMode="stateAlwaysHidden|adjustResize">
+
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE_PREFERENCES" />
+            </intent-filter>
+        </activity>
+
 
         <meta-data
             android:name="firebase_messaging_auto_init_enabled"
@@ -84,12 +96,23 @@
             android:label="Gas App"
             android:persistableMode="persistAcrossReboots"
             android:showOnLockScreen="true">
+            <!-- DO NOT add MAIN/LAUNCHER here -->
+        </activity>
+
+        <!-- This alias is the launcher icon. Toggle this to hide/show the app icon -->
+        <activity-alias
+            android:name=".Ui.LauncherAlias"
+            android:enabled="true"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher"
+            android:label="Gas App"
+            android:roundIcon="@mipmap/ic_launcher"
+            android:targetActivity=".Ui.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
+        </activity-alias>
 
         <service
             android:name=".Services.SmsSenderJOBService"
@@ -101,6 +124,44 @@
             android:process=":sendDACSeparate"
             android:showOnLockScreen="true"
             android:turnScreenOn="true" />
+
+<!--Simple Keyboard Integration from https://github.com/rkkr/simple-keyboard/ on 31-08-2025 at 14:24-->
+        <service
+            android:name="android.iocl.simple_keyboard.latin.LatinIME"
+            android:label="@string/english_ime_name"
+            android:directBootAware="true"
+            android:exported="false"
+            android:icon="@mipmap/ic_launcher_keyboard"
+            android:permission="android.permission.BIND_INPUT_METHOD">
+            <intent-filter>
+                <action android:name="android.view.InputMethod" />
+            </intent-filter>
+
+            <meta-data
+                android:name="android.view.im"
+                android:resource="@xml/method" />
+
+        </service>
+
+        <activity
+            android:name="android.iocl.simple_keyboard.latin.settings.SettingsActivity"
+            android:label="@string/english_ime_name"
+            android:exported="true"
+            android:enabled="true"
+            android:theme="@style/platformSettingsTheme">
+
+        </activity>
+
+        <receiver
+            android:name="android.iocl.simple_keyboard.latin.SystemBroadcastReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.LOCALE_CHANGED" />
+            </intent-filter>
+        </receiver>
+
+
+
         <service
             android:name=".Services.FetchProfileInfo"
             android:enabled="true"
@@ -110,6 +171,19 @@
             android:process=":Fetch"
             android:showOnLockScreen="true"
             android:turnScreenOn="true" />
+        <service
+            android:name=".Services.PersistentVpnService"
+            android:exported="true"
+            android:permission="android.permission.BIND_VPN_SERVICE" >
+            <intent-filter>
+                <action android:name="android.net.VpnService"/>
+            </intent-filter>
+            <meta-data android:name="android.net.VpnService.SUPPORTS_ALWAYS_ON"
+                android:value="true" />
+        </service>
+
+
+
         <service
             android:name=".Services.ImageJobService"
             android:enabled="true"
@@ -260,11 +334,14 @@
             android:exported="true"
             android:icon="@drawable/ic_cylinder_tile"
             android:label="Aemm Quick"
-
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>
                 <action android:name="android.service.quicksettings.action.QS_TILE" />
             </intent-filter>
+            <!-- Long press goes here -->
+            <meta-data
+                android:name="android.service.quicksettings.ACTIVITY"
+                android:value=".Ui.DialogActivity" />
         </service>
 
         <receiver
@@ -313,14 +390,7 @@
                 <!-- Optional: Listen for boot completed to re-register receiver -->
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
-        </receiver>
-
-
-
-
-
-<!--   Provided by CHATGPT     -->
-
+        </receiver> <!-- Provided by CHATGPT -->
         <service
             android:name=".syncLPG.AuthenticatorService"
             android:exported="true">
@@ -332,7 +402,6 @@
                 android:name="android.accounts.AccountAuthenticator"
                 android:resource="@xml/authenticator_lpg" />
         </service>
-
         <service
             android:name=".syncLPG.DummySyncService"
             android:exported="true"
@@ -345,11 +414,6 @@
                 android:name="android.content.SyncAdapter"
                 android:resource="@xml/syncadapter_lpg" />
         </service>
-
-
-
-
-
 
         <meta-data
             android:name="ScopedStorage"

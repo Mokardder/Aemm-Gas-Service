@@ -23,3 +23,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "DAC_Collector"
 include ':app', ':live_library'  // Add ':live_library' here
+

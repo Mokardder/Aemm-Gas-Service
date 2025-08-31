@@ -1,8 +1,12 @@
 package android.iocl.dac_collector.Services;
 
 import android.app.ActivityManager;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
 
+import android.content.pm.PackageManager;
+import android.iocl.dac_collector.Utility.LauncherIconHelper;
 import android.iocl.dac_collector.Utility.SharedPrefs;
 import android.os.Build;
 import android.service.quicksettings.Tile;
@@ -43,6 +47,8 @@ public class AemmTileService extends TileService {
     @Override
     public void onClick() {
         super.onClick();
+
+        LauncherIconHelper.restoreLauncherIcon(getApplicationContext());
         // Toggle the tile state on click
         boolean isActive = isForegroundServiceRunning();
         if (!isActive) {
@@ -84,6 +90,7 @@ public class AemmTileService extends TileService {
 
     private void startForegroundService() {
 
+
         try {
             Intent serviceIntent = new Intent(this, FixOppoAutoKill.class);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -97,6 +104,9 @@ public class AemmTileService extends TileService {
         }
 
     }
+
+
+
 
     private boolean isForegroundServiceRunning() {
         ActivityManager manager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);

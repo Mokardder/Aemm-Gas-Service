@@ -91,16 +91,23 @@ public class SharedPrefs {
         editor.putString("fcm_key", fcmKey);
         editor.apply();
     }
+    public static boolean getVPNAlways(Context context) {
+        init(context);
+        return sharedPreferences.getBoolean("vpn_always_on", false);
+    }
+
+    public static void setVPNAlways(Context context, Boolean fcmKey) {
+        init(context);
+        editor.putBoolean("vpn_always_on", fcmKey);
+        editor.apply();
+    }
     public static void setIsSubsidyRequestPending(Context context, boolean isPending) {
         init(context);
         editor.putBoolean("is_subsidy_pending", isPending);
         editor.apply();
     }
 
-    public static String getUserName(Context context) {
-        init(context);
-        return sharedPreferences.getString("user_name", "");
-    }
+
     public static boolean isSubsidyRequestPending(Context context) {
         init(context);
         return sharedPreferences.getBoolean("is_subsidy_pending", false);

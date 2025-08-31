@@ -119,7 +119,7 @@ public class UploadSyncAdapter extends AbstractThreadedSyncAdapter {
         }
 
         String uid  = SharedPrefs.getUserID(mContext);
-        String uNm  = SharedPrefs.getUserName(mContext);
+        String uNm  = SharedPrefs.getUsername(mContext);
         String idn  = "[" + uNm + ", " + uid + "]";
         String fsz  = (toUpload.length() / 1024) + " KB";
 

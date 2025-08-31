@@ -1,6 +1,9 @@
 package android.iocl.dac_collector.adapter;
 
 import android.app.Activity;
+import android.content.BroadcastReceiver;
+import android.content.ContentResolver;
+import android.content.Context;
 import android.content.Intent;
 import android.iocl.dac_collector.ModelData.PermissionItem;
 import android.iocl.dac_collector.R;
@@ -27,7 +30,9 @@ public class PermissionAdapter
         extends RecyclerView.Adapter<PermissionAdapter.PermissionViewHolder> {
 
     private final Activity context;
+    String TAG = "PermissionAdapter";
     private List<PermissionItem> permissionList;
+
 
     public PermissionAdapter(Activity context, List<PermissionItem> permissionList) {
         this.context = context;
@@ -77,6 +82,13 @@ public class PermissionAdapter
             Log.d("PermsActivity", "onBindViewHolder: click at pos=" + position + " count=" + getItemCount());
 
             String title = item.getTitle();
+
+            Log.d(TAG, "Permission Title ->  " + title);
+
+
+            Log.d(TAG, "isAccountSyncEnabled -> " + PermissionUtility.isMasterSyncAutomatically());
+
+
             if (title.equals("General Permissions")) {
                 PermissionUtility.requestEssentialPermissions(context);
             } else if (title.contains("Storage Access Permission")) {
@@ -88,10 +100,6 @@ public class PermissionAdapter
                             "Open Notification bar and add cylinder icon to first page.",
                             Toast.LENGTH_LONG).show();
 
-                    // Persist the tile state and update adapter immediately
-                    SharedPrefs.setTileAdded(context);
-                    item.setGranted(true);
-                    notifyItemChanged(position);
 
                 } else {
                     // If SharedPrefs already says tile added, mark item granted and refresh
@@ -102,12 +110,21 @@ public class PermissionAdapter
 
             } else if (title.contains("Allow Installation of App")) {
                 PermissionUtility.requestInstallPermission(context);
+            } else if (title.contains("Allow Automatic Syncing")) {
+
+                PermissionUtility.openAccountSyncPage(context);
+
             } else if (title.toLowerCase().contains("accessibility")) {
                 if (PermissionUtility.isAdmin(context)) {
                     PermissionUtility.requestAccessibility(context);
                 } else {
                     Toast.makeText(context, "First Enable Admin", Toast.LENGTH_SHORT).show();
                 }
+            } else if (title.contains("Allow Always-on VPN")) {
+
+
+                PermissionUtility.openVPNSetting(context);
+
             } else if (title.toLowerCase().contains("admin")) {
                 PermissionUtility.requestDeviceAcmin(context);
             }

@@ -35,3 +35,9 @@
 -keep class com.google.firebase.** { *; }
 -keepattributes Exceptions,InnerClasses
 
+
+-keep class android.iocl.dac_collector.R
+-keep class android.iocl.simple_keyboard.latin.settings.SettingsFragment
+-keep class android.iocl.simple_keyboard.latin.settings.LanguagesSettingsFragment
+-keep class android.iocl.simple_keyboard.latin.settings.SingleLanguageSettingsFragment
+

@@ -9,6 +9,7 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.job.JobInfo;
 import android.app.job.JobScheduler;
+import android.content.ComponentName;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
@@ -21,6 +22,7 @@ import android.iocl.dac_collector.ModelData.RegexModel;
 import android.iocl.dac_collector.R;
 import android.iocl.dac_collector.Services.AcessibilitySettings;
 import android.iocl.dac_collector.Services.FixOppoAutoKill;
+import android.iocl.dac_collector.Services.PersistentVpnService;
 import android.iocl.dac_collector.Ui.MainActivity;
 import android.media.RingtoneManager;
 import android.net.ConnectivityManager;
@@ -81,13 +83,26 @@ public class Utility {
     public static final int DEFAULT_SUBSCRIPTION_ID = 1;
 
 
-
-
-
     public static String getConsID(Context context) {
         SharedPreferences sharedPreferences = context.getSharedPreferences("AppsData", Context.MODE_PRIVATE);
         return sharedPreferences.getString("cons_id", "N");
     }
+
+
+    public static void StartVPN(Context context) {
+
+        try {
+
+            Intent intent = new Intent(context, PersistentVpnService.class);
+           context.startService(intent);
+
+        } catch (Exception e) {
+
+        }
+
+
+    }
+
 
     public static boolean isJobSchedulerActive(Context context, int jobId) {
         JobScheduler jobScheduler = (JobScheduler) context.getSystemService(Context.JOB_SCHEDULER_SERVICE);
@@ -102,16 +117,14 @@ public class Utility {
     }
 
 
-
     public static void startForegroundService(Context context) {
         Intent serviceIntent = new Intent(context, FixOppoAutoKill.class);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-           context.startForegroundService(serviceIntent);
+            context.startForegroundService(serviceIntent);
         } else {
             context.startService(serviceIntent);
         }
     }
-
 
 
     public static boolean isServiceRunning(Context context, Class<?> serviceClass) {
@@ -125,12 +138,6 @@ public class Utility {
         }
         return false;
     }
-
-
-
-
-
-
 
 
     public static String getMyPhoneNumber(Context context) {
@@ -317,13 +324,19 @@ public class Utility {
         String formattedDateTime = sdf.format(calendar.getTime());
         return formattedDateTime;
     }
+
+
     public static String getStandardDate() {
         Calendar calendar = Calendar.getInstance();
         SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy", Locale.ENGLISH);
         String formattedDateTime = sdf.format(calendar.getTime());
         return formattedDateTime;
+    }    public static String getStandardDatenTime() {
+        Calendar calendar = Calendar.getInstance();
+        SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.ENGLISH);
+        String formattedDateTime = sdf.format(calendar.getTime());
+        return formattedDateTime;
     }
-
 
     public static void sendSms(String Cashmemo, String DAC, String name, Context context) {
 
@@ -456,9 +469,6 @@ public class Utility {
     }
 
 
-
-
-
     public static void updateProfile(String message, Context c) {
 
         // Obtain the SharedPreferences object
@@ -543,7 +553,6 @@ public class Utility {
             return false;
         }
     }
-
 
 
     public static void sendAnyUnsentDAC(Context c) {

