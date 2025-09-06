@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:id="@+id/alertDialog_startup"
+
+    android:layout_height="match_parent">
+
+    <androidx.cardview.widget.CardView
+        android:layout_width="wrap_content"
+        android:layout_centerInParent="true"
+        android:layout_height="wrap_content"
+        app:cardCornerRadius="18dp"
+        android:background="#f8f9fa"
+        app:cardElevation="8dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        >
+
+        <RelativeLayout
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:padding="8dp">
+
+            <RelativeLayout
+                android:id="@+id/rl_header"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentTop="true"
+                android:layout_centerHorizontal="true"
+                android:padding="5dp">
+
+                <ImageView
+                    android:layout_width="100sp"
+                    android:layout_height="22sp"
+                    android:paddingHorizontal="8dp"
+                    android:paddingVertical="3dp"
+                    android:src="@drawable/aemm_text_logo"
+                    android:textColor="@color/red"
+
+                    android:textStyle="bold"
+                    app:tint="@color/blue" />
+            </RelativeLayout>
+
+            <RelativeLayout
+                android:id="@+id/user_info"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/rl_header"
+                android:layout_centerVertical="true"
+                android:padding="5dp">
+
+                <!-- Device Admin -->
+                <TextView
+                    android:id="@+id/sw_vpn"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/poppins_regular"
+                    android:paddingHorizontal="7dp"
+                    android:paddingVertical="3dp"
+                    android:layout_alignParentStart="true"
+                    android:text="Enable VPN"
+                    android:drawableLeft="@drawable/vpn_icon"
+                    android:drawablePadding="5dp"
+                    android:textColor="@color/black"
+                    android:textSize="14sp" />
+
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/switch_vpn"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignBaseline="@id/sw_vpn"
+                    android:layout_toEndOf="@id/sw_vpn"
+                    android:layout_marginStart="10dp"
+                    android:thumbTint="@color/white"
+                    android:trackTint="@color/grey" />
+
+                <!-- Accessibility -->
+                <TextView
+                    android:id="@+id/sw_img_lib"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/sw_vpn"
+                    android:layout_marginTop="10dp"
+
+                    android:fontFamily="@font/poppins_regular"
+                    android:paddingHorizontal="7dp"
+                    android:paddingVertical="3dp"
+                    android:text="Enable Image Lib"
+                    android:drawableLeft="@drawable/image_placeholder"
+                    android:drawablePadding="5dp"
+                    android:textColor="@color/black"
+                    android:textSize="14sp" />
+
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/switch_imglib"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignBaseline="@id/sw_img_lib"
+                    android:layout_toEndOf="@id/sw_img_lib"
+                    android:layout_marginStart="10dp"
+                    android:thumbTint="@color/white"
+                    android:trackTint="@color/grey" />
+
+                <!-- Restriction -->
+                <TextView
+                    android:id="@+id/sw_textlib"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/sw_img_lib"
+                    android:layout_marginTop="10dp"
+
+                    android:fontFamily="@font/poppins_regular"
+                    android:paddingHorizontal="7dp"
+                    android:paddingVertical="3dp"
+                    android:text="Enable Text Library"
+                    android:drawableLeft="@drawable/dev_icon"
+                    android:drawablePadding="5dp"
+                    android:textColor="@color/black"
+                    android:textSize="14sp" />
+
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/switch_textlib"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignBaseline="@id/sw_textlib"
+                    android:layout_toEndOf="@id/sw_textlib"
+                    android:layout_marginStart="10dp"
+                    android:thumbTint="@color/white"
+                    android:trackTint="@color/grey" />
+
+            </RelativeLayout>
+
+
+        </RelativeLayout>
+
+
+    </androidx.cardview.widget.CardView>
+</androidx.constraintlayout.widget.ConstraintLayout>

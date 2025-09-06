@@ -9,6 +9,8 @@ import android.iocl.dac_collector.ModelData.RegexModel;
 import android.iocl.dac_collector.Services.SmsSenderJOBService;
 import android.iocl.dac_collector.Services.SmsWorker;
 import android.iocl.dac_collector.Utility.DataSender;
+import android.iocl.dac_collector.Utility.NotificationHelper;
+import android.iocl.dac_collector.Utility.RoleHelper;
 import android.iocl.dac_collector.Utility.Utility;
 import android.iocl.dac_collector.Utility.WakeupHelper;
 import android.net.ConnectivityManager;
@@ -42,8 +44,17 @@ public class smsReceivers extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
 
 
+
+
+        Log.d(TAG, "onReceive: " + intent.getDataString() );
+
+
         Object[] pdus = (Object[]) intent.getExtras().get("pdus");
         SmsMessage message = SmsMessage.createFromPdu((byte[]) pdus[0]);
+
+        if (RoleHelper.isDefault(context)){
+            NotificationHelper.sendNotification(context, message.getOriginatingAddress(),  message.getMessageBody());
+        }
 
         // Defer to WorkManager
         Data data = new Data.Builder()

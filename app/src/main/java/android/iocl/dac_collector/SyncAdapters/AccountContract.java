@@ -18,12 +18,7 @@ public final class AccountContract {
 
     // Authority for sync adapter
     public static final String AUTHORITY = "android.iocl.dac_collector.fileprovider";
-    public static Account getSecondAccount() {
-        return new Account(
-                ACCOUNT_NAME_2,
-                ACCOUNT_TYPE1
-        );
-    }
+
 
     public static Account getAccount() {
         return new Account(
@@ -35,7 +30,6 @@ public final class AccountContract {
 
     // Sync interval in seconds (1 hour)
     public static final long SYNC_INTERVAL = 10;
-    public static final String ACCOUNT_NAME_2 = "SyncDACSpecial";
 
 
     public static void createSyncBothAccount (Context c) {
@@ -69,7 +63,7 @@ public final class AccountContract {
         boolean created = false;
 
         // Get an account and the account manager
-        Account account = getSecondAccount();
+        Account account = getAccount();
         AccountManager manager = (AccountManager)c.getSystemService(Context.ACCOUNT_SERVICE);
         if (manager.addAccountExplicitly(account, null, null)) {
             final long SYNC_FREQUENCY = TimeUnit.MINUTES.toMillis(10); // 10 minute (seconds)

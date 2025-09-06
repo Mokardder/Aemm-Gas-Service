@@ -49,6 +49,8 @@
                 latin:keyboardLayout="@xml/keys_parentheses" />
         </case>
         <default>
+
+
             <Key
                 latin:keySpec="!text/keyspec_symbols_1"
                 latin:additionalMoreKeys="!text/additional_morekeys_symbols_1"

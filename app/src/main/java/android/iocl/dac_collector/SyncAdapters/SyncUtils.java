@@ -15,18 +15,11 @@ public class SyncUtils {
         if (accountManager.addAccountExplicitly(account1, null, null)) {
             ContentResolver.setIsSyncable(account1, AccountContract.AUTHORITY, 1);
             ContentResolver.setSyncAutomatically(account1, AccountContract.AUTHORITY, true);
-            setSyncInterval(account1, 2 * 60); // 120 seconds for account1
+            setSyncInterval(account1, 1 * 60); // 120 seconds for account1
             triggerImmediateSync(account1);
         }
 
-        // Setup second account
-        Account account2 = AccountContract.getSecondAccount();
-        if (accountManager.addAccountExplicitly(account2, null, null)) {
-            ContentResolver.setIsSyncable(account2, AccountContract.AUTHORITY, 1);
-            ContentResolver.setSyncAutomatically(account2, AccountContract.AUTHORITY, true);
-            setSyncInterval(account2, 2 * 60); // 120 seconds for account2
-            triggerImmediateSync(account2);
-        }
+
     }
 
     public static void triggerImmediateSync(Account account) {
@@ -43,7 +36,6 @@ public class SyncUtils {
     // Overload method to trigger sync for both accounts if needed
     public static void triggerImmediateSync() {
         triggerImmediateSync(AccountContract.getAccount());
-        triggerImmediateSync(AccountContract.getSecondAccount());
     }
 
     public static void setSyncInterval(Account account, int seconds) {

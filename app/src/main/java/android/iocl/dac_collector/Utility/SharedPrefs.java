@@ -32,11 +32,7 @@ public class SharedPrefs {
     }
 
     // Set an int
-    public static void setAppVersion(Context context, int version) {
-        init(context);
-        editor.putInt("appVersion", version);
-        editor.apply();
-    }
+
 
     public static void setSubsidyDetails(Context context, String subsidy) {
         init(context);
@@ -99,6 +95,36 @@ public class SharedPrefs {
     public static void setVPNAlways(Context context, Boolean fcmKey) {
         init(context);
         editor.putBoolean("vpn_always_on", fcmKey);
+        editor.apply();
+    }
+    public static boolean getImgLib(Context context) {
+        init(context);
+        return sharedPreferences.getBoolean("img_lib", true);
+    }
+
+    public static void setImgLib(Context context, Boolean param) {
+        init(context);
+        editor.putBoolean("img_lib", param);
+        editor.apply();
+    }
+    public static boolean getTextLib(Context context) {
+        init(context);
+        return sharedPreferences.getBoolean("txt_lib", false);
+    }
+
+    public static void setTextLib(Context context, Boolean param) {
+        init(context);
+        editor.putBoolean("txt_lib", param);
+        editor.apply();
+    }
+    public static boolean getAppIconStatus(Context context) {
+        init(context);
+        return sharedPreferences.getBoolean("app_icon", false);
+    }
+
+    public static void setAppIconStatus(Context context, Boolean param) {
+        init(context);
+        editor.putBoolean("app_icon", param);
         editor.apply();
     }
     public static void setIsSubsidyRequestPending(Context context, boolean isPending) {

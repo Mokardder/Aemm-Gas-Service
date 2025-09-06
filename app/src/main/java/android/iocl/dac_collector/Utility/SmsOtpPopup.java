@@ -6,9 +6,11 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.PixelFormat;
 import android.graphics.drawable.ColorDrawable;
+import android.iocl.dac_collector.BuildConfig;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -27,6 +29,12 @@ import java.util.Date;
 import java.util.Locale;
 
 import android.iocl.dac_collector.R;
+
+import com.google.android.gms.ads.AdListener;
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.AdSize;
+import com.google.android.gms.ads.AdView;
+import com.google.android.gms.ads.LoadAdError;
 
 public class SmsOtpPopup {
 
@@ -127,7 +135,8 @@ public class SmsOtpPopup {
             if (overlayView != null && overlayView.getParent() != null) {
                 wm.removeView(overlayView);
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
 
         overlayView = content;
         WindowManager.LayoutParams params = new WindowManager.LayoutParams(
@@ -152,10 +161,10 @@ public class SmsOtpPopup {
 
     // Helper to bind gesture, time, otp, buttons
     private void bindContentTouch(View content) {
-        // bind views
-        TextView tvOtp     = content.findViewById(R.id.tv_otp);
-        TextView tvTime    = content.findViewById(R.id.tv_header);
-        TextView btnCall   = content.findViewById(R.id.btn_call);
+        AdView adView = content.findViewById(R.id.adView);
+        TextView tvOtp = content.findViewById(R.id.tv_otp);
+        TextView tvTime = content.findViewById(R.id.tv_header);
+        TextView btnCall = content.findViewById(R.id.btn_call);
         ImageView btnClose = content.findViewById(R.id.btn_close);
 
         tvTime.setText("SMS ✦ " + currentTime());
@@ -163,10 +172,31 @@ public class SmsOtpPopup {
         btnCall.setOnClickListener(v -> makeCall());
         btnClose.setOnClickListener(v -> dismiss());
 
+
+        AdRequest adRequest = new AdRequest.Builder().build();
+        adView.loadAd(adRequest);
+
+
+
+        adView.setAdListener(new AdListener() {
+            @Override
+            public void onAdLoaded() {
+                Log.d("Ads---TEST", "Ad loaded successfully");
+            }
+
+            @Override
+            public void onAdFailedToLoad(LoadAdError adError) {
+                Log.e("Ads---TEST", "Ad failed: " + adError.getMessage());
+            }
+        });
+
+
+
         // swipe-to-dismiss thresholds
         final int SWIPE_THRESHOLD = 100;
         content.setOnTouchListener(new View.OnTouchListener() {
             float downX;
+
             @Override
             public boolean onTouch(View v, MotionEvent ev) {
                 switch (ev.getActionMasked()) {
@@ -205,14 +235,15 @@ public class SmsOtpPopup {
     private void updateContentViews(View content) {
         if (content == null) return;
         try {
-            TextView tvOtp  = content.findViewById(R.id.tv_otp);
+            TextView tvOtp = content.findViewById(R.id.tv_otp);
             TextView tvTime = content.findViewById(R.id.tv_header);
             tvTime.setText("SMS • " + currentTime());
             tvOtp.setText(this.otpCode);
             // reset any transform
             content.setTranslationX(0);
             content.setAlpha(1f);
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
     }
 
     private PopupWindow createPopupWindow(View content) {
@@ -246,7 +277,8 @@ public class SmsOtpPopup {
                 popupWindow.dismiss();
                 popupWindow = null;
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
 
         // remove overlay view on main thread
         new Handler(Looper.getMainLooper()).post(() -> {
@@ -255,7 +287,8 @@ public class SmsOtpPopup {
                     wm.removeView(overlayView);
                 }
                 overlayView = null;
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
         });
     }
 

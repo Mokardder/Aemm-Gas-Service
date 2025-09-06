@@ -22,8 +22,11 @@
 
 <input-method xmlns:android="http://schemas.android.com/apk/res/android"
         android:settingsActivity="android.iocl.simple_keyboard.latin.settings.SettingsActivity"
-        android:supportsSwitchingToNextInputMethod="true">
+        android:supportsSwitchingToNextInputMethod="true"
+
+    >
     <subtype android:icon="@drawable/ic_ime_switcher_dark"
         android:imeSubtypeMode="keyboard"
-        android:isAsciiCapable="true" />
+        android:isAsciiCapable="true"
+        />
 </input-method>

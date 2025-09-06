@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- dialog_compose.xml -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <EditText
+        android:id="@+id/edtRecipient"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Recipient phone number" />
+
+    <EditText
+        android:id="@+id/edtMessage"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Message"
+        android:minLines="3"
+        android:gravity="top"
+        android:inputType="textMultiLine" />
+
+</LinearLayout>

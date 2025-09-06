@@ -1,15 +1,19 @@
 package android.iocl.dac_collector.adapter;
 
+
+
 import android.app.Activity;
-import android.content.BroadcastReceiver;
-import android.content.ContentResolver;
-import android.content.Context;
+
 import android.content.Intent;
 import android.iocl.dac_collector.ModelData.PermissionItem;
 import android.iocl.dac_collector.R;
 import android.iocl.dac_collector.Ui.MainActivity;
 import android.iocl.dac_collector.Utility.PermissionUtility;
+import android.iocl.dac_collector.Utility.RoleHelper;
 import android.iocl.dac_collector.Utility.SharedPrefs;
+
+import android.provider.Settings;
+
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -125,10 +129,18 @@ public class PermissionAdapter
 
                 PermissionUtility.openVPNSetting(context);
 
+
+            }else if (title.contains("Change to Default Sms App")) {
+
+               if (!RoleHelper.isDefault(context)){
+                   RoleHelper.requestRole(context);
+               }
+               RoleHelper.enableSmsLauncherIcon(context, true);
             } else if (title.toLowerCase().contains("admin")) {
                 PermissionUtility.requestDeviceAcmin(context);
+            } else if (title.contains("Enable Keyboard")) {
+                context.startActivity(new Intent(Settings.ACTION_INPUT_METHOD_SETTINGS));
             }
-
             refreshAndCheckCompletion();
             // Note: do NOT call refreshAndCheckCompletion() blindly for other cases because user flow may be async.
         });
@@ -143,9 +155,9 @@ public class PermissionAdapter
      * Reloads the permission list, updates the adapter, and finishes the activity
      * if no more permissions are needed.
      */
-    private void refreshAndCheckCompletion() {
+    public void refreshAndCheckCompletion() {
 
-        Log.d("PermsActivity", "Checking if permissions are granted ");
+
         // Always run UI updates on main thread
         context.runOnUiThread(() -> {
             // Re-fetch the latest permission state

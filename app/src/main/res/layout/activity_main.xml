@@ -222,6 +222,16 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
+
+            <com.google.android.gms.ads.AdView
+                android:id="@+id/adView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                ads:adSize="BANNER"
+                ads:adUnitId="@string/banner_ad_unit_id"
+                xmlns:ads="http://schemas.android.com/apk/res-auto"/>
+
+
             <!-- Remaining Book & Last Book Date Card -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
@@ -534,6 +544,13 @@
 
                 </FrameLayout>
             </com.google.android.material.card.MaterialCardView>
+            <com.google.android.gms.ads.AdView
+                android:id="@+id/adView2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                ads:adSize="BANNER"
+                ads:adUnitId="@string/banner_ad_unit_id"
+                xmlns:ads="http://schemas.android.com/apk/res-auto"/>
 
 
             <RelativeLayout

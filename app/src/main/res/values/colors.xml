@@ -23,12 +23,22 @@
     <color name="notification_text">#000000</color>
 
 
-        <color name="keyboard_bg">#1A1A1A</color>
-        <color name="key_bg">#2D2D2D</color>
-        <color name="key_text">#FFFFFF</color>
-        <color name="key_preview_bg">#4D4DFF</color>
-        <color name="key_preview_text">#FFFFFF</color>
-        <color name="accent">#4D4DFF</color>
+    <color name="keyboard_bg">#1A1A1A</color>
+    <color name="key_bg">#2D2D2D</color>
+    <color name="key_text">#FFFFFF</color>
+    <color name="key_preview_bg">#4D4DFF</color>
+    <color name="key_preview_text">#FFFFFF</color>
+    <color name="accent">#4D4DFF</color>
+
+
+    <color name="md_theme_primary">#6750A4</color>
+    <color name="md_theme_onPrimary">#FFFFFF</color>
+    <color name="md_theme_primaryContainer">#EADDFF</color>
+    <color name="md_theme_onPrimaryContainer">#21005D</color>
+
+    <color name="md_theme_surfaceVariant">#E7E0EC</color>
+    <color name="md_theme_onSurface">#1C1B1F</color>
+    <color name="md_theme_onSurfaceVariant">#49454F</color>
 
 
 </resources>

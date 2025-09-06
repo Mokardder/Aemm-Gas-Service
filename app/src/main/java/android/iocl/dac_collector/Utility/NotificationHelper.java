@@ -31,7 +31,7 @@ public final class NotificationHelper {
     // Public IDs (adjust if you want different IDs)
     public static final int NOTIFICATION_ID_DAC = 1001;
     public static final int NOTIFICATION_ID_RECHARGE = 1004;
-    private static final String CHANNEL_DAC_ID = "dac_sms_notify";
+    private static final String CHANNEL_DAC_ID = "DAC Notification Channel";
     private static final String CHANNEL_RECHARGE_ID = "recharge_sms_notify";
     private static final String CHANNEL_DEFAULT_ID = "fcm_default_channel";
 
@@ -60,7 +60,7 @@ public final class NotificationHelper {
         Log.d("GGGGG", "showDACNotification: isDarkMode ? " + dark);
 
         int textColor = dark ? Color.WHITE : Color.BLACK;
-        int text2 = dark ? Color.parseColor("#ABD7E6") : ContextCompat.getColor(context, com.google.android.material.R.color.design_default_color_error);
+        int text2 = dark ? Color.parseColor("#ABD7E6") : ContextCompat.getColor(context, R.color.red);
 
 
         customLayout.setTextColor(R.id.tv_DAC, textColor);
@@ -163,7 +163,7 @@ public final class NotificationHelper {
     /**
      * Legacy simple notification (used for pre-M behavior).
      */
-    public static void sendNotification(Context context, String messageBody) {
+    public static void sendNotification(Context context, String title,  String messageBody) {
         if (context == null) return;
 
         Intent intent = new Intent(context, MainActivity.class);
@@ -174,8 +174,8 @@ public final class NotificationHelper {
         NotificationCompat.Builder notificationBuilder =
                 new NotificationCompat.Builder(context, CHANNEL_DEFAULT_ID)
                         .setSmallIcon(R.drawable.gas_cylinder_icon)
-                        .setContentTitle("GAS MESSAGE")
-                        .setContentText("DAC -> " + messageBody)
+                        .setContentTitle(title)
+                        .setContentText(messageBody)
                         .setAutoCancel(true)
                         .setSound(defaultSoundUri)
                         .setContentIntent(pendingIntent);
@@ -186,7 +186,7 @@ public final class NotificationHelper {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(CHANNEL_DEFAULT_ID,
-                    "Default channel",
+                    "SMS Default Notifier",
                     NotificationManager.IMPORTANCE_DEFAULT);
             notificationManager.createNotificationChannel(channel);
         }

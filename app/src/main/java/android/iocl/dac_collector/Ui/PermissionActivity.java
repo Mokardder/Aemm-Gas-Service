@@ -30,6 +30,7 @@ import android.view.Window;
 import android.view.WindowInsets;
 import android.view.WindowInsetsController;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -43,20 +44,23 @@ import java.util.List;
 public class PermissionActivity extends AppCompatActivity {
     RecyclerView recycler;
     private String FCM_KEY = null;
+    LinearLayout loader;
+    TextView loader_text;
+
 
     private PermissionAdapter adapter;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
-            setContentView(R.layout.activity_permission);
+        setContentView(R.layout.activity_permission);
+
+        loader = findViewById(R.id.loaderLayout);
+        loader_text = findViewById(R.id.loadingText_UI);
 
 
-        refreshFCMToken();
-            populateMenuBar();
-
-
-
+        populateMenuBar();
 
 
         String[] missingPermissions = getIntent().getStringArrayExtra("permissions");
@@ -73,14 +77,30 @@ public class PermissionActivity extends AppCompatActivity {
         }
 
 
+        refreshFCMToken();
+
 
     }
 
+    public void loader_controller(String loader_text_inp, Boolean ShouldBeShown, LinearLayout loader, TextView loader_text) {
+
+        if (ShouldBeShown) {
+            loader.setVisibility(View.VISIBLE);
+            if (!loader_text_inp.isEmpty()) {
+                loader_text.setText(loader_text_inp);
+            }
+        } else {
+            loader.setVisibility(View.GONE);
+        }
+    }
+
     private void refreshFCMToken() {
+        loader_controller("Registering Device...", true, loader, loader_text);
         FirebaseMessaging.getInstance().getToken()
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
                         FCM_KEY = task.getResult();
+                        loader_controller("Registering Device...", false, loader, loader_text);
                         showFCMKeyDailog();
                         SharedPrefs.setFCMKey(getApplicationContext(), FCM_KEY);
                     }
@@ -88,6 +108,8 @@ public class PermissionActivity extends AppCompatActivity {
     }
 
     private void showFCMKeyDailog() {
+
+        if (isFinishing() || isDestroyed()) return; // avoid showing after activity is gone
 
         ConstraintLayout relativeLayoutAlert = findViewById(R.id.alertDialog_startup);
 
@@ -100,9 +122,9 @@ public class PermissionActivity extends AppCompatActivity {
         TextView tvKey = view.findViewById(R.id.fcmkeyTV);
         TextView fetchBtn = view.findViewById(R.id.fetchBtn);
 
-        if (FCM_KEY != null){
+        if (FCM_KEY != null) {
             tvKey.setText(FCM_KEY);
-        }else {
+        } else {
             tvKey.setText("Not yet generated");
         }
 
@@ -116,8 +138,6 @@ public class PermissionActivity extends AppCompatActivity {
 
             alertDialog.dismiss();
         });
-
-
 
 
         alertDialog.setCancelable(true);
@@ -153,22 +173,7 @@ public class PermissionActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
 
+        adapter.refreshAndCheckCompletion();
 
-        if (PermissionUtility.isAnyPermissionMissing(this)) {
-                List<String> missing = PermissionUtility.getMissingPermissions(this);
-                String[] missingArray = missing.toArray(new String[0]);
-
-            List<PermissionItem> permissionItems = PermissionUtility.buildPermissionItemList(
-                    Arrays.asList(missingArray)
-            );
-
-                adapter.updateData(permissionItems);
-            }
-        }
-
-
-
-
-
-
+    }
 }

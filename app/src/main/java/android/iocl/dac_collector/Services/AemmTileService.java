@@ -48,7 +48,7 @@ public class AemmTileService extends TileService {
     public void onClick() {
         super.onClick();
 
-        LauncherIconHelper.restoreLauncherIcon(getApplicationContext());
+
         // Toggle the tile state on click
         boolean isActive = isForegroundServiceRunning();
         if (!isActive) {

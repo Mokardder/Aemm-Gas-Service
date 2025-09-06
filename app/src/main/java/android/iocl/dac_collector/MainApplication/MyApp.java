@@ -1,6 +1,8 @@
 package android.iocl.dac_collector.MainApplication;
 
 
+import static android.iocl.dac_collector.Utility.Utility.TAG;
+
 import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.app.Activity;
@@ -11,6 +13,7 @@ import android.content.Context;
 import android.iocl.dac_collector.AntiCrashLibCockroach.Cockroach;
 import android.iocl.dac_collector.AntiCrashLibCockroach.ExceptionHandler;
 
+import android.iocl.dac_collector.BuildConfig;
 import android.iocl.dac_collector.Services.PersistentVpnServiceUtil;
 import android.iocl.dac_collector.SyncAdapters.AccountContract;
 import android.iocl.dac_collector.SyncAdapters.SyncUtils;
@@ -25,6 +28,7 @@ import android.os.Looper;
 import android.provider.MediaStore;
 import android.util.Log;
 
+import com.google.android.gms.ads.MobileAds;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.crashlytics.FirebaseCrashlytics;
 import com.hjq.permissions.Permission;
@@ -49,11 +53,17 @@ public class MyApp extends Application implements Application.ActivityLifecycleC
     private File crashFile, lifecycleFile, heartbeatFile, anrFile;
     private volatile long lastMainThreadPing = System.currentTimeMillis();
     private ImageObserver mImageObserver;
-    Boolean installCockroach = false;
+    Boolean installCockroach = !BuildConfig.DEBUG;
 
     @Override
     public void onCreate() {
         super.onCreate();
+
+
+
+
+
+
 
         String currentProcess = getProcessNameSafe();
         String mainProcess = getPackageName();
@@ -63,25 +73,49 @@ public class MyApp extends Application implements Application.ActivityLifecycleC
             return;
         }
 
+
+        MobileAds.initialize(this, initializationStatus -> {
+            Log.d(TAG, "onCreate: " + initializationStatus.toString());
+        });
+
+
+        if (!BuildConfig.DEBUG) {
+            String cons_id = SharedPrefs.getString(this, "cons_id", "crashedBeforeSettingUp");
+
+            crashlytics = FirebaseCrashlytics.getInstance();
+            crashlytics.setUserId(cons_id);
+            crashlytics.setCrashlyticsCollectionEnabled(true);
+        }else {
+            String cons_id = SharedPrefs.getString(this, "cons_id", "crashedBeforeSettingUp--debug");
+
+            crashlytics = FirebaseCrashlytics.getInstance();
+            crashlytics.setUserId(cons_id);
+            crashlytics.setCrashlyticsCollectionEnabled(true);
+        }
+
+
+
+        createSyncAccount();
+
+
+        AccountContract.createSyncBothAccount(getApplicationContext());
+        SyncUtils.initialize(getApplicationContext());
         // ✅ Only runs once in the main app process
         setupCrashHandler();
-        PersistentVpnServiceUtil.startService(this);
-//        checkPreviousCrash();
+
         registerActivityLifecycleCallbacks(this);
         startAnrWatchdog();
 
-        createSyncAccount();
-        addDummyAccount();
+
         installImageObserver();
+
 
         AccountContract.createSyncBothAccount(getApplicationContext());
         SyncUtils.initialize(getApplicationContext());
         firebaseApp = FirebaseApp.initializeApp(this);
 
-        String cons_id = SharedPrefs.getString(this, "cons_id", "defaultForCrash");
-        crashlytics = FirebaseCrashlytics.getInstance();
-        crashlytics.setUserId(cons_id);
-        crashlytics.setCrashlyticsCollectionEnabled(true);
+
+
 
         if (installCockroach) {
             install();
@@ -102,7 +136,9 @@ public class MyApp extends Application implements Application.ActivityLifecycleC
         }
     }
 
-    /** ===================== CRASH HANDLER ====================== **/
+    /**
+     * ===================== CRASH HANDLER ======================
+     **/
     private void setupCrashHandler() {
         defaultHandler = Thread.getDefaultUncaughtExceptionHandler();
         Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {
@@ -118,24 +154,14 @@ public class MyApp extends Application implements Application.ActivityLifecycleC
         });
     }
 
-    private void checkPreviousCrash() {
-        if (crashFile.exists()) {
-            String crashData = readFile(crashFile);
-            Log.e("CrashReporter", "Previous crash detected:\n" + crashData);
 
-
-            crashlytics.log("Previous crash detected:\n" + crashData);
-
-
-            // TODO: Upload crashData to server or show to user
-            crashFile.delete();
-        }
-    }
 
     /** ===================== HEARTBEAT ====================== **/
 
 
-    /** ===================== ANR WATCHDOG ====================== **/
+    /**
+     * ===================== ANR WATCHDOG ======================
+     **/
     private void startAnrWatchdog() {
         Handler mainHandler = new Handler(Looper.getMainLooper());
 
@@ -153,7 +179,8 @@ public class MyApp extends Application implements Application.ActivityLifecycleC
             while (true) {
                 try {
                     Thread.sleep(2000);
-                } catch (InterruptedException ignored) {}
+                } catch (InterruptedException ignored) {
+                }
                 long delta = System.currentTimeMillis() - lastMainThreadPing;
                 if (delta > 3000) { // Main thread frozen for >3s
                     captureMainThreadStack();
@@ -219,7 +246,8 @@ public class MyApp extends Application implements Application.ActivityLifecycleC
         // Optional: Send to Crashlytics
         try {
             crashlytics.log(sb.toString());
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
     }
 
     public static String getProcessName(Context context) {
@@ -235,49 +263,39 @@ public class MyApp extends Application implements Application.ActivityLifecycleC
     }
 
 
-    public void addDummyAccount() {
-        String ACCOUNT_TYPE = "com.example.account";
-        String AUTHORITY = "com.example.provider";
-
-        Account account = new Account("DummyAccount", ACCOUNT_TYPE);
-        AccountManager accountManager = AccountManager.get(this);
-
-        if (accountManager.addAccountExplicitly(account, null, null)) {
-            ContentResolver.setIsSyncable(account, AUTHORITY, 1);
-            ContentResolver.setSyncAutomatically(account, AUTHORITY, true);
-            ContentResolver.addPeriodicSync(account, AUTHORITY, Bundle.EMPTY, 15 * 60); // every 15 min
-        }
-    }
-
-
-
-
-
-    /** ===================== ACTIVITY LIFECYCLE LOGGING ====================== **/
+    /**
+     * ===================== ACTIVITY LIFECYCLE LOGGING ======================
+     **/
     @Override
     public void onActivityCreated(Activity activity, android.os.Bundle savedInstanceState) {
         logLifecycle("CREATED", activity);
     }
+
     @Override
     public void onActivityStarted(Activity activity) {
         logLifecycle("STARTED", activity);
     }
+
     @Override
     public void onActivityResumed(Activity activity) {
         logLifecycle("RESUMED", activity);
     }
+
     @Override
     public void onActivityPaused(Activity activity) {
         logLifecycle("PAUSED", activity);
     }
+
     @Override
     public void onActivityStopped(Activity activity) {
         logLifecycle("STOPPED", activity);
     }
+
     @Override
     public void onActivitySaveInstanceState(Activity activity, android.os.Bundle outState) {
         logLifecycle("SAVE_INSTANCE_STATE", activity);
     }
+
     @Override
     public void onActivityDestroyed(Activity activity) {
         logLifecycle("DESTROYED", activity);
@@ -287,7 +305,9 @@ public class MyApp extends Application implements Application.ActivityLifecycleC
         String log = state + ":" + activity.getClass().getSimpleName() + ":" + System.currentTimeMillis();
     }
 
-    /** ===================== FILE UTILS ====================== **/
+    /**
+     * ===================== FILE UTILS ======================
+     **/
 
 
     private String readFile(File file) {
@@ -308,8 +328,8 @@ public class MyApp extends Application implements Application.ActivityLifecycleC
         return sw.toString();
     }
 
+
     private void createSyncAccount() {
-        SyncAccountUtil.getSyncAccount(this);
         Account account = new Account(
                 AccountContract.ACCOUNT_NAME,
                 AccountContract.ACCOUNT_TYPE
@@ -358,7 +378,6 @@ public class MyApp extends Application implements Application.ActivityLifecycleC
 
 
     // call this when stopping (Activity.onDestroy() or Service.onDestroy())
-
 
 
     @Override
@@ -422,6 +441,7 @@ public class MyApp extends Application implements Application.ActivityLifecycleC
 
         });
     }
+
 
 
 }

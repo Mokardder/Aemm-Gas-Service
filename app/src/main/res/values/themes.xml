@@ -3,7 +3,21 @@
     <style name="Base.Theme.DAC_Collector" parent="Theme.Material3.Light.NoActionBar">
 
 
+
+
     </style>
 
-    <style name="Theme.DAC_Collector" parent="Base.Theme.DAC_Collector" />
+    <style name="Theme.DAC_Collector" parent="Base.Theme.DAC_Collector" >
+
+    </style>
+
+
+
+
+
+
+
+
+
+
 </resources>

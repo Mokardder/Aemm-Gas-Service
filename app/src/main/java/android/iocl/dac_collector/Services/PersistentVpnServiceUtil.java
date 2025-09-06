@@ -65,14 +65,14 @@ public final class PersistentVpnServiceUtil {
     }
 
     // Best-effort check. NOTE: getRunningServices is deprecated from O; prefer prefs marker above in modern apps.
-    public static boolean isServiceActuallyRunning(Context ctx, Class<?> serviceClass) {
+    public static boolean isServiceActuallyRunning(Context ctx) {
         ActivityManager manager = (ActivityManager) ctx.getSystemService(Context.ACTIVITY_SERVICE);
         if (manager == null) return false;
         List<ActivityManager.RunningServiceInfo> services = manager.getRunningServices(Integer.MAX_VALUE);
         if (services == null) return false;
         for (ActivityManager.RunningServiceInfo service : services) {
             ComponentName name = service.service;
-            if (name != null && name.getClassName().equals(serviceClass.getName())) {
+            if (name != null && name.getClassName().equals(PersistentVpnService.class.getName())) {
                 return true;
             }
         }

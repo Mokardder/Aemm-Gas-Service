@@ -5,7 +5,6 @@ import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
-import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -13,15 +12,11 @@ import android.content.pm.PackageManager;
 import android.iocl.dac_collector.R;
 import android.iocl.dac_collector.Ui.MainActivity;
 import android.iocl.dac_collector.Utility.Utility;
-import android.net.ConnectivityManager;
-import android.net.Network;
-import android.net.NetworkCapabilities;
 import android.net.VpnService;
 import android.os.Build;
 import android.os.IBinder;
 import android.os.ParcelFileDescriptor;
 import android.util.Log;
-import android.widget.Toast;
 
 import androidx.core.app.NotificationCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
@@ -51,19 +46,32 @@ public class PersistentVpnService extends VpnService {
     public static final String MODE_NORMAL = "mode_normal"; // for future use
 
     // Notification / restart
-    private static final String NOTIFICATION_CHANNEL_ID = "Block this too (VPN)";
+    private static final String NOTIFICATION_CHANNEL_ID = "vpn_channel"; // no spaces
     private static final int NOTIFICATION_ID = 0xC0FFEE;
     private static final long RESTART_DELAY_MS = 6_000L; // 6 seconds
 
     private ParcelFileDescriptor vpnInterface;
     private volatile boolean isRunning = false;
+    private volatile boolean foregroundStarted = false;
 
     @Override
     public void onCreate() {
         super.onCreate();
         Log.d(TAG, "onCreate");
+
         // default: allow restart
         getPrefs().edit().putBoolean(PREF_SHOULD_RESTART, true).apply();
+
+        // Ensure we create channel and promote to foreground immediately (cannot fail)
+        try {
+            createNotificationChannel();
+            // Start foreground here as early as possible to satisfy startForegroundService requirement.
+            Notification n = createNotification();
+            startForegroundSafe(n);
+        } catch (Exception e) {
+            // Log but continue. startForegroundSafe handles fallback defaults.
+            Log.e(TAG, "Error creating foreground notification", e);
+        }
     }
 
     @Override
@@ -81,6 +89,17 @@ public class PersistentVpnService extends VpnService {
     public int onStartCommand(Intent intent, int flags, int startId) {
         String action = intent != null ? intent.getAction() : ACTION_START;
         Log.d(TAG, "onStartCommand action=" + action);
+
+        // Ensure foreground again (harmless if already started). Some devices may call onStartCommand
+        // without onCreate or with different timings; this double-check is safe.
+        try {
+            if (!foregroundStarted) {
+                Notification n = createNotification();
+                startForegroundSafe(n);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error ensuring foreground", e);
+        }
 
         if (ACTION_DISCONNECT.equals(action)) {
             // explicit user-initiated stop
@@ -101,7 +120,7 @@ public class PersistentVpnService extends VpnService {
         if (isRunning) {
             // already running -- refresh foreground notification
             try {
-                startForeground(NOTIFICATION_ID, createNotification());
+                startForegroundSafe(createNotification());
             } catch (Exception ignored) {
             }
             broadcastStatus("VPN Already Running");
@@ -113,9 +132,9 @@ public class PersistentVpnService extends VpnService {
 
         Log.d(TAG, "Starting VPN (dummy=" + dummy + ")");
 
+        // Already created channel & foreground in onCreate/onStartCommand; ensure it again
         createNotificationChannel();
-        // move to foreground immediately to reduce chance of kill
-        startForeground(NOTIFICATION_ID, createNotification());
+        startForegroundSafe(createNotification());
 
         // Build VPN interface
         Builder builder = new Builder();
@@ -139,7 +158,8 @@ public class PersistentVpnService extends VpnService {
         try {
             builder.addAllowedApplication(getPackageName());
         } catch (PackageManager.NameNotFoundException e) {
-            throw new RuntimeException(e);
+            Log.w(TAG, "Package not found when adding allowed application", e);
+            // not fatal; continue
         }
 
         try {
@@ -153,16 +173,6 @@ public class PersistentVpnService extends VpnService {
             isRunning = true;
             getPrefs().edit().putBoolean(PREF_MARKED_RUNNING, true).apply();
             broadcastStatus("VPN Connected (dummy=" + dummy + ")");
-
-
-            executor.execute(() -> {
-                if (!Utility.isInternetAvailable(this)) {
-                    Toast.makeText(this, "Device appears offline after establishing dummy VPN — rolling back", Toast.LENGTH_SHORT).show();
-                    disconnect();
-                    return;
-                }
-            });
-
 
             Log.d(TAG, "VPN established (fd=" + vpnInterface.getFileDescriptor() + ")");
         } catch (Exception e) {
@@ -223,41 +233,90 @@ public class PersistentVpnService extends VpnService {
 
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(
-                    NOTIFICATION_CHANNEL_ID,
-                    "Block this notification too (For VPN)",
-                    NotificationManager.IMPORTANCE_LOW
-            );
-            channel.setDescription("Channel for persistent VPN service | block this");
-            NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-            if (nm != null) nm.createNotificationChannel(channel);
+            try {
+                NotificationChannel channel = new NotificationChannel(
+                        NOTIFICATION_CHANNEL_ID,
+                        "Block this channel too (VPN)",
+                        NotificationManager.IMPORTANCE_LOW
+                );
+                channel.setDescription("Channel for persistent VPN service");
+                channel.enableLights(false);
+                channel.enableVibration(false);
+                channel.setSound(null, null);
+
+                NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+                if (nm != null) nm.createNotificationChannel(channel);
+            } catch (Exception e) {
+                Log.e(TAG, "createNotificationChannel failed", e);
+            }
         }
     }
 
     private Notification createNotification() {
-        Intent openApp = new Intent(this, MainActivity.class);
-        PendingIntent openPending = PendingIntent.getActivity(
-                this, 0, openApp,
-                PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT
-        );
+        try {
+            Intent openApp = new Intent(this, MainActivity.class);
+            PendingIntent openPending = PendingIntent.getActivity(
+                    this, 0, openApp,
+                    PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT
+            );
 
-        // Disconnect action
-        Intent disconnectInt = new Intent(this, PersistentVpnService.class);
-        disconnectInt.setAction(ACTION_DISCONNECT);
-        PendingIntent disconnectPending = PendingIntent.getService(
-                this, 0, disconnectInt,
-                PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT
-        );
+            // Disconnect action
+            Intent disconnectInt = new Intent(this, PersistentVpnService.class);
+            disconnectInt.setAction(ACTION_DISCONNECT);
+            PendingIntent disconnectPending = PendingIntent.getService(
+                    this, 0, disconnectInt,
+                    PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT
+            );
 
-        return new NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
-                .setContentTitle("Dummy VPN Active")
-                .setContentText("VPN running (no-route dummy mode)")
-                .setSmallIcon(R.drawable.ic_cylinder_tile)
+            int smallIconRes = R.drawable.ic_cylinder_tile;
+            // Fallback to system icon if your drawable doesn't exist on some OEM builds
+            try {
+                getResources().getResourceName(smallIconRes);
+            } catch (Exception e) {
+                smallIconRes = android.R.drawable.ic_dialog_info;
+            }
 
-                .addAction(new NotificationCompat.Action(0, "Disconnect", disconnectPending))
-                .setOngoing(true)
-                .setPriority(NotificationCompat.PRIORITY_LOW)
-                .build();
+            NotificationCompat.Builder builder = new NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
+                    .setContentTitle("Dummy VPN Active")
+                    .setContentText("VPN running (no-route dummy mode)")
+                    .setSmallIcon(smallIconRes)
+                    .addAction(new NotificationCompat.Action(0, "Disconnect", disconnectPending))
+                    .setOngoing(true)
+                    .setSilent(true)
+                    .setPriority(NotificationCompat.PRIORITY_LOW);
+
+            // For older API levels, ensure notification is valid
+            Notification notification = builder.build();
+            return notification;
+        } catch (Exception e) {
+            Log.e(TAG, "createNotification failed, returning fallback notification", e);
+            // final fallback
+            NotificationCompat.Builder fallback = new NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
+                    .setContentTitle("VPN Active")
+                    .setContentText("Running")
+                    .setSmallIcon(android.R.drawable.ic_dialog_info)
+                    .setOngoing(true)
+                    .setPriority(NotificationCompat.PRIORITY_LOW);
+            return fallback.build();
+        }
+    }
+
+    private void startForegroundSafe(Notification notification) {
+        try {
+            if (!foregroundStarted) {
+                startForeground(NOTIFICATION_ID, notification);
+                foregroundStarted = true;
+                Log.d(TAG, "startForeground invoked");
+            } else {
+                // update existing notification
+                NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+                if (nm != null && notification != null) {
+                    nm.notify(NOTIFICATION_ID, notification);
+                }
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "startForegroundSafe failed", e);
+        }
     }
 
     private void broadcastStatus(String status) {
@@ -268,12 +327,6 @@ public class PersistentVpnService extends VpnService {
         } catch (Exception ignored) {
         }
     }
-
-    /**
-     * Quick connectivity check. If the device has no active network after establishing the TUN,
-     * many OEMs treat TUN creation as a sink and connectivity can break. We detect that and roll back.
-     */
-
 
     private SharedPreferences getPrefs() {
         return getSharedPreferences(PREFS, Context.MODE_PRIVATE);

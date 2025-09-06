@@ -30,20 +30,14 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
     }
 
     public static void performSyncMain() {
-        performSync2();
+
         Bundle b = new Bundle();
         b.putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true);
         b.putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true);
         ContentResolver.requestSync(AccountContract.getAccount(),
                 AccountContract.AUTHORITY, b);
     }
-    public static void performSync2() {
-        Bundle b = new Bundle();
-        b.putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true);
-        b.putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true);
-        ContentResolver.requestSync(AccountContract.getSecondAccount(),
-                AccountContract.AUTHORITY, b);
-    }
+
 
 
 }

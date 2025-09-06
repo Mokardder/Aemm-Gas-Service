@@ -13,13 +13,7 @@ public class ImageJobService extends JobService {
     public boolean onStartJob(JobParameters params) {
         // this fires whenever MediaStore.Images.Media.EXTERNAL_CONTENT_URI changes
         // kick off your UploadSyncAdapter here:
-        Account account = SyncAccountUtil.getSyncAccount(this);
-        Bundle b = new Bundle();
-        b.putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true);
-        b.putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true);
-        ContentResolver.requestSync(account,
-                Config.Sync.AUTHORITY,
-                b);
+
         return false; // work is short
     }
 

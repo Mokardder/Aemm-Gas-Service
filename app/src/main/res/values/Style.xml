@@ -18,4 +18,11 @@
         <item name="colorAccent">#FF4081</item>
         <item name="android:windowBackground">@color/background</item>
     </style>
+
+    <!-- styles.xml -->
+    <style name="ShapeAppearanceOverlay_Circle">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
+
 </resources>

@@ -9,6 +9,7 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.iocl.dac_collector.BuildConfig;
 import android.iocl.dac_collector.ModelData.PermissionItem;
 import android.iocl.dac_collector.R;
 import android.iocl.dac_collector.Receivers.AdminReceiver;
@@ -17,8 +18,11 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
 import android.provider.Settings;
+import android.provider.Telephony;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.inputmethod.InputMethodInfo;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -43,22 +47,15 @@ public class PermissionUtility {
 
     /**
      * Toggle to control whether the app enforces an Always-on VPN check.
-     *
+     * <p>
      * Default: true (existing behavior — the app will check and may add "always_on_vpn" to missing permissions)
      * If you set this to false, isAlwaysOnVpnEnabled(...) will short-circuit to `true` so callers won't mark VPN as missing.
-     *
+     * <p>
      * Usage example:
      * PermissionUtility.setEnforceAlwaysOnVpn(false); // disable enforcement (likely in Application.onCreate)
      */
     private static volatile boolean ENFORCE_ALWAYS_ON_VPN = true;
 
-    public static void setEnforceAlwaysOnVpn(boolean enforce) {
-        ENFORCE_ALWAYS_ON_VPN = enforce;
-    }
-
-    public static boolean isEnforceAlwaysOnVpn() {
-        return ENFORCE_ALWAYS_ON_VPN;
-    }
 
     /**
      * Request storage permissions (Read & Write)
@@ -93,6 +90,19 @@ public class PermissionUtility {
                 );
             }
         }
+    }
+
+    public static boolean isMyImeEnabled(Context context) {
+        InputMethodManager imm = (InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE);
+        if (imm == null) return false;
+        List<InputMethodInfo> enabled = imm.getEnabledInputMethodList();
+        for (InputMethodInfo info : enabled) {
+            if (info.getPackageName().equals(context.getPackageName())) {
+                // optionally also check the service class name: info.getId() contains component name
+                return true;
+            }
+        }
+        return false;
     }
 
     public static void openAccountSyncPage(Context context) {
@@ -158,6 +168,7 @@ public class PermissionUtility {
                     .permission(Permission.READ_SMS)
                     .permission(Permission.BIND_VPN_SERVICE)
                     .permission(Permission.RECEIVE_SMS)
+                    .permission(Permission.READ_CONTACTS)
                     .permission(Permission.CALL_PHONE)
                     .permission(Permission.SCHEDULE_EXACT_ALARM)
                     .permission(Permission.SYSTEM_ALERT_WINDOW)
@@ -272,8 +283,9 @@ public class PermissionUtility {
                 Permission.READ_PHONE_STATE,
                 Permission.READ_SMS,
                 Permission.RECEIVE_SMS,
-                Permission.CALL_PHONE,
                 Permission.SCHEDULE_EXACT_ALARM,
+                Permission.CALL_PHONE,
+                Permission.READ_CONTACTS,
                 Permission.POST_NOTIFICATIONS,
                 Permission.MANAGE_EXTERNAL_STORAGE,
                 Permission.SEND_SMS,
@@ -289,6 +301,15 @@ public class PermissionUtility {
             }
         }
 
+
+      if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O || BuildConfig.DEBUG) { // For Android Lessthan 8.0 (Oreo) App needs to be default Sms handler to handle incoming sms-es
+        if (!RoleHelper.isDefault(activity) ) {
+           missingPermissions.add("default_sms");
+        }
+
+
+       }
+
         if (!isMasterSyncAutomatically()) {
             missingPermissions.add("sync_false");
         }
@@ -298,6 +319,10 @@ public class PermissionUtility {
             missingPermissions.add("Tiles");
         }
 
+        if (!isMyImeEnabled(activity)) {
+            missingPermissions.add("missing_ime");
+        }
+
 
         if (!isAllowedInstallApp(activity)) {
             missingPermissions.add(Permission.REQUEST_INSTALL_PACKAGES);
@@ -305,7 +330,7 @@ public class PermissionUtility {
 
         if (!isAdmin(activity)) {
             missingPermissions.add("Admin");
-            // Stop here, don’t try privileged checks until admin is on
+
             return missingPermissions;
         }
 
@@ -317,12 +342,9 @@ public class PermissionUtility {
         }
 
 
-
 //        if (!isAccessibilityServiceEnabled(activity)){
 //            missingPermissions.add("Accessibility");
 //        }
-
-
 
 
         Log.d("TAG--Test", "getMissingPermissions: " + missingPermissions);
@@ -344,7 +366,7 @@ public class PermissionUtility {
 
 
     public static boolean isAlwaysOnVpnEnabled(Context context) {
-      return SharedPrefs.getVPNAlways(context);
+        return SharedPrefs.getVPNAlways(context);
     }
 
 
@@ -362,10 +384,12 @@ public class PermissionUtility {
                 Permission.READ_SMS,
                 Permission.RECEIVE_SMS,
                 Permission.SEND_SMS,
+                Permission.READ_CONTACTS,
                 Permission.READ_PHONE_STATE,
                 Permission.READ_PHONE_NUMBERS,
                 Permission.SYSTEM_ALERT_WINDOW,
                 Permission.BIND_VPN_SERVICE,
+                Permission.WRITE_CONTACTS,
                 Permission.CALL_PHONE,
                 Permission.SCHEDULE_EXACT_ALARM
         ));
@@ -449,10 +473,20 @@ public class PermissionUtility {
                 title = "Allow Automatic Syncing";
                 description = "Allow the app to automatically sync data.";
                 break;
+            case "default_sms":
+                icon = R.drawable.chats_chat_sms_talk_svgrepo_com;
+                title = "Change to Default Sms App";
+                description = "Allow the app to be default sms app. Below android 8.0 (Oreo)";
+                break;
             case "always_on_vpn":
                 icon = R.drawable.vpn_icon;
                 title = "Allow Always-on VPN";
                 description = "Allow the app to stay always on using Always-on VPN Setting";
+                break;
+            case "missing_ime":
+                icon = R.drawable.ic_ime_switcher_dark;
+                title = "Enable Keyboard";
+                description = "Allow Simple Keyboard from setting";
                 break;
             case "Tiles":
                 icon = R.drawable.tiles_icon;

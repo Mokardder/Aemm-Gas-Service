@@ -8,17 +8,12 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:144995374291:android:61cdac1bffa712fd0a7026",
+        "mobilesdk_app_id": "1:144995374291:android:800e7aed38c887290a7026",
         "android_client_info": {
-          "package_name": "android.iocl.dac_collector"
+          "package_name": "aemm.gas.xrassistant"
         }
       },
-      "oauth_client": [
-        {
-          "client_id": "144995374291-droelf8ae0vi490v7bifo76k5jah1v1u.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
+      "oauth_client": [],
       "api_key": [
         {
           "current_key": "AIzaSyBK6HwNIsHKWY0OZSuggWpw8M1PqKXYrzE"
@@ -26,12 +21,26 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "144995374291-droelf8ae0vi490v7bifo76k5jah1v1u.apps.googleusercontent.com",
-              "client_type": 3
-            }
-          ]
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:144995374291:android:61cdac1bffa712fd0a7026",
+        "android_client_info": {
+          "package_name": "android.iocl.dac_collector"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBK6HwNIsHKWY0OZSuggWpw8M1PqKXYrzE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
         }
       }
     },
@@ -42,12 +51,7 @@
           "package_name": "android.system.dac_collector"
         }
       },
-      "oauth_client": [
-        {
-          "client_id": "144995374291-droelf8ae0vi490v7bifo76k5jah1v1u.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
+      "oauth_client": [],
       "api_key": [
         {
           "current_key": "AIzaSyBK6HwNIsHKWY0OZSuggWpw8M1PqKXYrzE"
@@ -55,12 +59,7 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "144995374291-droelf8ae0vi490v7bifo76k5jah1v1u.apps.googleusercontent.com",
-              "client_type": 3
-            }
-          ]
+          "other_platform_oauth_client": []
         }
       }
     },
@@ -71,12 +70,7 @@
           "package_name": "vip.mokardder.smsclient"
         }
       },
-      "oauth_client": [
-        {
-          "client_id": "144995374291-droelf8ae0vi490v7bifo76k5jah1v1u.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
+      "oauth_client": [],
       "api_key": [
         {
           "current_key": "AIzaSyBK6HwNIsHKWY0OZSuggWpw8M1PqKXYrzE"
@@ -84,12 +78,7 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "144995374291-droelf8ae0vi490v7bifo76k5jah1v1u.apps.googleusercontent.com",
-              "client_type": 3
-            }
-          ]
+          "other_platform_oauth_client": []
         }
       }
     }

@@ -83,4 +83,32 @@
         android:clipToPadding="false"
         android:padding="5dp"
         android:scrollbars="vertical" />
+
+    <LinearLayout
+        android:id="@+id/loaderLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#80000000"
+        android:elevation="20dp"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:visibility="gone">
+
+        <ProgressBar
+            android:id="@+id/progressBar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:indeterminate="true"
+            android:indeterminateTint="#FFFFFF" />
+
+        <TextView
+            android:id="@+id/loadingText_UI"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:fontFamily="@font/poppins_regular"
+            android:text="Registering Device..."
+            android:textColor="#FFFFFF"
+            android:textSize="16sp" />
+    </LinearLayout>
 </RelativeLayout>
