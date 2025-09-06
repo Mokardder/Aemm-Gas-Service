@@ -1,29 +1,29 @@
-# DAC_Receiver_Client-For-Customer-
+# DAC_Receiver_Client-For-Customer
 
 ## Overview
 
-DAC_Receiver_Client-For-Customer- is a robust and user-oriented client application designed to interface with Digital-to-Analog Converter (DAC) systems. This repository provides essential tools and components to facilitate seamless communication between customer devices and DAC hardware, ensuring reliable data transmission, status monitoring, and efficient management.
+DAC_Receiver_Client-For-Customer- is a specialized client application focused on the capture, notification, and management of SMS messages containing Indane LPG DAC codes. Its core purpose is to enhance the user experience and streamline interactions around LPG delivery and subsidy status, by integrating SMS parsing, real-time notifications, overlays, and server communication.
 
-## Features
+## Key Features
 
-- **Easy Integration:** Plug-and-play functionality for quick deployment in various environments.
-- **Real-Time Data Monitoring:** Track and visualize the status of DAC hardware with live updates.
-- **Secure Communication:** Implements secure protocols to protect sensitive data between client and DAC devices.
-- **Customizable Interface:** Adapt the client to meet specific customer requirements with minimal effort.
-- **Error Handling & Logging:** Comprehensive error management and logging for troubleshooting and system reliability.
+- **Indane LPG DAC Code SMS Capture:** Automatically detects and extracts DAC codes from incoming SMS messages related to Indane LPG deliveries.
+- **Notification & Overlay:** Instantly notifies users and displays overlays with relevant DAC code information for quick action and reference.
+- **Server Communication:** Securely sends captured DAC information and user interactions to a remote server for tracking and automation.
+- **SMS App Functionality:** Provides a custom SMS app interface tailored for DAC code management, offering features beyond standard messaging apps.
+- **Subsidy Checking:** Integrates tools for users to check their LPG subsidy status directly from the app, streamlining the process.
+- **User-Friendly Interface:** Designed for ease of use, ensuring users can manage their LPG deliveries and subsidies efficiently.
 
 ## Use Cases
 
-- Industrial automation and monitoring
-- Audio and signal processing applications
-- Remote device management for DAC systems
-- Custom solutions for customer-facing DAC deployments
+- Customers wanting instant access to their Indane LPG DAC codes via notifications and overlays.
+- Users needing to forward DAC codes or delivery updates to a server for further automation or record keeping.
+- Individuals who want to easily check their LPG subsidy status without manual intervention.
 
 ## Technologies Used
 
-- Python (core logic and interface)
-- Networking libraries for communication
-- Logging and error handling frameworks
+- Android (for SMS capture, overlays, and notifications)
+- Backend server integration (for data transmission)
+- Custom messaging and subsidy tools
 
 ## Getting Started
 
@@ -31,18 +31,18 @@ DAC_Receiver_Client-For-Customer- is a robust and user-oriented client applicati
    ```bash
    git clone https://github.com/Mokardder/DAC_Receiver_Client-For-Customer-.git
    ```
-2. Install dependencies as specified in the `requirements.txt`.
-3. Configure client settings in the provided config files.
-4. Run the client application and connect to your DAC hardware.
+2. Set up the app on your Android device following the instructions in the documentation.
+3. Configure server settings and permissions as needed.
+4. Start capturing DAC SMS messages and managing your LPG deliveries and subsidies.
 
 ## Contribution
 
-Contributions, issues, and feature requests are welcome! Please open an issue or submit a pull request to help improve the project.
+Contributions and feature requests are welcome! For any suggestions, improvements, or issues, please submit an issue or pull request.
 
 ## License
 
-Distributed under the MIT License. See `LICENSE` for more information.
+Distributed under the MIT License. See `LICENSE` for details.
 
 ---
 
-*For more details, refer to the documentation or contact the repository owner.*
+*For details on setup and usage, please refer to the documentation or contact the repository owner.*
