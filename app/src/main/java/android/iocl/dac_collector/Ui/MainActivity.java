@@ -433,6 +433,8 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
                     rewardedAd.show(this, rewardItem -> {
                         // Ad finished successfully, give reward
                         showSubsidyDialog();
+
+                        // hello
                     });
                 } else {
                     // Ad not ready, just show dialog directly
