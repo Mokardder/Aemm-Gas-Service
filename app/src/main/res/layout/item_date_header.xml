@@ -10,11 +10,10 @@
         android:id="@+id/tvDateHeader"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-
         android:paddingHorizontal="12dp"
         android:paddingVertical="4dp"
         android:text="12 Mar 2025"
-        android:textColor="@android:color/black"
+        android:textColor="#F1F1F1"
         android:textStyle="bold"
         android:textSize="12sp" />
 </LinearLayout>

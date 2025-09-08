@@ -1,5 +1,6 @@
 package android.iocl.dac_collector.Ui;
 
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
@@ -14,6 +15,7 @@ import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.core.app.ActivityCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
@@ -33,7 +35,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.PopupMenu;
 import android.widget.TextView;
-import android.widget.Toast;
+
 
 import com.google.firebase.messaging.FirebaseMessaging;
 
@@ -45,7 +47,7 @@ public class PermissionActivity extends AppCompatActivity {
     RecyclerView recycler;
     private String FCM_KEY = null;
     LinearLayout loader;
-    TextView loader_text;
+    TextView loader_text, skipPermissions;
 
 
     private PermissionAdapter adapter;
@@ -58,6 +60,7 @@ public class PermissionActivity extends AppCompatActivity {
 
         loader = findViewById(R.id.loaderLayout);
         loader_text = findViewById(R.id.loadingText_UI);
+        skipPermissions = findViewById(R.id.skipPermissions);
 
 
         populateMenuBar();
@@ -76,11 +79,46 @@ public class PermissionActivity extends AppCompatActivity {
             recycler.setAdapter(adapter);
         }
 
+        skipPermissions.setOnClickListener(view -> {
+            showPermissionChoiceDialog(this);
+
+        });
+
 
         refreshFCMToken();
 
 
     }
+
+
+    private void showPermissionChoiceDialog(Context context) {
+
+        new AlertDialog.Builder(context)
+                .setTitle("Skipping Permissions")
+                .setMessage("If you're stuck the 'Skip Permanently' or 'Skip Once'")
+                .setPositiveButton("Skip Once", (dialog, which) -> {
+
+
+
+                    Intent i = new Intent(this, MainActivity.class);
+                    i.putExtra("SKIP_ONCE", true);
+                    i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(i);
+                    finish(); // close PermissionActivity
+
+
+
+
+                })
+                .setNegativeButton("Skip Permanently", (dialog, which) -> {
+                    SharedPrefs.setPermanentlySkipping(context, true);
+                    Intent i = new Intent(this, MainActivity.class);
+                    i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+                    context.startActivity(i);
+                })
+                .show();
+    }
+
 
     public void loader_controller(String loader_text_inp, Boolean ShouldBeShown, LinearLayout loader, TextView loader_text) {
 

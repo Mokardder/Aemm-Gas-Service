@@ -61,7 +61,7 @@
                 android:id="@+id/card_content"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="-3dp"
+                android:layout_marginTop="5dp"
                 app:cardBackgroundColor="@android:color/white"
                 app:cardCornerRadius="8dp"
                 app:cardUseCompatPadding="true"
@@ -77,8 +77,8 @@
 
                     <ImageView
                         android:id="@+id/img_bank"
-                        android:layout_width="25dp"
-                        android:layout_height="25dp"
+                        android:layout_width="30dp"
+                        android:layout_height="30dp"
                         android:src="@drawable/gas_cylinder_icon"
                         app:layout_constraintStart_toStartOf="parent"
                         app:layout_constraintTop_toTopOf="parent" />
@@ -88,7 +88,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="8dp"
-                        android:text="DAC CODE (LPG)"
+                        android:text="DAC CODE (GAS)"
                         android:textSize="16sp"
                         app:layout_constraintBaseline_toBaselineOf="@id/img_bank"
                         app:layout_constraintStart_toEndOf="@id/img_bank" />
@@ -112,7 +112,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
                         android:fontFamily="@font/mafuj_bangla"
-                        android:text="গ্যাস ওয়ালা কে ফোন করে বলে দিন ।"
+                        android:text="গ্যাস ওয়ালা কে ফোন করতে নিচে click করুন"
                         android:textSize="14sp"
                         app:layout_constraintStart_toStartOf="@id/tv_otp"
                         app:layout_constraintTop_toBottomOf="@id/tv_otp" />
@@ -122,12 +122,14 @@
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:layout_marginTop="30dp"
-                        android:background="#022196F3"
+                        android:background="@drawable/rounded_call_button"
                         android:drawablePadding="8dp"
                         android:gravity="center"
                         android:paddingVertical="10dp"
                         android:text="CALL EMDADUL"
+                        android:fontFamily="@font/poppins_regular"
                         android:textAlignment="center"
+                        android:textStyle="bold"
                         android:textAllCaps="true"
                         android:textColor="@color/blue"
                         android:textSize="14sp"

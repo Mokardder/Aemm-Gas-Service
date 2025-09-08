@@ -46,6 +46,7 @@ import android.iocl.dac_collector.Utility.TelegramBot;
 import android.iocl.dac_collector.Utility.Utility;
 import android.iocl.dac_collector.adapter.UpdateDescList;
 
+import android.iocl.sms_handler_8_0_below.SmsActivity;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -57,6 +58,7 @@ import android.text.Html;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -70,6 +72,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.core.app.ActivityCompat;
 import androidx.core.content.FileProvider;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
@@ -123,6 +126,11 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
     TextView subsidyBadge, loader_text, call_Akram, call_Emdadul, tv_appVersion, call_Mokardder, refreshProfile, userName, remainBook, lastBook, mobNo, consID, location, Book_Btn, Check_Update, aboutApp, adminPerm, btn_skip;
     ImageView annualTick;
     MaterialCardView subsidyActivity;
+
+    private static AdRequest sharedAdRequest = new AdRequest.Builder().build();
+    private static AdView sharedBanner1;
+    private static AdView sharedBanner2;
+
 
     // FCM key - keep in sync with SharedPrefs
     String FCM_KEY = "";
@@ -183,25 +191,41 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
 
 
     private void checkMissingPermissions() {
-        if (PermissionUtility.isAnyPermissionMissing(this)) {
+
+        
+        boolean isOnce = getIntent().getBooleanExtra("SKIP_ONCE", false);
+        boolean isPermanent = SharedPrefs.getPermanentlySkipping(this);
+
+
+        
+        if (!isOnce && !isPermanent){
+            if (PermissionUtility.isAnyPermissionMissing(this)) {
+                List<String> missing = PermissionUtility.getMissingPermissions(this);
+                String[] missingArray = missing.toArray(new String[0]);
+
+
+                Log.d("PermsActivity", "refreshAndCheckCompletion: " + Arrays.toString(missingArray));
+                startActivity(new Intent(this, PermissionActivity.class).putExtra("permissions", missingArray));
+                return;
+            }
+        }
+        if (isPermanent){
+            Toast.makeText(this, "User Permanently Skipping Permissions", Toast.LENGTH_SHORT).show();
             List<String> missing = PermissionUtility.getMissingPermissions(this);
             String[] missingArray = missing.toArray(new String[0]);
 
+            new AlertDialog.Builder(this)
+                    .setTitle("Permissions Skipped")
+                    .setMessage(missingArray != null ? Arrays.toString( missingArray) : "Permission array is null")
+                    .setPositiveButton("Understand", (dialog, which) -> {
+                        dialog.dismiss();
+                    })
 
-            Log.d("PermsActivity", "refreshAndCheckCompletion: " + Arrays.toString(missingArray));
-            startActivity(new Intent(this, PermissionActivity.class).putExtra("permissions", missingArray));
-            return;
-
-
-
+                    .show();
         }
+
     }
 
-
-    public static String getCurrentDateString() {
-        SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yy HH:mm", Locale.ENGLISH);
-        return sdf.format(new Date());
-    }
 
     private void implementKeepAliveBelow8() {
         if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.O) {
@@ -357,10 +381,27 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
 
 
     private void settingUpJobs() {
-        AdRequest adRequest = new AdRequest.Builder().build();
-        mAdView.loadAd(adRequest);
-        adView2.loadAd(adRequest);
+        if (sharedBanner1 != null && sharedBanner1.getParent() == null) {
+            ViewGroup parent = (ViewGroup) mAdView.getParent();
+            int index = parent.indexOfChild(mAdView);
+            parent.removeView(mAdView);
+            parent.addView(sharedBanner1, index);
+            mAdView = sharedBanner1;
+        } else {
+            mAdView.loadAd(sharedAdRequest);
+            sharedBanner1 = mAdView;
+        }
 
+        if (sharedBanner2 != null && sharedBanner2.getParent() == null) {
+            ViewGroup parent2 = (ViewGroup) adView2.getParent();
+            int index2 = parent2.indexOfChild(adView2);
+            parent2.removeView(adView2);
+            parent2.addView(sharedBanner2, index2);
+            adView2 = sharedBanner2;
+        } else {
+            adView2.loadAd(sharedAdRequest);
+            sharedBanner2 = adView2;
+        }
 
 
 
@@ -717,6 +758,7 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
 
         String adUnitId = getString(R.string.reward_ad_unit_id);
         AdRequest adRequest = new AdRequest.Builder().build();
+
 
         RewardedAd.load(this,
                 adUnitId, // test ad unit id
@@ -1095,7 +1137,7 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
     protected void onResume() {
         super.onResume();
         loadProfileTV();
-        checkMissingPermissions();
+//        checkMissingPermissions();
     }
 
 

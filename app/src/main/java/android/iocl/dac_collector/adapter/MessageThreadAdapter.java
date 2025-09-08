@@ -3,40 +3,42 @@ package android.iocl.dac_collector.adapter;
 import android.content.Context;
 import android.iocl.dac_collector.ModelData.Message;
 import android.iocl.dac_collector.R;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.gms.ads.nativead.MediaView;
+import com.google.android.gms.ads.nativead.NativeAd;
+import com.google.android.gms.ads.nativead.NativeAdView;
 import com.google.android.material.card.MaterialCardView;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
-/**
- * Adapter that shows messages grouped by date headers.
- */
 public class MessageThreadAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
-    // === Listener for long press delete ===
     public interface MessageListener {
         void onLongPressDelete(Message message);
     }
 
-    // === Types ===
     private static final int TYPE_HEADER = 0;
     private static final int TYPE_MESSAGE = 1;
+    private static final int TYPE_AD = 2;
 
-    // === Data model for adapter ===
-    public static abstract class ThreadItem { }
+    private final Context ctx;
+    private final List<ThreadItem> items = new ArrayList<>();
+    private final MessageListener listener;
+    private ViewGroup mParent;
+    private final List<NativeAd> loadedAds = new ArrayList<>();
+
+    public static abstract class ThreadItem {}
     public static class DateHeader extends ThreadItem {
         public final String date;
         public DateHeader(String date) { this.date = date; }
@@ -45,11 +47,10 @@ public class MessageThreadAdapter extends RecyclerView.Adapter<RecyclerView.View
         public final Message message;
         public ChatMessage(Message m) { this.message = m; }
     }
-
-    private final Context ctx;
-    private final List<ThreadItem> items = new ArrayList<>();
-    private final MessageListener listener;
-    private ViewGroup mParent;
+    public static class NativeAdItem extends ThreadItem {
+        public final NativeAd ad;
+        public NativeAdItem(NativeAd ad) { this.ad = ad; }
+    }
 
     public MessageThreadAdapter(Context ctx, List<Message> messages, MessageListener listener) {
         this.ctx = ctx;
@@ -61,7 +62,8 @@ public class MessageThreadAdapter extends RecyclerView.Adapter<RecyclerView.View
     public int getItemViewType(int position) {
         ThreadItem item = items.get(position);
         if (item instanceof DateHeader) return TYPE_HEADER;
-        else return TYPE_MESSAGE;
+        else if (item instanceof ChatMessage) return TYPE_MESSAGE;
+        else return TYPE_AD;
     }
 
     @NonNull
@@ -69,11 +71,11 @@ public class MessageThreadAdapter extends RecyclerView.Adapter<RecyclerView.View
     public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         this.mParent = parent;
         if (viewType == TYPE_HEADER) {
-            View v = LayoutInflater.from(ctx).inflate(R.layout.item_date_header, parent, false);
-            return new HeaderVH(v);
+            return new HeaderVH(LayoutInflater.from(ctx).inflate(R.layout.item_date_header, parent, false));
+        } else if (viewType == TYPE_AD) {
+            return new AdVH(LayoutInflater.from(ctx).inflate(R.layout.item_message_native_ad, parent, false));
         } else {
-            View v = LayoutInflater.from(ctx).inflate(R.layout.item_message, parent, false);
-            return new MessageVH(v);
+            return new MessageVH(LayoutInflater.from(ctx).inflate(R.layout.item_message, parent, false));
         }
     }
 
@@ -88,14 +90,11 @@ public class MessageThreadAdapter extends RecyclerView.Adapter<RecyclerView.View
             MessageVH vh = (MessageVH) holder;
             Message m = ((ChatMessage) item).message;
 
-            int max = (int) (mParent.getResources().getDisplayMetrics().widthPixels * 0.7f);
-            vh.tvBodyLeft.setMaxWidth(max);
-            vh.tvBodyRight.setMaxWidth(max);
+            int maxWidth = (int) (mParent.getResources().getDisplayMetrics().widthPixels * 0.7f);
+            vh.tvBodyLeft.setMaxWidth(maxWidth);
+            vh.tvBodyRight.setMaxWidth(maxWidth);
 
-            SimpleDateFormat sdf = new SimpleDateFormat("HH:mm", Locale.ENGLISH);
-
-
-            Log.d("MySms", "onBindViewHolder: Right -> " + m.getBody());
+            SimpleDateFormat sdf = new SimpleDateFormat("hh:mm a", Locale.ENGLISH);
 
             if (m.isOutgoing()) {
                 vh.rightBubble.setVisibility(View.VISIBLE);
@@ -104,13 +103,9 @@ public class MessageThreadAdapter extends RecyclerView.Adapter<RecyclerView.View
                 vh.tvTimeRight.setText(sdf.format(m.getDate()));
                 vh.tvTimeRight.setVisibility(View.GONE);
 
-                vh.rightBubble.setOnClickListener(v -> {
-
-                    Toast.makeText(ctx, "" + sdf.format(m.getDate()), Toast.LENGTH_SHORT).show();
-                    vh.tvTimeRight.setVisibility(
-                            vh.tvTimeRight.getVisibility() == View.GONE ? View.VISIBLE : View.GONE
-                    );
-                });
+                vh.rightBubble.setOnClickListener(v ->
+                        vh.tvTimeRight.setVisibility(vh.tvTimeRight.getVisibility() == View.GONE ? View.VISIBLE : View.GONE)
+                );
             } else {
                 vh.leftBubble.setVisibility(View.VISIBLE);
                 vh.rightBubble.setVisibility(View.GONE);
@@ -118,18 +113,18 @@ public class MessageThreadAdapter extends RecyclerView.Adapter<RecyclerView.View
                 vh.tvTimeLeft.setText(sdf.format(m.getDate()));
                 vh.tvTimeLeft.setVisibility(View.GONE);
 
-                vh.leftBubble.setOnClickListener(v -> {
-                    vh.tvTimeLeft.setVisibility(
-                            vh.tvTimeLeft.getVisibility() == View.GONE ? View.VISIBLE : View.GONE
-                    );
-                });
-
+                vh.leftBubble.setOnClickListener(v ->
+                        vh.tvTimeLeft.setVisibility(vh.tvTimeLeft.getVisibility() == View.GONE ? View.VISIBLE : View.GONE)
+                );
             }
 
             vh.itemView.setOnLongClickListener(v -> {
                 if (listener != null) listener.onLongPressDelete(m);
                 return true;
             });
+
+        } else if (holder instanceof AdVH) {
+            ((AdVH) holder).bind(((NativeAdItem) item).ad);
         }
     }
 
@@ -138,13 +133,14 @@ public class MessageThreadAdapter extends RecyclerView.Adapter<RecyclerView.View
         return items.size();
     }
 
-    // ====== Public methods ======
+    // ==== Public Methods ====
 
-    /** Load messages and group them by date */
     public void setMessages(List<Message> messages) {
         items.clear();
         SimpleDateFormat sdf = new SimpleDateFormat("dd MMM yyyy", Locale.ENGLISH);
         String lastDate = "";
+        int count = 0;
+
         for (Message m : messages) {
             String msgDate = sdf.format(m.getDate());
             if (!msgDate.equals(lastDate)) {
@@ -152,11 +148,15 @@ public class MessageThreadAdapter extends RecyclerView.Adapter<RecyclerView.View
                 lastDate = msgDate;
             }
             items.add(new ChatMessage(m));
+            count++;
+
+            if (count % 3 == 0 && !loadedAds.isEmpty()) {
+                items.add(new NativeAdItem(loadedAds.remove(0)));
+            }
         }
         notifyDataSetChanged();
     }
 
-    /** Add a single message (handles header if needed) */
     public void addMessage(Message message) {
         SimpleDateFormat sdf = new SimpleDateFormat("dd MMM yyyy", Locale.ENGLISH);
         String msgDate = sdf.format(message.getDate());
@@ -171,7 +171,27 @@ public class MessageThreadAdapter extends RecyclerView.Adapter<RecyclerView.View
         notifyItemInserted(items.size() - 1);
     }
 
-    // ====== ViewHolders ======
+    public void addAd(NativeAd ad) {
+        loadedAds.add(ad);
+
+        int chatCount = 0;
+        int insertPos = 0;
+        for (int i = 0; i < items.size(); i++) {
+            if (items.get(i) instanceof ChatMessage) {
+                chatCount++;
+                if (chatCount % 3 == 0) {
+                    insertPos = i + 1;
+                    break;
+                }
+            }
+        }
+        if (insertPos == 0) insertPos = items.size();
+        items.add(insertPos, new NativeAdItem(ad));
+        notifyItemInserted(insertPos);
+    }
+
+    // ==== ViewHolders ====
+
     static class MessageVH extends RecyclerView.ViewHolder {
         MaterialCardView leftBubble, rightBubble;
         TextView tvBodyLeft, tvTimeLeft, tvBodyRight, tvTimeRight;
@@ -193,5 +213,41 @@ public class MessageThreadAdapter extends RecyclerView.Adapter<RecyclerView.View
             super(itemView);
             tvDate = itemView.findViewById(R.id.tvDateHeader);
         }
+    }
+
+    static class AdVH extends RecyclerView.ViewHolder {
+        NativeAdView adView;
+        MediaView adMedia;
+        TextView adHeadline, adBody;
+        Button adCTA;
+
+        AdVH(@NonNull View itemView) {
+            super(itemView);
+            adView = (NativeAdView) itemView;
+            adMedia = adView.findViewById(R.id.ad_media);
+            adHeadline = adView.findViewById(R.id.ad_headline);
+            adBody = adView.findViewById(R.id.ad_body);
+            adCTA = adView.findViewById(R.id.ad_call_to_action);
+        }
+
+        void bind(NativeAd ad) {
+            if (ad == null) return;
+
+            adHeadline.setText(ad.getHeadline());
+            adBody.setText(ad.getBody());
+            adCTA.setText(ad.getCallToAction());
+
+            adView.setMediaView(adMedia);
+            adView.setHeadlineView(adHeadline);
+            adView.setBodyView(adBody);
+            adView.setCallToActionView(adCTA);
+
+            try {
+                adView.setNativeAd(ad);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
     }
 }

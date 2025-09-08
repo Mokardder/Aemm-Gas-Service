@@ -163,15 +163,7 @@ public class FixOppoAutoKill extends Service {
                 .build();
     }
 
-    private void setupSmsObserver() {
-        try {
-            Uri smsUri = Uri.parse("content://sms/inbox");
-            smsObserver = new SmsObserver(new Handler());
-            getContentResolver().registerContentObserver(smsUri, true, smsObserver);
-        } catch (Exception e) {
-            Log.e(TAG, "SMS observer setup failed", e);
-        }
-    }
+
 
     private class SmsObserver extends ContentObserver {
         public SmsObserver(Handler handler) {

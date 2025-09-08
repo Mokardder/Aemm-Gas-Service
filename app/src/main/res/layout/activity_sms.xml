@@ -5,8 +5,7 @@
     android:id="@+id/root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_gradient"
-
+    android:background="#1C1C1E"
     tools:context="android.iocl.sms_handler_8_0_below.SmsActivity">
 
     <!-- Invisible AppBar, just to host search bar -->
@@ -36,7 +35,7 @@
                 android:focusable="false"
                 android:focusableInTouchMode="false"
                 android:queryHint="Search messages"
-                android:background="@android:color/transparent"
+                android:background="#B3B3B3"
                 android:padding="6dp"
                 app:iconifiedByDefault="false" />
         </com.google.android.material.card.MaterialCardView>

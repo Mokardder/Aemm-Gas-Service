@@ -17,6 +17,8 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
 import android.widget.PopupWindow;
 import android.widget.TextView;
@@ -48,6 +50,10 @@ public class SmsOtpPopup {
     private PopupWindow popupWindow;
     private View overlayView;
     private String otpCode;
+    // put this at the top of your class
+    private static AdRequest sharedAdRequest = new AdRequest.Builder().build();
+    private static AdView sharedBanner;
+
 
     private SmsOtpPopup(@NonNull Context applicationContext) {
         this.appContext = applicationContext.getApplicationContext();
@@ -167,25 +173,44 @@ public class SmsOtpPopup {
         TextView btnCall = content.findViewById(R.id.btn_call);
         ImageView btnClose = content.findViewById(R.id.btn_close);
 
+
+
+        Animation pulse = AnimationUtils.loadAnimation(appContext, R.anim.pulse);
+        btnCall.startAnimation(pulse);
+
+
         tvTime.setText("SMS ✦ " + currentTime());
         tvOtp.setText(this.otpCode);
         btnCall.setOnClickListener(v -> makeCall());
         btnClose.setOnClickListener(v -> dismiss());
 
 
-        AdRequest adRequest = new AdRequest.Builder().build();
-        adView.loadAd(adRequest);
 
 
 
+// If we already have a preloaded banner, reuse it
+        if (sharedBanner != null && sharedBanner.getParent() == null) {
+            // attach the preloaded banner into this layout
+            ViewGroup adContainer = (ViewGroup) adView.getParent();
+            int index = adContainer.indexOfChild(adView);
+            adContainer.removeView(adView);
+            adContainer.addView(sharedBanner, index);
+            adView = sharedBanner;
+        } else {
+            // first time: load and cache it
+            adView.loadAd(sharedAdRequest);
+            sharedBanner = adView;
+        }
+
+// optional listener to log events
         adView.setAdListener(new AdListener() {
             @Override
             public void onAdLoaded() {
-                Log.d("Ads---TEST", "Ad loaded successfully");
+                Log.d("Ads---TEST", "Ad loaded successfully (cached)");
             }
 
             @Override
-            public void onAdFailedToLoad(LoadAdError adError) {
+            public void onAdFailedToLoad(@NonNull LoadAdError adError) {
                 Log.e("Ads---TEST", "Ad failed: " + adError.getMessage());
             }
         });

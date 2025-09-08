@@ -19,7 +19,9 @@ import android.os.Bundle;
 import android.provider.ContactsContract;
 import android.provider.Telephony;
 import android.telephony.SmsManager;
+import android.text.Editable;
 import android.text.TextUtils;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -27,6 +29,9 @@ import android.view.Window;
 import android.view.WindowInsets;
 import android.view.WindowInsetsController;
 import android.view.WindowManager;
+import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.SearchView;
 import android.widget.Toast;
@@ -39,6 +44,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -118,28 +124,12 @@ public class SmsActivity extends AppCompatActivity implements ConversationAdapte
 
 
 
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-
-
-    }
 
 
 
 
 
-    private boolean isDefaultSmsApp() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            RoleManager rm = (RoleManager) getSystemService(ROLE_SERVICE);
-            if (rm != null) return rm.isRoleHeld(RoleManager.ROLE_SMS);
-        } else {
-            String myPackage = getPackageName();
-            String defaultSms = Telephony.Sms.getDefaultSmsPackage(this);
-            return myPackage.equals(defaultSms);
-        }
-        return false;
-    }
+
 
     private void hideSystemBars() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -168,25 +158,135 @@ public class SmsActivity extends AppCompatActivity implements ConversationAdapte
     }
 
     private void showComposeDialog() {
-        View v = LayoutInflater.from(this).inflate(R.layout.dialog_compose, null);
-        EditText etNumber = v.findViewById(R.id.edtRecipient);
-        EditText etMessage = v.findViewById(R.id.edtMessage);
+        View v = LayoutInflater.from(this).inflate(R.layout.dialog_compose_custom, null);
+        AutoCompleteTextView etNumber = v.findViewById(R.id.edtRecipientAuto);
+        EditText etMessage = v.findViewById(R.id.edtMessageAuto);
+        Button btnSend = v.findViewById(R.id.btnSendDialog);
+        Button btnCancel = v.findViewById(R.id.btnCancelDialog);
 
-        new AlertDialog.Builder(this)
-                .setTitle("Compose SMS")
+        // adapter backed by contact suggestions (simple string list: "Name <number>")
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_dropdown_item_1line);
+        etNumber.setAdapter(adapter);
+        etNumber.setThreshold(1);
+
+        // prefilling suggestions initially (could be empty if permission missing)
+        List<String> initial = getContactSuggestions("");
+        adapter.clear();
+        adapter.addAll(initial);
+        adapter.notifyDataSetChanged();
+
+        // update suggestions as user types (lightweight)
+        etNumber.addTextChangedListener(new TextWatcher() {
+            private Runnable r;
+            @Override public void beforeTextChanged(CharSequence s, int st, int c, int a) {}
+            @Override public void onTextChanged(CharSequence s, int st, int b, int c) {}
+            @Override
+            public void afterTextChanged(Editable s) {
+                final String q = s.toString();
+                // fetch suggestions on background thread to avoid UI freeze for big addressbooks
+                new Thread(() -> {
+                    List<String> res = getContactSuggestions(q);
+                    runOnUiThread(() -> {
+                        adapter.clear();
+                        adapter.addAll(res);
+                        adapter.notifyDataSetChanged();
+                        if (!res.isEmpty() && etNumber.isPopupShowing()) {
+                            etNumber.showDropDown();
+                        }
+                    });
+                }).start();
+            }
+        });
+
+        // When user taps a suggestion, extract the phone number part
+        etNumber.setOnItemClickListener((parent, view1, position, id) -> {
+            String picked = adapter.getItem(position);
+            if (picked != null) {
+                String number = extractNumberFromSuggestion(picked);
+                if (number != null) etNumber.setText(number);
+            }
+        });
+
+        AlertDialog dialog = new AlertDialog.Builder(this, R.style.AppTheme)
                 .setView(v)
-                .setNegativeButton("Cancel", null)
-                .setPositiveButton("Send", (dialog, which) -> {
-                    String num = etNumber.getText().toString().trim();
-                    String msg = etMessage.getText().toString().trim();
-                    if (TextUtils.isEmpty(num) || TextUtils.isEmpty(msg)) {
-                        Toast.makeText(this, "Number and message required", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-                    sendSms(num, msg);
-                })
-                .show();
+                .create();
+
+        btnCancel.setOnClickListener(x -> dialog.dismiss());
+        btnSend.setOnClickListener(x -> {
+            String num = etNumber.getText().toString().trim();
+            String msg = etMessage.getText().toString().trim();
+            if (TextUtils.isEmpty(num) || TextUtils.isEmpty(msg)) {
+                Toast.makeText(this, "Number and message required", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // basic validation: strip spaces and non-digit symbols except +
+            String normalized = num.replaceAll("[^0-9+]", "");
+            sendSms(normalized, msg);
+            dialog.dismiss();
+        });
+
+        dialog.show();
     }
+
+    // returns list of "DisplayName <number>" matching the query.
+// requires READ_CONTACTS permission.
+    private List<String> getContactSuggestions(String query) {
+        List<String> suggestions = new ArrayList<>();
+
+
+
+        String sel = ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME + " LIKE ? OR "
+                + ContactsContract.CommonDataKinds.Phone.NUMBER + " LIKE ?";
+        String like = "%" + query + "%";
+        String[] selArgs = new String[]{like, like};
+
+        Cursor c = null;
+        try {
+            c = getContentResolver().query(
+                    ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                    new String[]{
+                            ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
+                            ContactsContract.CommonDataKinds.Phone.NUMBER
+                    },
+                    sel,
+                    selArgs,
+                    ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME + " ASC"
+            );
+
+            if (c != null) {
+                while (c.moveToNext()) {
+                    String name = c.getString(c.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME));
+                    String number = c.getString(c.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER));
+                    // format suggestion
+                    String item = name + " <" + number + ">";
+                    if (!suggestions.contains(item)) suggestions.add(item);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if (c != null) c.close();
+        }
+        return suggestions;
+    }
+
+    private String extractNumberFromSuggestion(String suggestion) {
+        // suggestion format: "Name <number>"
+        int lt = suggestion.indexOf('<');
+        int gt = suggestion.indexOf('>');
+        if (lt >= 0 && gt > lt) {
+            return suggestion.substring(lt + 1, gt).trim();
+        }
+        // fallback: attempt to pull last token that looks like number
+        String[] parts = suggestion.split("\\s+");
+        for (int i = parts.length - 1; i >= 0; i--) {
+            String p = parts[i].replaceAll("[^0-9+]", "");
+            if (p.length() >= 6) return p;
+        }
+        return null;
+    }
+
 
     private void sendSms(String number, String text) {
 

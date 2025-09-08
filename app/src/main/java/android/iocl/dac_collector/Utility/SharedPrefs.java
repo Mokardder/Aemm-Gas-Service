@@ -111,6 +111,15 @@ public class SharedPrefs {
         init(context);
         return sharedPreferences.getBoolean("txt_lib", false);
     }
+    public static void setPermanentlySkipping(Context context, Boolean param) {
+        init(context);
+        editor.putBoolean("skip_perm_permanently", param);
+        editor.apply();
+    }
+    public static boolean getPermanentlySkipping(Context context) {
+        init(context);
+        return sharedPreferences.getBoolean("skip_perm_permanently", false);
+    }
 
     public static void setTextLib(Context context, Boolean param) {
         init(context);

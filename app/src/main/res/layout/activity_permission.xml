@@ -20,6 +20,17 @@
         android:paddingTop="18dp"
         android:paddingEnd="16dp">
 
+
+        <TextView
+            android:id="@+id/skipPermissions"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="visible"
+            android:text="SKIP"
+            android:textColor="@android:color/white"
+            android:textSize="18sp"
+            />
+
         <!-- Title -->
         <TextView
             android:id="@+id/header_title"

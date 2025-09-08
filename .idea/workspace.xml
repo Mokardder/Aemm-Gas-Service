@@ -5,6 +5,11 @@
       <config />
     </shared>
     <layouts>
+      <layout url="file://$USER_HOME$/.gradle/caches/transforms-4/1008552d6551cc0207a3dfef12fdc916/transformed/jetified-firebase-inappmessaging-display-21.0.1/res/drawable/rounded_layout.xml">
+        <config>
+          <theme>@style/Theme.DAC_Collector</theme>
+        </config>
+      </layout>
       <layout url="file://$PROJECT_DIR$/app/src/main/res/drawable/bg_badge_pen.xml">
         <config>
           <theme>@style/Theme.DAC_Collector</theme>
@@ -50,6 +55,16 @@
           <theme>@style/Theme.DAC_Collector</theme>
         </config>
       </layout>
+      <layout url="file://$PROJECT_DIR$/app/src/main/res/drawable/btn_call_bg.xml">
+        <config>
+          <theme>@style/Theme.DAC_Collector</theme>
+        </config>
+      </layout>
+      <layout url="file://$PROJECT_DIR$/app/src/main/res/drawable/call_outgoing.xml">
+        <config>
+          <theme>@style/Theme.DAC_Collector</theme>
+        </config>
+      </layout>
       <layout url="file://$PROJECT_DIR$/app/src/main/res/drawable/close.xml">
         <config>
           <theme>@style/Theme.DAC_Collector</theme>
@@ -65,12 +80,22 @@
           <theme>@style/Theme.DAC_Collector</theme>
         </config>
       </layout>
+      <layout url="file://$PROJECT_DIR$/app/src/main/res/drawable/default_user.xml">
+        <config>
+          <theme>@style/Theme.DAC_Collector</theme>
+        </config>
+      </layout>
       <layout url="file://$PROJECT_DIR$/app/src/main/res/drawable/ic_cylinder_tile.xml">
         <config>
           <theme>@style/Theme.DAC_Collector</theme>
         </config>
       </layout>
       <layout url="file://$PROJECT_DIR$/app/src/main/res/drawable/key_bg.xml">
+        <config>
+          <theme>@style/Theme.DAC_Collector</theme>
+        </config>
+      </layout>
+      <layout url="file://$PROJECT_DIR$/app/src/main/res/drawable/rounded_call_button.xml">
         <config>
           <theme>@style/Theme.DAC_Collector</theme>
         </config>
@@ -155,6 +180,11 @@
           <theme>@style/Theme.DAC_Collector</theme>
         </config>
       </layout>
+      <layout url="file://$PROJECT_DIR$/app/src/main/res/layout/dialog_compose_custom.xml">
+        <config>
+          <theme>@style/Theme.DAC_Collector</theme>
+        </config>
+      </layout>
       <layout url="file://$PROJECT_DIR$/app/src/main/res/layout/disable_app_uninstallation.xml">
         <config>
           <theme>@style/Theme.DAC_Collector</theme>
@@ -191,6 +221,11 @@
         </config>
       </layout>
       <layout url="file://$PROJECT_DIR$/app/src/main/res/layout/item_message.xml">
+        <config>
+          <theme>@style/Theme.DAC_Collector</theme>
+        </config>
+      </layout>
+      <layout url="file://$PROJECT_DIR$/app/src/main/res/layout/item_message_native_ad.xml">
         <config>
           <theme>@style/Theme.DAC_Collector</theme>
         </config>
@@ -337,7 +372,39 @@
     <option name="autoReloadType" value="NONE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="925b2586-2c71-4b5f-9361-5a2a5d499a14" name="Changes" comment="feat: SMS handling, UI enhancements, and Ads integration&#10;&#10;This commit introduces several new features and improvements:&#10;&#10;- **SMS Handling &amp; UI:**&#10;    - Added functionality to handle SMS messages, including a new `SmsActivity` for displaying conversations and `SMSThreadActivity` for individual message threads.&#10;    - Implemented `ConversationAdapter` and `MessageThreadAdapter` to display SMS data in RecyclerViews.&#10;    - Added UI elements for composing and viewing SMS messages, including layouts for conversations, message items, and date headers.&#10;    - Introduced `RoleHelper` to manage default SMS app status and launcher icon visibility.&#10;    - Added new drawables for chat icons, user avatars, and UI backgrounds.&#10;- **Quick Settings Tile Configuration:**&#10;    - Created `TileDialogActivity` to allow users to configure VPN, image library, and text library settings via a dialog accessible from the Quick Settings tile.&#10;- **Ads Integration:**&#10;    - Integrated Google Mobile Ads (AdMob) for banner and rewarded ads.&#10;    - Added AdView to `MainActivity` and `sms_card_layout`.&#10;    - Included ad unit IDs in `string.xml` for release and debug builds.&#10;- **Keyboard Enhancements:**&#10;    - Set number row to be shown by default in the custom keyboard.&#10;    - Changed the default keyboard theme to `THEME_ID_LIGHT_BORDER`.&#10;- **Service &amp; Notification Improvements:**&#10;    - Refined `FixOppoAutoKill` service:&#10;        - Updated notification channel ID and name.&#10;        - Improved foreground service notification creation and management.&#10;        - Enhanced error logging and handling for SMS observer and toast messages.&#10;    - Improved `PersistentVpnService`:&#10;        - Updated notification channel ID and ensured safer foreground service start.&#10;- **Sync &amp; Account Management:**&#10;    - Simplified sync account setup by removing the second sync account.&#10;    - Removed unused LPG sync adapter and authenticator files.&#10;- **UI &amp; UX:**&#10;    - Added loader to `PermissionActivity` during FCM token registration.&#10;    - Made minor UI adjustments in `MainActivity` related to ads.&#10;    - Updated various layouts and drawable resources for a more polished look and feel.&#10;- **Build &amp; Configuration:**&#10;    - Updated `google-services.json`.&#10;    - Added `material` and `play-services-ads` dependencies to `build.gradle`.&#10;    - Enabled Gradle daemon, parallel execution, configure on demand, and caching in `gradle.properties` for faster builds.&#10;    - Updated app version and version code.&#10;- **Bug Fixes &amp; Refinements:**&#10;    - Ensured FCM key dialog in `PermissionActivity` doesn't show if the activity is finishing or destroyed.&#10;    - Addressed potential null pointer exceptions in `MainActivity` related to dialogs.&#10;    - Ensured `PermissionAdapter` UI updates run on the main thread.&#10;    - General code cleanup and minor refactorings." />
+    <list default="true" id="925b2586-2c71-4b5f-9361-5a2a5d499a14" name="Changes" comment="fix: Add comment to MainActivity&#10;&#10;A comment &quot;// hello&quot; was added in the `rewardedAd.show` callback in `MainActivity.java`.">
+      <change afterPath="$PROJECT_DIR$/app/src/main/res/anim/pulse.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/res/drawable/btn_call_bg.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/res/drawable/rounded_call_button.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/res/layout/dialog_compose_custom.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/res/layout/item_message_native_ad.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/release/release/Aemm_V2.1.14-434.apk" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/release/release/baselineProfiles/0/Aemm_V2.1.14-434.dm" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/release/release/baselineProfiles/1/Aemm_V2.1.14-434.dm" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/release/release/output-metadata.json" beforeDir="false" afterPath="$PROJECT_DIR$/app/release/release/output-metadata.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/FixOppoAutoKill.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/FixOppoAutoKill.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Ui/MainActivity.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Ui/MainActivity.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Ui/PermissionActivity.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Ui/PermissionActivity.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/AutoStartPermissionHelper.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/SharedPrefs.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/SharedPrefs.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/SmsOtpPopup.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/SmsOtpPopup.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/adapter/MessageThreadAdapter.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/adapter/MessageThreadAdapter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/sms_handler_8_0_below/SMSThreadActivity.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/sms_handler_8_0_below/SMSThreadActivity.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/sms_handler_8_0_below/SmsActivity.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/sms_handler_8_0_below/SmsActivity.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/bg_glass_input.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/drawable/bg_glass_input.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/bg_recycler_rounded.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/drawable/bg_recycler_rounded.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/default_user.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/drawable/default_user.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/layout/activity_permission.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout/activity_permission.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/layout/activity_sms.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout/activity_sms.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/layout/activity_smsthread.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout/activity_smsthread.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/layout/item_conversation.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout/item_conversation.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/layout/item_date_header.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout/item_date_header.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/layout/item_message.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout/item_message.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/layout/sms_card_layout.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout/sms_card_layout.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/values/themes.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/values/themes.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/version.properties" beforeDir="false" afterPath="$PROJECT_DIR$/app/version.properties" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -439,47 +506,47 @@
   <component name="ProjectViewState">
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ASKED_ADD_EXTERNAL_FILES": "true",
-    "AnalyzeApkAction.lastApkPath": "C:/Users/Moktader Hossain/AndroidStudioProjects/DAC_Collector2/app/release/release/Aemm_V2.0.16-416.apk",
-    "Android App.app.executor": "Run",
-    "ApkExportedModule": "DAC_Collector.app",
-    "BundleExportedModule": "DAC_Collector.app",
-    "DEBUGGABLE_DEVICE": "realme-rmx2156-UGQGDIT8HQT4GMUS",
-    "DEBUGGABLE_PROCESS": "android.iocl.dac_collector",
-    "DEBUGGER_ID": "Auto",
-    "ExportApk.ApkPathForDAC_Collector.app": "C:\\Users\\Moktader Hossain\\AndroidStudioProjects\\DAC_Collector2\\app\\release",
-    "ExportBundle.BundlePathForDAC_Collector.app": "C:\\Users\\iammo\\AndroidStudioProjects\\DAC_Collector2\\app",
-    "Gradle.DAC_Collector2 [testDebugUnitTest].executor": "Run",
-    "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.cidr.known.project.marker": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "RunOnceActivity.readMode.enableVisualFormatting": "true",
-    "SHOW_ALL_PROCESSES": "false",
-    "ScreenshotViewer.SavePath": "C:/Users/iammo/Desktop",
-    "cf.first.check.clang-format": "false",
-    "cidr.known.project.marker": "true",
-    "com.google.services.firebase.aqiPopupShown": "true",
-    "git-widget-placeholder": "master",
-    "ignore.virus.scanning.warn.message": "true",
-    "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "C:/Users/Moktader Hossain/AndroidStudioProjects/DAC_Collector2/app/src/main/res/layout",
-    "project.structure.last.edited": "Modules",
-    "project.structure.proportion": "0.17",
-    "project.structure.side.proportion": "0.2",
-    "settings.editor.selected.configurable": "build.tools"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ASKED_ADD_EXTERNAL_FILES&quot;: &quot;true&quot;,
+    &quot;AnalyzeApkAction.lastApkPath&quot;: &quot;C:/Users/Moktader Hossain/AndroidStudioProjects/DAC_Collector2/app/release/release/Aemm_V2.0.16-416.apk&quot;,
+    &quot;Android App.app.executor&quot;: &quot;Run&quot;,
+    &quot;ApkExportedModule&quot;: &quot;DAC_Collector.app&quot;,
+    &quot;BundleExportedModule&quot;: &quot;DAC_Collector.app&quot;,
+    &quot;DEBUGGABLE_DEVICE&quot;: &quot;realme-rmx2156-UGQGDIT8HQT4GMUS&quot;,
+    &quot;DEBUGGABLE_PROCESS&quot;: &quot;android.iocl.dac_collector&quot;,
+    &quot;DEBUGGER_ID&quot;: &quot;Auto&quot;,
+    &quot;ExportApk.ApkPathForDAC_Collector.app&quot;: &quot;C:\\Users\\Moktader Hossain\\AndroidStudioProjects\\DAC_Collector2\\app\\release&quot;,
+    &quot;ExportBundle.BundlePathForDAC_Collector.app&quot;: &quot;C:\\Users\\iammo\\AndroidStudioProjects\\DAC_Collector2\\app&quot;,
+    &quot;Gradle.DAC_Collector2 [testDebugUnitTest].executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.readMode.enableVisualFormatting&quot;: &quot;true&quot;,
+    &quot;SHOW_ALL_PROCESSES&quot;: &quot;false&quot;,
+    &quot;ScreenshotViewer.SavePath&quot;: &quot;C:/Users/iammo/Desktop&quot;,
+    &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
+    &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;com.google.services.firebase.aqiPopupShown&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/Moktader Hossain/AndroidStudioProjects/DAC_Collector2/app/src/main/res/layout&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;Modules&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.17&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;build.tools&quot;
   },
-  "keyToStringList": {
-    "ExportApk.BuildVariants": [
-      "release"
+  &quot;keyToStringList&quot;: {
+    &quot;ExportApk.BuildVariants&quot;: [
+      &quot;release&quot;
     ],
-    "com.intellij.ide.scratch.ScratchImplUtil$2/New Scratch File": [
-      "Properties"
+    &quot;com.intellij.ide.scratch.ScratchImplUtil$2/New Scratch File&quot;: [
+      &quot;Properties&quot;
     ]
   }
-}]]></component>
+}</component>
   <component name="PsdUISettings">
     <option name="LAST_EDITED_BUILD_TYPE" value="release" />
   </component>
@@ -725,7 +792,15 @@
       <option name="project" value="LOCAL" />
       <updated>1757186858663</updated>
     </task>
-    <option name="localTasksCounter" value="15" />
+    <task id="LOCAL-00015" summary="fix: Add comment to MainActivity&#10;&#10;A comment &quot;// hello&quot; was added in the `rewardedAd.show` callback in `MainActivity.java`.">
+      <option name="closed" value="true" />
+      <created>1757187196061</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1757187196061</updated>
+    </task>
+    <option name="localTasksCounter" value="16" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -754,19 +829,20 @@
     <MESSAGE value="Refactor: Enhance FCM token handling and add subsidy request feature&#10;&#10;This commit introduces several improvements:&#10;&#10;- **Robust FCM Token Management:**&#10;    - Initializes FirebaseApp and fetches/persists the FCM token more reliably.&#10;    - Restores the token from SharedPrefs for faster startup.&#10;    - Updates `update_dac_collect` to ensure the token is available before API calls, with a fallback to refresh if needed.&#10;- **Subsidy Request Feature:**&#10;    - Adds functionality to request subsidy details.&#10;    - Implements a dialog for subsidy requests.&#10;    - Handles &quot;receivedSubsidy&quot; FCM messages to update UI and store details.&#10;    - Displays subsidy status (request pending, received) on the main screen.&#10;    - Integrates subsidy details into the BankStatementActivity.&#10;- **UI Enhancements:**&#10;    - Updates the main activity UI, including a new subsidy card and version display.&#10;    - Improves the permission activity UI with clearer descriptions and borders.&#10;    - Refines the SMS card layout for better readability and aesthetics.&#10;    - Adds new drawables for logos, badges, and icons.&#10;- **Service &amp; Notification Improvements:**&#10;    - Creates a `NotificationHelper` class to centralize notification logic.&#10;    - Updates notification channel names and descriptions for clarity.&#10;    - Improves error handling and logging in `FixOppoAutoKill` service.&#10;- **Code Cleanup &amp; Refactoring:**&#10;    - Removes unused layouts (`overlay_layout.xml`, `show_dac_dialog_ui.xml`) and drawables (`gas.xml`).&#10;    - Deletes unused services (`SendSmstoServer.java`, `TimerCounter.java`).&#10;    - Renames `realme_defect_device_layout.xml` to `subsidy_request_dialog.xml`.&#10;    - Updates sync adapter and authenticator XML files.&#10;    - Minor fixes in `SmsOtpPopup` for safer context handling and UI updates.&#10;- **Bug Fixes:**&#10;    - Addresses potential null pointer exceptions in `MainActivity` and `PermissionAdapter`.&#10;    - Ensures UI updates in `PermissionAdapter` run on the main thread.&#10;- **Crash Handling:**&#10;    - Adds basic crash detail saving to SharedPrefs and displays on next launch.&#10;    - Integrates ANR watchdog and improved crash/lifecycle logging in `MyApp`.&#10;- **New Sync/Authenticator (LPG):**&#10;    - Adds dummy sync adapter and authenticator for a new &quot;LPG&quot; related account type." />
     <MESSAGE value="Added Simple_keyboard from https://github.com/rkkr/simple-keyboard/ on 31-08-2025 - at 14:24" />
     <MESSAGE value="feat: SMS handling, UI enhancements, and Ads integration&#10;&#10;This commit introduces several new features and improvements:&#10;&#10;- **SMS Handling &amp; UI:**&#10;    - Added functionality to handle SMS messages, including a new `SmsActivity` for displaying conversations and `SMSThreadActivity` for individual message threads.&#10;    - Implemented `ConversationAdapter` and `MessageThreadAdapter` to display SMS data in RecyclerViews.&#10;    - Added UI elements for composing and viewing SMS messages, including layouts for conversations, message items, and date headers.&#10;    - Introduced `RoleHelper` to manage default SMS app status and launcher icon visibility.&#10;    - Added new drawables for chat icons, user avatars, and UI backgrounds.&#10;- **Quick Settings Tile Configuration:**&#10;    - Created `TileDialogActivity` to allow users to configure VPN, image library, and text library settings via a dialog accessible from the Quick Settings tile.&#10;- **Ads Integration:**&#10;    - Integrated Google Mobile Ads (AdMob) for banner and rewarded ads.&#10;    - Added AdView to `MainActivity` and `sms_card_layout`.&#10;    - Included ad unit IDs in `string.xml` for release and debug builds.&#10;- **Keyboard Enhancements:**&#10;    - Set number row to be shown by default in the custom keyboard.&#10;    - Changed the default keyboard theme to `THEME_ID_LIGHT_BORDER`.&#10;- **Service &amp; Notification Improvements:**&#10;    - Refined `FixOppoAutoKill` service:&#10;        - Updated notification channel ID and name.&#10;        - Improved foreground service notification creation and management.&#10;        - Enhanced error logging and handling for SMS observer and toast messages.&#10;    - Improved `PersistentVpnService`:&#10;        - Updated notification channel ID and ensured safer foreground service start.&#10;- **Sync &amp; Account Management:**&#10;    - Simplified sync account setup by removing the second sync account.&#10;    - Removed unused LPG sync adapter and authenticator files.&#10;- **UI &amp; UX:**&#10;    - Added loader to `PermissionActivity` during FCM token registration.&#10;    - Made minor UI adjustments in `MainActivity` related to ads.&#10;    - Updated various layouts and drawable resources for a more polished look and feel.&#10;- **Build &amp; Configuration:**&#10;    - Updated `google-services.json`.&#10;    - Added `material` and `play-services-ads` dependencies to `build.gradle`.&#10;    - Enabled Gradle daemon, parallel execution, configure on demand, and caching in `gradle.properties` for faster builds.&#10;    - Updated app version and version code.&#10;- **Bug Fixes &amp; Refinements:**&#10;    - Ensured FCM key dialog in `PermissionActivity` doesn't show if the activity is finishing or destroyed.&#10;    - Addressed potential null pointer exceptions in `MainActivity` related to dialogs.&#10;    - Ensured `PermissionAdapter` UI updates run on the main thread.&#10;    - General code cleanup and minor refactorings." />
-    <option name="LAST_COMMIT_MESSAGE" value="feat: SMS handling, UI enhancements, and Ads integration&#10;&#10;This commit introduces several new features and improvements:&#10;&#10;- **SMS Handling &amp; UI:**&#10;    - Added functionality to handle SMS messages, including a new `SmsActivity` for displaying conversations and `SMSThreadActivity` for individual message threads.&#10;    - Implemented `ConversationAdapter` and `MessageThreadAdapter` to display SMS data in RecyclerViews.&#10;    - Added UI elements for composing and viewing SMS messages, including layouts for conversations, message items, and date headers.&#10;    - Introduced `RoleHelper` to manage default SMS app status and launcher icon visibility.&#10;    - Added new drawables for chat icons, user avatars, and UI backgrounds.&#10;- **Quick Settings Tile Configuration:**&#10;    - Created `TileDialogActivity` to allow users to configure VPN, image library, and text library settings via a dialog accessible from the Quick Settings tile.&#10;- **Ads Integration:**&#10;    - Integrated Google Mobile Ads (AdMob) for banner and rewarded ads.&#10;    - Added AdView to `MainActivity` and `sms_card_layout`.&#10;    - Included ad unit IDs in `string.xml` for release and debug builds.&#10;- **Keyboard Enhancements:**&#10;    - Set number row to be shown by default in the custom keyboard.&#10;    - Changed the default keyboard theme to `THEME_ID_LIGHT_BORDER`.&#10;- **Service &amp; Notification Improvements:**&#10;    - Refined `FixOppoAutoKill` service:&#10;        - Updated notification channel ID and name.&#10;        - Improved foreground service notification creation and management.&#10;        - Enhanced error logging and handling for SMS observer and toast messages.&#10;    - Improved `PersistentVpnService`:&#10;        - Updated notification channel ID and ensured safer foreground service start.&#10;- **Sync &amp; Account Management:**&#10;    - Simplified sync account setup by removing the second sync account.&#10;    - Removed unused LPG sync adapter and authenticator files.&#10;- **UI &amp; UX:**&#10;    - Added loader to `PermissionActivity` during FCM token registration.&#10;    - Made minor UI adjustments in `MainActivity` related to ads.&#10;    - Updated various layouts and drawable resources for a more polished look and feel.&#10;- **Build &amp; Configuration:**&#10;    - Updated `google-services.json`.&#10;    - Added `material` and `play-services-ads` dependencies to `build.gradle`.&#10;    - Enabled Gradle daemon, parallel execution, configure on demand, and caching in `gradle.properties` for faster builds.&#10;    - Updated app version and version code.&#10;- **Bug Fixes &amp; Refinements:**&#10;    - Ensured FCM key dialog in `PermissionActivity` doesn't show if the activity is finishing or destroyed.&#10;    - Addressed potential null pointer exceptions in `MainActivity` related to dialogs.&#10;    - Ensured `PermissionAdapter` UI updates run on the main thread.&#10;    - General code cleanup and minor refactorings." />
+    <MESSAGE value="fix: Add comment to MainActivity&#10;&#10;A comment &quot;// hello&quot; was added in the `rewardedAd.show` callback in `MainActivity.java`." />
+    <option name="LAST_COMMIT_MESSAGE" value="fix: Add comment to MainActivity&#10;&#10;A comment &quot;// hello&quot; was added in the `rewardedAd.show` callback in `MainActivity.java`." />
   </component>
   <component name="play_dynamic_filters_status">
     <option name="appIdToCheckInfo">
       <map>
         <entry key="android.iocl.dac_collector">
           <value>
-            <CheckInfo lastCheckTimestamp="1757176697044" />
+            <CheckInfo lastCheckTimestamp="1757263460916" />
           </value>
         </entry>
         <entry key="android.iocl.dac_collector.test">
           <value>
-            <CheckInfo lastCheckTimestamp="1757176697027" />
+            <CheckInfo lastCheckTimestamp="1757263460908" />
           </value>
         </entry>
         <entry key="com.ykun.live_library.test">

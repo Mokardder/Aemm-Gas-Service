@@ -1,29 +1,42 @@
 package android.iocl.sms_handler_8_0_below;
 
+import static android.iocl.dac_collector.Utility.Utility.TAG;
+
 import android.Manifest;
 import android.content.ContentResolver;
+
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.iocl.dac_collector.ModelData.Message;
 import android.iocl.dac_collector.R;
 import android.iocl.dac_collector.adapter.MessageThreadAdapter;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.provider.Telephony;
 import android.telephony.SmsManager;
 import android.text.TextUtils;
+import android.util.Log;
+import android.view.WindowInsetsController;
+import android.view.WindowManager;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.annotation.Nullable;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.google.android.gms.ads.AdListener;
+import com.google.android.gms.ads.AdLoader;
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.LoadAdError;
+import com.google.android.gms.ads.nativead.NativeAd;
 
 import com.google.android.material.button.MaterialButton;
 
@@ -32,33 +45,34 @@ import java.util.List;
 
 public class SMSThreadActivity extends AppCompatActivity implements MessageThreadAdapter.MessageListener {
 
-    public static final String EXTRA_ADDRESS = "extra_address";
-    public static final String EXTRA_NAME = "extra_name";
-
     private RecyclerView rv;
     private MessageThreadAdapter adapter;
     private EditText edtReply;
     private MaterialButton btnSend;
+    public static final String EXTRA_ADDRESS = "extra_address";
+    public static final String EXTRA_NAME = "extra_name";
     private String address, name;
     private TextView tvTitle;
 
+    private final List<NativeAd> loadedAds = new ArrayList<>();
+
     private final ActivityResultLauncher<String[]> requestPermissionsLauncher =
-            registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), result -> {
-                loadAllMessages();
-            });
+            registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), result -> loadAllMessages());
 
     @Override
-    protected void onCreate(@Nullable Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_smsthread);
 
+        hideSystemBars();
+        preloadNativeAds();
         tvTitle = findViewById(R.id.tvHeader);
         rv = findViewById(R.id.rvMessages);
         edtReply = findViewById(R.id.edtReply);
         btnSend = findViewById(R.id.btnSend);
 
-        address = getIntent().getStringExtra(EXTRA_ADDRESS);
-        name = getIntent().getStringExtra(EXTRA_NAME);
+        address = getIntent().getStringExtra("extra_address");
+        name = getIntent().getStringExtra("extra_name");
         tvTitle.setText(name != null ? name : address);
 
         rv.setLayoutManager(new LinearLayoutManager(this));
@@ -67,12 +81,9 @@ public class SMSThreadActivity extends AppCompatActivity implements MessageThrea
 
         btnSend.setOnClickListener(v -> {
             String text = edtReply.getText().toString().trim();
-            if (!TextUtils.isEmpty(text)) {
-                sendSms(text);
-            }
+            if (!TextUtils.isEmpty(text)) sendSms(text);
         });
 
-        // ask for permissions if needed
         if (!hasPermissions()) {
             requestPermissionsLauncher.launch(new String[]{
                     Manifest.permission.READ_SMS,
@@ -81,11 +92,26 @@ public class SMSThreadActivity extends AppCompatActivity implements MessageThrea
         } else {
             loadAllMessages();
         }
+
+
     }
 
     private boolean hasPermissions() {
         return ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_SMS) == PackageManager.PERMISSION_GRANTED &&
                 ActivityCompat.checkSelfPermission(this, Manifest.permission.SEND_SMS) == PackageManager.PERMISSION_GRANTED;
+    }
+
+    private void hideSystemBars() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            WindowInsetsController controller = getWindow().getInsetsController();
+            if (controller != null) {
+                controller.hide(android.view.WindowInsets.Type.statusBars());
+                controller.setSystemBarsBehavior(WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+            }
+        } else {
+            getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
+                    WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        }
     }
 
     private void loadAllMessages() {
@@ -125,9 +151,13 @@ public class SMSThreadActivity extends AppCompatActivity implements MessageThrea
 
             runOnUiThread(() -> {
                 adapter.setMessages(allMessages);
-                if (!allMessages.isEmpty()) {
-                    rv.scrollToPosition(adapter.getItemCount() - 1);
+
+                // Inject preloaded ads
+                for (NativeAd ad : loadedAds) {
+                    adapter.addAd(ad);
                 }
+
+                if (!allMessages.isEmpty()) rv.scrollToPosition(adapter.getItemCount() - 1);
             });
         }).start();
     }
@@ -143,20 +173,72 @@ public class SMSThreadActivity extends AppCompatActivity implements MessageThrea
             ArrayList<String> parts = sms.divideMessage(text);
             sms.sendMultipartTextMessage(address, null, parts, null, null);
 
-            // optimistic UI update
             Message sent = new Message("local-" + System.currentTimeMillis(), address, text, System.currentTimeMillis(), Telephony.Sms.MESSAGE_TYPE_SENT);
             runOnUiThread(() -> {
                 adapter.addMessage(sent);
-                rv.scrollToPosition(adapter.getItemCount() - 1);
                 edtReply.setText("");
             });
 
-            // reload to sync with provider
             loadAllMessages();
         } catch (Exception e) {
             e.printStackTrace();
             Toast.makeText(this, "Send failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
         }
+    }
+
+    private void preloadNativeAds() {
+
+        Log.d(TAG, "preloadNativeAds: Started");
+        
+        AdLoader adLoader = new AdLoader.Builder(this, "ca-app-pub-3940256099942544/2247696110") // test ad unit
+                .forNativeAd(ad -> {
+
+                    Log.d(TAG, "preloadNativeAds: " + ad.getBody());
+                    loadedAds.add(ad);
+                })
+                .withAdListener(new AdListener() {
+                    @Override
+                    public void onAdClicked() {
+                        super.onAdClicked();
+                    }
+
+                    @Override
+                    public void onAdClosed() {
+                        super.onAdClosed();
+                    }
+
+                    @Override
+                    public void onAdImpression() {
+                        super.onAdImpression();
+                    }
+
+                    @Override
+                    public void onAdLoaded() {
+                        super.onAdLoaded();
+                        Toast.makeText(SMSThreadActivity.this, "Ads loaded", Toast.LENGTH_SHORT).show();
+                    }
+
+                    @Override
+                    public void onAdOpened() {
+                        super.onAdOpened();
+                    }
+
+                    @Override
+                    public void onAdSwipeGestureClicked() {
+                        super.onAdSwipeGestureClicked();
+                    }
+
+                    @Override
+                    public void onAdFailedToLoad(@NonNull LoadAdError adError) {
+
+
+                        Log.d(TAG, "onAdFailedToLoad: " +adError.toString());
+                        // optional logging
+                    }
+                })
+                .build();
+
+        adLoader.loadAds(new AdRequest.Builder().build(), 5); // preload multiple ads
     }
 
     @Override
@@ -171,8 +253,8 @@ public class SMSThreadActivity extends AppCompatActivity implements MessageThrea
 
     private void deleteMessage(Message m) {
         try {
-            Uri deleteUri = Telephony.Sms.CONTENT_URI;
-            int deleted = getContentResolver().delete(deleteUri, Telephony.Sms._ID + "=?", new String[]{m.getId()});
+            int deleted = getContentResolver().delete(Telephony.Sms.CONTENT_URI,
+                    Telephony.Sms._ID + "=?", new String[]{m.getId()});
             if (deleted > 0) {
                 Toast.makeText(this, "Deleted", Toast.LENGTH_SHORT).show();
                 loadAllMessages();
