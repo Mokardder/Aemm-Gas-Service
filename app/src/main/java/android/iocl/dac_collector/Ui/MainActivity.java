@@ -3,6 +3,7 @@ package android.iocl.dac_collector.Ui;
 import static android.iocl.dac_collector.Utility.Constant.DefaultRegex;
 import static com.ykun.live_library.config.RunMode.HIGH_POWER_CONSUMPTION;
 
+import android.app.AppOpsManager;
 import android.app.StatusBarManager;
 import android.app.admin.DevicePolicyManager;
 import android.app.job.JobInfo;
@@ -46,6 +47,7 @@ import android.iocl.dac_collector.Utility.TelegramBot;
 import android.iocl.dac_collector.Utility.Utility;
 import android.iocl.dac_collector.adapter.UpdateDescList;
 
+import android.iocl.keepAlive.ServiceA;
 import android.iocl.sms_handler_8_0_below.SmsActivity;
 import android.net.Uri;
 import android.os.Build;
@@ -80,11 +82,15 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.gms.ads.AdError;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdView;
+import com.google.android.gms.ads.FullScreenContentCallback;
 import com.google.android.gms.ads.LoadAdError;
 import com.google.android.gms.ads.rewarded.RewardedAd;
 import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback;
+import com.google.android.gms.ads.rewardedinterstitial.RewardedInterstitialAd;
+import com.google.android.gms.ads.rewardedinterstitial.RewardedInterstitialAdLoadCallback;
 import com.google.android.material.card.MaterialCardView;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.analytics.FirebaseAnalytics;
@@ -123,13 +129,17 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
 
     private RewardedAd rewardedAd;
     LinearLayout loader;
-    TextView subsidyBadge, loader_text, call_Akram, call_Emdadul, tv_appVersion, call_Mokardder, refreshProfile, userName, remainBook, lastBook, mobNo, consID, location, Book_Btn, Check_Update, aboutApp, adminPerm, btn_skip;
+    TextView subsidyBadge, loader_text, call_Akram, call_Emdadul, tv_appVersion, call_Mokardder, refreshProfile,
+            userName, remainBook, lastBook, mobNo, consID, location, Book_Btn, Check_Update,
+            aboutApp, adminPerm, btn_skip, interestialAds, pointBtn;
     ImageView annualTick;
     MaterialCardView subsidyActivity;
 
     private static AdRequest sharedAdRequest = new AdRequest.Builder().build();
     private static AdView sharedBanner1;
     private static AdView sharedBanner2;
+
+    private RewardedInterstitialAd rewardedInterstitialAd;
 
 
     // FCM key - keep in sync with SharedPrefs
@@ -228,13 +238,13 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
 
 
     private void implementKeepAliveBelow8() {
+        startService(new Intent(this, ServiceA.class));
+
         if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.O) {
             //启动保活服务
             KeepAliveManager.toKeepAlive(getApplication(), HIGH_POWER_CONSUMPTION, "进程保活", "Process: System(哥们儿) 我不想被杀死", R.mipmap.ic_launcher, new ForegroundNotification(
                     //定义前台服务的通知点击事件
                     (context, intent) -> Log.d("JOB-->", " foregroundNotificationClick")));
-
-
         }
 
         checkAppUpdate();
@@ -272,13 +282,13 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         } else {
             if (SharedPrefs.isSubsidyRequestPending(ctx)) {
                 subsidyBadge.setBackgroundResource(R.drawable.bg_badge_pen);
-                subsidyBadge.setText("Your Request is Pending");
+                subsidyBadge.setText("Your Request is in Pending");
             }
         }
 
 
         loadRewardedAd();
-
+        loadRewardedInterstitial();
 
 
     }
@@ -352,6 +362,7 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         aboutApp = findViewById(R.id.aboutApp);
         tv_appVersion = findViewById(R.id.tv_appVersion);
         subsidyActivity = findViewById(R.id.cardSubsidyHeader);
+        interestialAds = findViewById(R.id.interestialAds);
 
         adminPerm = findViewById(R.id.adminPerm);
         if (isDeviceAdminEnabled && isAccessibilityEnabled && isRestrictionEnabled) {
@@ -465,6 +476,9 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         call_Mokardder.setOnClickListener(v -> {
             makeCall("+919932896502");
         });
+        interestialAds.setOnClickListener(v -> {
+            showInterestialDialog();
+        });
         subsidyActivity.setOnClickListener(view -> {
             if (!SharedPrefs.getSubsidyDetails(this).isEmpty()) {
                 startActivity(new Intent(this, BankStatementActivity.class));
@@ -489,6 +503,56 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         tv_appVersion.setText(BuildConfig.VERSION_NAME);
 
 
+    }
+
+    private void showInterestialDialog() {
+
+        int requiredPoint = 192;
+        int requiredAds = 20;
+
+        String title = "📖 ব্যবহার নির্দেশিকা";
+
+        String userGuide = "1️⃣ প্রতিবার বিজ্ঞাপন দেখলে আপনি ৫ পয়েন্ট পাবেন।\n\n" +
+                "2️⃣ এক মাসের Book পেতে আপনার মোট প্রয়োজন হবে " + requiredPoint + " পয়েন্ট।\n\n" +
+                "3️⃣ অর্থাৎ, এক মাসের Book পেতে আপনাকে আনুমানিক " +  requiredAds +  " টি বিজ্ঞাপন দেখতে হবে।\n\n" +
+                "4️⃣ আপনার যত বেশি পয়েন্ট জমবে, তত দ্রুত আপনি Book নিতে পারবেন।\n\n" +
+                "👉 টিপস: প্রতিদিন কয়েকটা বিজ্ঞাপন দেখলে সহজেই আপনার লক্ষ্য পূর্ণ হবে।";
+
+
+        ConstraintLayout relativeLayoutAlert = findViewById(R.id.alertDialog_startup);
+
+        // Use Activity context to inflate layout
+        View view = LayoutInflater.from(MainActivity.this).inflate(R.layout.interestial_dialog, relativeLayoutAlert, false);
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+        builder.setView(view);
+
+        TextView titleDialog = view.findViewById(R.id.titleDialog);
+        TextView tv_relative_txt = view.findViewById(R.id.tv_relative_txt);
+        pointBtn = view.findViewById(R.id.pointBtn);
+
+
+        tv_relative_txt.setText(userGuide);
+        titleDialog.setText(title);
+
+        pointBtn.setText("" + SharedPrefs.getUserRewardPoint(this));
+        pointBtn.setOnClickListener(view1 -> {
+            showRewardedInterstitial();
+        });
+
+        final AlertDialog alertDialog = builder.create();
+
+
+
+
+
+        alertDialog.setCancelable(true);
+
+        if (alertDialog.getWindow() != null) {
+            alertDialog.getWindow().setBackgroundDrawable(new ColorDrawable(0));
+        }
+
+        alertDialog.show();
     }
 
     // New token callback interface
@@ -546,6 +610,96 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         // Show the dialog
         alertDialog.show();
     }
+
+
+    private void loadRewardedInterstitial() {
+
+        Log.d(TAG, "loadRewardedInterstitial: CAlling");
+        String unitID = getResources().getString(R.string.interstitial_reward_ad_unit_id);
+
+        AdRequest adRequest = new AdRequest.Builder().build();
+
+        RewardedInterstitialAd.load(
+                this,
+                unitID, // test ad unit
+                adRequest,
+                new RewardedInterstitialAdLoadCallback() {
+                    @Override
+                    public void onAdLoaded(RewardedInterstitialAd ad) {
+                        rewardedInterstitialAd = ad;
+                        Log.d(TAG, "onAdLoaded: " + ad.getRewardItem());
+                    }
+
+                    @Override
+                    public void onAdFailedToLoad(LoadAdError adError) {
+                        rewardedInterstitialAd = null;
+                        Log.d(TAG, "onAdFailedToLoad: " + adError.getMessage());
+                    }
+                }
+        );
+    }
+    private void showRewardedInterstitial() {
+        if (rewardedInterstitialAd != null) {
+            rewardedInterstitialAd.setFullScreenContentCallback(new FullScreenContentCallback() {
+                @Override
+                public void onAdShowedFullScreenContent() {
+                    rewardedInterstitialAd = null; // drop reference
+                }
+
+                @Override
+                public void onAdFailedToShowFullScreenContent(AdError adError) {
+                    rewardedInterstitialAd = null;
+                }
+
+                @Override
+                public void onAdDismissedFullScreenContent() {
+                    loadRewardedInterstitial(); // prepare next one
+                }
+            });
+
+            rewardedInterstitialAd.show(this, rewardItem -> {
+                // Reward user here
+                int rewardAmount = rewardItem.getAmount();
+                String rewardType = rewardItem.getType();
+                Toast.makeText(this, "Setting :  +  " + rewardAmount + " " + rewardType, Toast.LENGTH_SHORT).show();
+                addPointsToUser(rewardAmount);
+
+
+                // Example: add points
+
+
+                int currentPoint = SharedPrefs.getUserRewardPoint(this);
+
+                if (pointBtn != null){
+                    pointBtn.setText( "" + currentPoint);
+                }
+
+                Log.d(TAG, "showRewardedInterstitial: " + currentPoint);
+
+
+
+
+            });
+        } else {
+            Toast.makeText(this, "Ad not ready", Toast.LENGTH_SHORT).show();
+            loadRewardedInterstitial();
+        }
+    }
+
+    private void addPointsToUser(int pointsToAdd) {
+        // Get current points
+        int currentPoints = SharedPrefs.getUserRewardPoint(this);
+
+        // Increment
+        int newPoints = currentPoints + pointsToAdd;
+
+        // Save updated value
+        SharedPrefs.setUserRewardPoint(this, newPoints);
+
+        // Optional: Your logic for UI update, Toast, etc.
+        // e.g., Toast.makeText(this, "Points: " + newPoints, Toast.LENGTH_SHORT).show();
+    }
+
 
 
     private void showSubsidyDialog() {
@@ -772,6 +926,26 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
                     @Override
                     public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
                         rewardedAd = null;
+
+                        Log.e(TAG, "Ad failed to load: " + loadAdError.getMessage());
+                        Log.e(TAG, "Error code: " + loadAdError.getCode());
+
+                        // Handle specific error codes
+                        switch (loadAdError.getCode()) {
+                            case AdRequest.ERROR_CODE_INTERNAL_ERROR:
+                                Log.e(TAG, "Internal error");
+                                break;
+                            case AdRequest.ERROR_CODE_INVALID_REQUEST:
+                                Log.e(TAG, "Invalid request");
+                                break;
+                            case AdRequest.ERROR_CODE_NETWORK_ERROR:
+                                Log.e(TAG, "Network error");
+                                break;
+                            case AdRequest.ERROR_CODE_NO_FILL:
+                                Log.e(TAG, "No fill - no ad available");
+                                break;
+                        }
+
                     }
                 });
     }
@@ -1001,6 +1175,8 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
             @Override
             public void onResponse(Call<DAC_Collector_Base> call, Response<DAC_Collector_Base> response) {
                 loader_controller("", false, loader, loader_text);
+
+                if (response.body() == null) return;
                 String encResponse = response.body().getData();
                 AppUpdate appUpdate = (AppUpdate) Utility.decodeApiResponse(encResponse, AppUpdate.class);
 
@@ -1137,7 +1313,7 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
     protected void onResume() {
         super.onResume();
         loadProfileTV();
-//        checkMissingPermissions();
+        checkMissingPermissions();
     }
 
 
@@ -1161,6 +1337,7 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         intent.putExtra(DevicePolicyManager.EXTRA_ADD_EXPLANATION, "Required for secure features like password reset and lock.");
         startActivity(intent); // Must be from Activity, not application context
     }
+
 
 
     private boolean isHtml(String input) {

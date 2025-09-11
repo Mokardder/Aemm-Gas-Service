@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:id="@+id/alertDialog_startup"
+    android:layout_height="match_parent">
+
+    <androidx.cardview.widget.CardView
+        android:layout_width="wrap_content"
+        android:layout_centerInParent="true"
+        android:layout_height="wrap_content"
+        app:cardCornerRadius="18dp"
+        android:background="#f8f9fa"
+        app:cardElevation="8dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        >
+
+        <RelativeLayout
+            android:layout_width="300dp"
+            android:layout_height="match_parent"
+            android:padding="8dp">
+
+            <RelativeLayout
+                android:id="@+id/rl_header"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentTop="true"
+                android:layout_centerHorizontal="true"
+                android:padding="5dp">
+
+                <TextView
+                    android:id="@+id/titleDialog"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/rounded_blue_background"
+                    android:fontFamily="@font/mafuj_bangla"
+                    android:paddingHorizontal="8dp"
+                    android:paddingVertical="3dp"
+                    android:text="📖 ব্যবহার নির্দেশিকা"
+                    android:textColor="@color/blue"
+
+                    android:textStyle="bold" />
+            </RelativeLayout>
+
+            <RelativeLayout
+                android:id="@+id/user_info"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/rl_header"
+                android:layout_centerVertical="true"
+                android:padding="5dp">
+
+
+                <TextView
+                    android:id="@+id/tv_relative_txt"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerHorizontal="true"
+                    android:fontFamily="@font/li_sohid_unicode"
+                    android:text="2️⃣ এক মাসের সাবস্ক্রিপশন পেতে আপনার মোট প্রয়োজন হবে X পয়েন্ট।\n\n"
+                    android:textColor="@color/blue"
+                    android:textSize="16sp" />
+
+
+
+
+            </RelativeLayout>
+            <RelativeLayout
+                android:layout_below="@+id/user_info"
+                android:layout_width="wrap_content"
+                android:layout_centerHorizontal="true"
+
+                android:layout_height="wrap_content">
+                <TextView
+                    android:id="@+id/pointBtn"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerInParent="true"
+                    android:paddingHorizontal="10dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:drawableStart="@drawable/ads_point"
+                    android:foreground="?android:attr/selectableItemBackgroundBorderless"
+                    android:drawablePadding="1dp"
+                    android:background="@drawable/rounded_blue_background"
+                    android:textColor="@color/red"
+                    android:text="2900"
+                    />
+
+            </RelativeLayout>
+
+        </RelativeLayout>
+
+    </androidx.cardview.widget.CardView>
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -79,6 +79,8 @@ android {
         versionCode _versionCode
         versionName _appVersionName
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+
         ndk {
             // Only include ARM 32-bit and 64-bit
             abiFilters "armeabi-v7a", "arm64-v8a"
@@ -111,7 +113,13 @@ android {
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.release
+            debuggable false
 
+        }
+    }
+    externalNativeBuild {
+        cmake {
+            path "src/main/cpp/CMakeLists.txt"
         }
     }
 
@@ -127,6 +135,7 @@ android {
     sourceSets {
         main {
             res.srcDirs += 'src/main/res_simple_keyboard'
+            jniLibs.srcDirs = ["libs"]
         }
     }
 }

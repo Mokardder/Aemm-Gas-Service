@@ -41,3 +41,18 @@
 -keep class android.iocl.simple_keyboard.latin.settings.LanguagesSettingsFragment
 -keep class android.iocl.simple_keyboard.latin.settings.SingleLanguageSettingsFragment
 
+# AdMob Proguard rules
+-keep public class com.google.android.gms.ads.** {
+   public *;
+}
+
+-keep public class com.google.ads.** {
+   public *;
+}
+
+-keep class com.google.android.gms.** { *; }
+-dontwarn com.google.android.gms.ads.**
+
+# For rewarded ads specifically
+-keep class com.google.android.gms.ads.rewarded.** { *; }
+

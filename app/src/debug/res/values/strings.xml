@@ -1,4 +1,5 @@
 <resources>
     <string name="banner_ad_unit_id" translatable="false">ca-app-pub-3940256099942544/6300978111</string> 
     <string name="reward_ad_unit_id" translatable="false">ca-app-pub-3940256099942544/5224354917</string> 
+    <string name="interstitial_reward_ad_unit_id" translatable="false">ca-app-pub-3940256099942544/5354046379</string>
 </resources>

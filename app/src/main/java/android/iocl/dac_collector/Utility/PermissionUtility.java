@@ -302,13 +302,13 @@ public class PermissionUtility {
         }
 
 
-      if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O || BuildConfig.DEBUG) { // For Android Lessthan 8.0 (Oreo) App needs to be default Sms handler to handle incoming sms-es
-        if (!RoleHelper.isDefault(activity) ) {
-           missingPermissions.add("default_sms");
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O || BuildConfig.DEBUG) { // For Android Lessthan 8.0 (Oreo) App needs to be default Sms handler to handle incoming sms-es
+            if (!RoleHelper.isDefault(activity)) {
+                missingPermissions.add("default_sms");
+            }
+
+
         }
-
-
-       }
 
         if (!isMasterSyncAutomatically()) {
             missingPermissions.add("sync_false");
@@ -331,14 +331,15 @@ public class PermissionUtility {
         if (!isAdmin(activity)) {
             missingPermissions.add("Admin");
 
-            return missingPermissions;
-        }
 
-//      TODO: Remmove the LOG
+        }
 
 
         if (!isAlwaysOnVpnEnabled(activity)) {
-            missingPermissions.add("always_on_vpn");
+            if (XXPermissions.isGrantedPermissions(activity, Permission.BIND_VPN_SERVICE)) {
+                missingPermissions.add("always_on_vpn");
+            }
+
         }
 
 

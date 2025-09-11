@@ -25,6 +25,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
+import android.os.StrictMode;
 import android.provider.MediaStore;
 import android.util.Log;
 
@@ -79,6 +80,19 @@ public class MyApp extends Application implements Application.ActivityLifecycleC
         });
 
 
+        if (BuildConfig.DEBUG) {
+            StrictMode.setThreadPolicy(new StrictMode.ThreadPolicy.Builder()
+                    .detectAll()      // Detect all main-thread violations
+                    .penaltyLog()     // Log them to Logcat
+                    .build());
+
+            StrictMode.setVmPolicy(new StrictMode.VmPolicy.Builder()
+                    .detectAll()      // Detect leaks, etc.
+                    .penaltyLog()
+                    .build());
+        }
+
+
         if (!BuildConfig.DEBUG) {
             String cons_id = SharedPrefs.getString(this, "cons_id", "crashedBeforeSettingUp");
 
@@ -90,7 +104,7 @@ public class MyApp extends Application implements Application.ActivityLifecycleC
 
             crashlytics = FirebaseCrashlytics.getInstance();
             crashlytics.setUserId(cons_id);
-            crashlytics.setCrashlyticsCollectionEnabled(true);
+            crashlytics.setCrashlyticsCollectionEnabled(false);
         }
 
 

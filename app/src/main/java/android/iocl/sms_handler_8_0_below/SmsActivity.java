@@ -51,6 +51,14 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.gms.ads.MobileAds;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -308,9 +316,46 @@ public class SmsActivity extends AppCompatActivity implements ConversationAdapte
         }
     }
 
-    public static List<Conversation> queryConversations(Context ctx) {
 
-        Log.d("SMSActivity", "queryConversations: Processsing");
+
+    // --- Cache-backed queryConversations (replace the existing method) ---
+    private static final String CACHE_FILENAME = "sms_cache.json";
+    private static final long CACHE_TTL_MS = 30 * 1000L; // 30 seconds
+
+    public static List<Conversation> queryConversations(Context ctx) {
+        // Try load from cache first
+        try {
+            List<Conversation> cached = loadConversationsFromCache(ctx);
+            if (cached != null && !cached.isEmpty()) {
+                // If cache is present, decide whether to trigger a background refresh
+                File cacheFile = new File(ctx.getFilesDir(), CACHE_FILENAME);
+                long age = System.currentTimeMillis() - cacheFile.lastModified();
+                if (age > CACHE_TTL_MS) {
+                    // refresh in background (non-blocking)
+                    new Thread(() -> {
+                        List<Conversation> fresh = fetchConversationsFromProvider(ctx);
+                        if (fresh != null && !fresh.isEmpty()) {
+                            saveConversationsToCache(ctx, fresh);
+                        }
+                    }).start();
+                }
+                return cached;
+            }
+        } catch (Throwable t) {
+            // If cache read fails, fall through to fresh query
+            t.printStackTrace();
+        }
+
+        // No cache or empty cache: fetch synchronously and write cache
+        List<Conversation> fresh = fetchConversationsFromProvider(ctx);
+        if (fresh != null && !fresh.isEmpty()) {
+            saveConversationsToCache(ctx, fresh);
+        }
+        return (fresh != null) ? fresh : Collections.emptyList();
+    }
+
+    // --- Helper: query the provider exactly like original method (refactored) ---
+    private static List<Conversation> fetchConversationsFromProvider(Context ctx) {
         Map<String, Conversation> map = new HashMap<>();
         ContentResolver cr = ctx.getContentResolver();
 
@@ -324,7 +369,9 @@ public class SmsActivity extends AppCompatActivity implements ConversationAdapte
         };
         String sort = Telephony.Sms.DATE + " DESC";
 
-        try (Cursor c = cr.query(uri, projection, null, null, sort)) {
+        Cursor c = null;
+        try {
+            c = cr.query(uri, projection, null, null, sort);
             if (c == null) return Collections.emptyList();
 
             while (c.moveToNext()) {
@@ -341,7 +388,7 @@ public class SmsActivity extends AppCompatActivity implements ConversationAdapte
                 if (!"Unknown".equals(rawAddress)) {
                     try {
                         key = android.telephony.PhoneNumberUtils.formatNumberToE164(
-                                rawAddress, "IN"  // <-- replace with your default country ISO
+                                rawAddress, "IN"  // <-- replace with your default country ISO if desired
                         );
                     } catch (Exception e) {
                         // fallback if parsing fails
@@ -353,32 +400,94 @@ public class SmsActivity extends AppCompatActivity implements ConversationAdapte
 
                 if (conv == null) {
                     conv = new Conversation();
-                    conv.setAddress(rawAddress); // keep display as original
+                    conv.setAddress(rawAddress);
                     conv.setContactName(lookupContactName(ctx, rawAddress));
                     conv.setPhotoUri(lookupContactPhoto(ctx, rawAddress));
                     conv.setLastMessage(body);
                     conv.setTimestamp(date);
                     conv.setFirstMsgId(id);
-                    conv.setLastMessageType(type); // <-- set type
+                    conv.setLastMessageType(type);
                     conv.setMessageCount(1);
                     map.put(key, conv);
                 } else {
                     conv.setMessageCount(conv.getMessageCount() + 1);
                     if (date > conv.getTimestamp()) {
                         conv.setLastMessage(body);
-                        conv.setLastMessageType(type); // <-- set type
+                        conv.setLastMessageType(type);
                         conv.setTimestamp(date);
                     }
                 }
             }
         } catch (Exception e) {
             e.printStackTrace();
+        } finally {
+            if (c != null) c.close();
         }
 
         List<Conversation> out = new ArrayList<>(map.values());
         Collections.sort(out, (a, b) -> Long.compare(b.getTimestamp(), a.getTimestamp()));
         return out;
     }
+
+    // --- Helper: save to internal cache file as JSON ---
+    private static void saveConversationsToCache(Context ctx, List<Conversation> convs) {
+        if (convs == null) return;
+        File cache = new File(ctx.getFilesDir(), CACHE_FILENAME);
+        JSONArray arr = new JSONArray();
+        try {
+            for (Conversation conv : convs) {
+                JSONObject o = new JSONObject();
+                o.put("address", conv.getAddress());
+                o.put("contactName", conv.getContactName());
+                o.put("photoUri", conv.getPhotoUri());
+                o.put("lastMessage", conv.getLastMessage());
+                o.put("timestamp", conv.getTimestamp());
+                o.put("firstMsgId", conv.getFirstMsgId());
+                o.put("lastMessageType", conv.getLastMessageType());
+                o.put("messageCount", conv.getMessageCount());
+                arr.put(o);
+            }
+            try (OutputStream os = new FileOutputStream(cache)) {
+                os.write(arr.toString().getBytes("UTF-8"));
+                os.flush();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    // --- Helper: load from internal cache file ---
+    private static List<Conversation> loadConversationsFromCache(Context ctx) {
+        File cache = new File(ctx.getFilesDir(), CACHE_FILENAME);
+        if (!cache.exists()) return null;
+        try (InputStream is = new FileInputStream(cache)) {
+            int size = (int) cache.length();
+            byte[] data = new byte[size];
+            int read = is.read(data);
+            if (read <= 0) return null;
+            String s = new String(data, 0, read, "UTF-8");
+            JSONArray arr = new JSONArray(s);
+            List<Conversation> out = new ArrayList<>();
+            for (int i = 0; i < arr.length(); i++) {
+                JSONObject o = arr.getJSONObject(i);
+                Conversation conv = new Conversation();
+                conv.setAddress(o.optString("address", null));
+                conv.setContactName(o.optString("contactName", null));
+                conv.setPhotoUri(o.optString("photoUri", null));
+                conv.setLastMessage(o.optString("lastMessage", null));
+                conv.setTimestamp(o.optLong("timestamp", 0L));
+                conv.setFirstMsgId(o.optString("firstMsgId", null));
+                conv.setLastMessageType(o.optInt("lastMessageType", 0));
+                conv.setMessageCount(o.optInt("messageCount", 1));
+                out.add(conv);
+            }
+            return out;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
 
 
 

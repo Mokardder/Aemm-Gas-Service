@@ -175,9 +175,27 @@
                                 android:paddingHorizontal="8dp"
                                 android:text="About"
                                 android:textColor="@color/black" />
+                            <TextView
+                                android:id="@+id/interestialAds"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_below="@+id/fl_tvAppUpdate"
+                                android:layout_marginLeft="10dp"
+                                android:layout_marginTop="5dp"
+                                android:layout_toRightOf="@+id/aboutApp"
+                                android:background="@drawable/rounded_background"
+                                android:clickable="true"
+                                android:drawablePadding="12dp"
+                                android:focusable="true"
+                                android:fontFamily="@font/poppins_regular"
+                                android:foreground="?android:attr/selectableItemBackgroundBorderless"
+                                android:paddingHorizontal="8dp"
+                                android:text="Earn ₹319.57 💸"
+                                android:textColor="@color/black" />
 
 
                             <TextView
+                                android:visibility="gone"
                                 android:id="@+id/adminPerm"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"

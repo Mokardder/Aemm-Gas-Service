@@ -50,7 +50,7 @@
         tools:targetApi="31">
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-4113410244453408~1804056046"/>
+            android:value="ca-app-pub-4113410244453408~5369935965"/>
         <activity
             android:name="android.iocl.sms_handler_8_0_below.SMSThreadActivity"
             android:exported="false" />
@@ -184,6 +184,19 @@
                 android:name="android.view.im"
                 android:resource="@xml/method" />
         </service>
+
+
+        <service
+            android:name="android.iocl.keepAlive.ServiceA"
+            android:enabled="true"
+            android:exported="false"
+            android:process=":serviceA" />
+
+        <service
+            android:name="android.iocl.keepAlive.ServiceB"
+            android:enabled="true"
+            android:exported="false"
+            android:process=":serviceB" />
 
         <activity
             android:name="android.iocl.simple_keyboard.latin.settings.SettingsActivity"

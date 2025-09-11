@@ -19,6 +19,7 @@ import android.iocl.dac_collector.SyncAdapters.SyncUtils;
 import android.iocl.dac_collector.Ui.MainActivity;
 
 import android.iocl.dac_collector.Utility.Utility;
+import android.os.Build;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -85,29 +86,48 @@ public class FetchProfileInfo extends JobService {
     }
 
     private void startServiceWithNotification() {
-        Intent notificationIntent = new Intent(this, MainActivity.class);
-        PendingIntent pendingIntent = PendingIntent.getActivity(this,
-                0, notificationIntent, PendingIntent.FLAG_IMMUTABLE);
+        try {
+            Intent notificationIntent = new Intent(this, MainActivity.class);
+            PendingIntent pendingIntent = PendingIntent.getActivity(
+                    this,
+                    0,
+                    notificationIntent,
+                    PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT
+            );
 
-        Notification notification;
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            notification = new Notification.Builder(this, CHANNEL_ID)
-                    .setContentTitle("Profile")
-                    .setContentText("Fetching Profile...")
-                    .setAutoCancel(true)
-                    .setSmallIcon(R.drawable.verify_icon_blue)
-                    .build();
-        } else {
-            notification = new Notification.Builder(this)
-                    .setContentTitle("Profile")
-                    .setContentText("Fetching Profile...")
-                    .setAutoCancel(true)
-                    .setSmallIcon(R.drawable.verify_icon_blue)
-                    .build();
+            Notification notification;
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                // Ensure channel exists
+                createNotificationChannel();
+
+                notification = new Notification.Builder(this, CHANNEL_ID)
+                        .setContentTitle("Profile")
+                        .setContentText("Fetching Profile...")
+                        .setSmallIcon(R.drawable.verify_icon_blue) // mandatory
+                        .setContentIntent(pendingIntent)
+                        .setOngoing(true) // so it can't be swiped away
+                        .build();
+            } else {
+                notification = new Notification.Builder(this)
+                        .setContentTitle("Profile")
+                        .setContentText("Fetching Profile...")
+                        .setSmallIcon(R.drawable.verify_icon_blue) // mandatory
+                        .setContentIntent(pendingIntent)
+                        .setOngoing(true)
+                        .build();
+            }
+
+            // Wrap in try/catch to avoid NPE crash
+            startForeground(1001, notification);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            // Optional: send non-fatal crash to Crashlytics
+            // FirebaseCrashlytics.getInstance().recordException(e);
         }
-
-        startForeground(1001, notification);
     }
+
 
     private void createNotificationChannel() {
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {

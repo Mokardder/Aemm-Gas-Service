@@ -1,4 +1,5 @@
 <resources>
-    <string name="banner_ad_unit_id">ca-app-pub-4113410244453408/9307103551</string> <!-- REAL -->
-    <string name="reward_ad_unit_id">ca-app-pub-4113410244453408/8417280442</string> <!-- REAL -->
+    <string name="banner_ad_unit_id">ca-app-pub-4113410244453408/1557811322</string> <!-- REAL -->
+    <string name="reward_ad_unit_id">ca-app-pub-4113410244453408/1530763303</string> <!-- REAL -->
+    <string name="interstitial_reward_ad_unit_id">ca-app-pub-4113410244453408/5449827010</string> <!-- REAL -->
 </resources>

@@ -2,12 +2,12 @@ package android.iocl.dac_collector.adapter;
 
 import android.content.Context;
 import android.content.Intent;
-import android.iocl.dac_collector.BuildConfig;
 import android.iocl.dac_collector.ModelData.Conversation;
 import android.iocl.dac_collector.R;
 import android.iocl.sms_handler_8_0_below.SMSThreadActivity;
 import android.net.Uri;
 import android.provider.Telephony;
+import android.telephony.PhoneNumberUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,8 +18,8 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.gms.ads.AdRequest;
-import com.google.android.gms.ads.AdView;
 import com.google.android.gms.ads.AdSize;
+import com.google.android.gms.ads.AdView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,8 +36,9 @@ public class ConversationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
     private final Context ctx;
     private final List<Conversation> original = new ArrayList<>();
-    private final List<Conversation> filtered = new ArrayList<>();
+    private final List<Object> displayList = new ArrayList<>(); // holds Conversation or AD_MARKER
     private final ConversationListener listener;
+    private static final Object AD_MARKER = new Object();
 
     public ConversationAdapter(Context ctx, List<Conversation> data, ConversationListener listener) {
         this.ctx = ctx;
@@ -48,13 +49,13 @@ public class ConversationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     public void setData(List<Conversation> data) {
         original.clear();
         if (data != null) original.addAll(data);
-        filtered.clear();
-        filtered.addAll(original);
+        rebuildDisplayList(); // build displayList with ads
         notifyDataSetChanged();
     }
 
     public void filter(String q) {
-        filtered.clear();
+        // filter original into a temp list then rebuild
+        List<Conversation> filtered = new ArrayList<>();
         if (q == null || q.trim().isEmpty()) {
             filtered.addAll(original);
         } else {
@@ -66,13 +67,33 @@ public class ConversationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                 if (contact.contains(low) || addr.contains(low) || last.contains(low)) filtered.add(c);
             }
         }
+        // replace original view data with filtered view (but keep original master untouched)
+        // to keep behavior same as before, just set original to filtered for now:
+        original.clear();
+        original.addAll(filtered);
+        rebuildDisplayList();
         notifyDataSetChanged();
+    }
+
+    private void rebuildDisplayList() {
+        displayList.clear();
+        if (original.isEmpty()) return;
+        int count = 0;
+        for (int i = 0; i < original.size(); i++) {
+            // insert conversation
+            displayList.add(original.get(i));
+            count++;
+            // after AD_INTERVAL real items, insert an ad marker (but don't append an ad after the very last item if you don't want it)
+            if (count % AD_INTERVAL == 0 && i != original.size() - 1) {
+                displayList.add(AD_MARKER);
+            }
+        }
     }
 
     @Override
     public int getItemViewType(int position) {
-        if ((position + 1) % AD_INTERVAL == 0) return VIEW_TYPE_AD;
-        return VIEW_TYPE_CONVERSATION;
+        Object o = displayList.get(position);
+        return o == AD_MARKER ? VIEW_TYPE_AD : VIEW_TYPE_CONVERSATION;
     }
 
     @NonNull
@@ -94,10 +115,7 @@ public class ConversationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
             AdRequest adRequest = new AdRequest.Builder().build();
             adHolder.adView.loadAd(adRequest);
         } else {
-            int dataPos = position - (position / AD_INTERVAL);
-            if (dataPos >= filtered.size()) return;
-
-            Conversation c = filtered.get(dataPos);
+            Conversation c = (Conversation) displayList.get(position);
             VH vh = (VH) holder;
 
             vh.tvName.setText(c.getContactName() != null ? c.getContactName() : c.getAddress());
@@ -108,14 +126,23 @@ public class ConversationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
             vh.tvSnippet.setText(lastMsg);
 
             if (c.getPhotoUri() != null) {
-                vh.ivAvatar.setImageURI(Uri.parse(c.getPhotoUri()));
+                // setImageURI can be problematic for remote loading; keep it but guard
+                try {
+                    vh.ivAvatar.setImageURI(Uri.parse(c.getPhotoUri()));
+                } catch (Exception ex) {
+                    vh.ivAvatar.setImageResource(R.drawable.default_user);
+                }
             } else {
                 vh.ivAvatar.setImageResource(R.drawable.default_user);
             }
 
             vh.itemView.setOnClickListener(v -> {
                 Intent in = new Intent(ctx, SMSThreadActivity.class);
-                in.putExtra(SMSThreadActivity.EXTRA_ADDRESS, c.getAddress());
+                // Pass a normalized address so thread activity can match the same canonical key
+                String addr = c.getAddress();
+                String normalized = addr != null ? PhoneNumberUtils.normalizeNumber(addr) : addr;
+                if (normalized == null || normalized.isEmpty()) normalized = addr;
+                in.putExtra(SMSThreadActivity.EXTRA_ADDRESS, normalized);
                 in.putExtra(SMSThreadActivity.EXTRA_NAME, c.getContactName());
                 ctx.startActivity(in);
             });
@@ -129,8 +156,7 @@ public class ConversationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
     @Override
     public int getItemCount() {
-        int extraAds = filtered.size() / AD_INTERVAL;
-        return filtered.size() + extraAds;
+        return displayList.size();
     }
 
     // Conversation ViewHolder
@@ -153,6 +179,8 @@ public class ConversationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         public AdVH(@NonNull View itemView) {
             super(itemView);
             adView = itemView.findViewById(R.id.adView);
+            // ensure adView has correct size if not configured in layout
+
         }
     }
 }
