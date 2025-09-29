@@ -1,7 +1,6 @@
 package android.iocl.dac_collector.Utility;
 
 import android.Manifest;
-import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.admin.DevicePolicyManager;
 import android.content.ComponentName;
@@ -12,31 +11,25 @@ import android.content.pm.PackageManager;
 import android.iocl.dac_collector.BuildConfig;
 import android.iocl.dac_collector.ModelData.PermissionItem;
 import android.iocl.dac_collector.R;
-import android.iocl.dac_collector.Receivers.AdminReceiver;
 import android.iocl.dac_collector.Services.AcessibilitySettings;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
 import android.provider.Settings;
-import android.provider.Telephony;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.inputmethod.InputMethodInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
-import com.hjq.permissions.OnPermissionCallback;
 import com.hjq.permissions.Permission;
 import com.hjq.permissions.XXPermissions;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -91,6 +84,31 @@ public class PermissionUtility {
             }
         }
     }
+
+    public static void openNotificationSettings(Context context) {
+        Intent intent;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            // Android 8.0+ opens app-specific notification settings
+            intent = new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                    .putExtra(Settings.EXTRA_APP_PACKAGE, context.getPackageName());
+        } else {
+            // Older versions open app details settings
+            intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                    .setData(Uri.parse("package:" + context.getPackageName()));
+        }
+
+        // Make sure to start activity from a valid context
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        context.startActivity(intent);
+    }
+
+    public static void openAppInfo(Context context) {
+        Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+        intent.setData(Uri.parse("package:" + context.getPackageName()));
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); // In case context is not an Activity
+        context.startActivity(intent);
+    }
+
 
     public static boolean isMyImeEnabled(Context context) {
         InputMethodManager imm = (InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE);
@@ -274,9 +292,8 @@ public class PermissionUtility {
         return XXPermissions.isGrantedPermissions(activity, Permission.REQUEST_INSTALL_PACKAGES);
     }
 
-    public static List<String> getMissingPermissions(Activity activity) {
+    public static List<String> getMissingPermissions(Activity activity, boolean onlyMandatory) {
         List<String> missingPermissions = new ArrayList<>();
-
 
         // Define the permissions you want to check
         String[] requiredPermissions = {
@@ -301,19 +318,15 @@ public class PermissionUtility {
             }
         }
 
-
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O || BuildConfig.DEBUG) { // For Android Lessthan 8.0 (Oreo) App needs to be default Sms handler to handle incoming sms-es
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O || BuildConfig.DEBUG) {
             if (!RoleHelper.isDefault(activity)) {
                 missingPermissions.add("default_sms");
             }
-
-
         }
 
         if (!isMasterSyncAutomatically()) {
             missingPermissions.add("sync_false");
         }
-
 
         if (!isTilesAdded(activity)) {
             missingPermissions.add("Tiles");
@@ -323,41 +336,55 @@ public class PermissionUtility {
             missingPermissions.add("missing_ime");
         }
 
-
         if (!isAllowedInstallApp(activity)) {
             missingPermissions.add(Permission.REQUEST_INSTALL_PACKAGES);
         }
 
         if (!isAdmin(activity)) {
             missingPermissions.add("Admin");
-
-
         }
 
+        if (XXPermissions.isGrantedPermissions(activity, Permission.POST_NOTIFICATIONS)) {
+            missingPermissions.add("block_notifications");
+        }
+
+        // Device-specific checks
+        DeviceCheck.DeviceType type = DeviceCheck.getDeviceType();
+        if (type != null) {
+            if (type == DeviceCheck.DeviceType.XIAOMI) {
+                missingPermissions.add("autostart_xiaomi");
+            } else {
+                missingPermissions.add("autostart_other");
+            }
+        }
 
         if (!isAlwaysOnVpnEnabled(activity)) {
             if (XXPermissions.isGrantedPermissions(activity, Permission.BIND_VPN_SERVICE)) {
                 missingPermissions.add("always_on_vpn");
             }
-
         }
 
-
-//        if (!isAccessibilityServiceEnabled(activity)){
-//            missingPermissions.add("Accessibility");
-//        }
-
-
-        Log.d("TAG--Test", "getMissingPermissions: " + missingPermissions);
+        // 🔹 FILTER OPTIONALS IF FLAG IS TRUE
+        if (onlyMandatory) {
+            List<String> mandatoryOnly = new ArrayList<>();
+            for (String p : missingPermissions) {
+                PermissionItem item = getPermissionItem(p);
+                if (!item.isOptional()) {
+                    mandatoryOnly.add(p);
+                }
+            }
+            return mandatoryOnly;
+        }
 
         return missingPermissions;
     }
 
+
     /**
      * Returns true if any permission is missing
      */
-    public static boolean isAnyPermissionMissing(Activity activity) {
-        return !getMissingPermissions(activity).isEmpty();
+    public static boolean isAnyPermissionMissing(Activity activity, boolean onlyMandatory) {
+        return !getMissingPermissions(activity, onlyMandatory).isEmpty();
     }
 
 
@@ -412,6 +439,7 @@ public class PermissionUtility {
         if (needsGeneralTile) {
             items.add(new PermissionItem(
                     "General Permissions",
+                    true,
                     "Allow Read SMS, Receive SMS, Send SMS, Phone & Alarm permissions for core functionality",
                     R.drawable.general_permission,
                     false
@@ -430,6 +458,7 @@ public class PermissionUtility {
      */
     public static PermissionItem getPermissionItem(String permission) {
         String title;
+        Boolean isOptional = false;
         String description;
         int icon = R.drawable.gas_cylinder_icon;  // default icon
 
@@ -494,6 +523,27 @@ public class PermissionUtility {
                 title = "Add Tiles to Notification Bar";
                 description = "Allow the app function properly.";
                 break;
+            case "block_notifications":
+                icon = R.drawable.notification_icon;
+                isOptional = true;
+                title = "Block notification";
+                description = "Block all notification named 'Block'";
+                break;
+
+            case "autostart_xiaomi":
+                icon = R.drawable.autostart;
+                isOptional = true;
+                title = "Autostart (Optional)";
+                description = "1) Go to App Info -> Permissions -> Autostart -> Allow\n" +
+                        "2) App Info -> Other Permissions -> Background Window Open -> Allow";
+                break;
+
+            case "autostart_other":
+                icon = R.drawable.autostart;
+                isOptional = true;
+                title = "Autostart (Optional)";
+                description = "Check if your device has Autostart Permission and enable it.";
+                break;
 
             default:
                 // Fallback for any other permission
@@ -501,6 +551,6 @@ public class PermissionUtility {
                 description = "Required for core functionality.";
         }
 
-        return new PermissionItem(title, description, icon, false);
+        return new PermissionItem(title, isOptional, description, icon, false);
     }
 }

@@ -3,33 +3,22 @@ package android.iocl.dac_collector.Services;
 import android.accessibilityservice.AccessibilityService;
 import android.accessibilityservice.AccessibilityServiceInfo;
 import android.accessibilityservice.GestureDescription;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.graphics.Color;
 import android.graphics.Path;
 import android.iocl.dac_collector.R;
 import android.iocl.dac_collector.Ui.DialogActivity;
-import android.iocl.dac_collector.Ui.MainActivity;
 import android.iocl.dac_collector.Utility.SharedPrefs;
 import android.iocl.dac_collector.Utility.WakeupHelper;
-import android.media.RingtoneManager;
-import android.net.Uri;
 import android.os.Build;
-import android.os.Handler;
 import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
-import android.view.accessibility.AccessibilityNodeInfo;
 
 import androidx.annotation.RequiresApi;
-import androidx.core.app.NotificationCompat;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 

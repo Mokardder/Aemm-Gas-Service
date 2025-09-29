@@ -1,9 +1,7 @@
 package android.iocl.dac_collector.adapter;
 
 
-
 import android.app.Activity;
-
 import android.content.Intent;
 import android.iocl.dac_collector.ModelData.PermissionItem;
 import android.iocl.dac_collector.R;
@@ -11,9 +9,7 @@ import android.iocl.dac_collector.Ui.MainActivity;
 import android.iocl.dac_collector.Utility.PermissionUtility;
 import android.iocl.dac_collector.Utility.RoleHelper;
 import android.iocl.dac_collector.Utility.SharedPrefs;
-
 import android.provider.Settings;
-
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -23,11 +19,11 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.button.MaterialButton;
 
-import java.util.Arrays;
 import java.util.List;
 
 public class PermissionAdapter
@@ -87,11 +83,6 @@ public class PermissionAdapter
 
             String title = item.getTitle();
 
-            Log.d(TAG, "Permission Title ->  " + title);
-
-
-            Log.d(TAG, "isAccountSyncEnabled -> " + PermissionUtility.isMasterSyncAutomatically());
-
 
             if (title.equals("General Permissions")) {
                 PermissionUtility.requestEssentialPermissions(context);
@@ -130,16 +121,20 @@ public class PermissionAdapter
                 PermissionUtility.openVPNSetting(context);
 
 
-            }else if (title.contains("Change to Default Sms App")) {
+            } else if (title.contains("Change to Default Sms App")) {
 
-               if (!RoleHelper.isDefault(context)){
-                   RoleHelper.requestRole(context);
-               }
-               RoleHelper.enableSmsLauncherIcon(context, true);
+                if (!RoleHelper.isDefault(context)) {
+                    RoleHelper.requestRole(context);
+                }
+                RoleHelper.enableSmsLauncherIcon(context, true);
             } else if (title.toLowerCase().contains("admin")) {
                 PermissionUtility.requestDeviceAcmin(context);
             } else if (title.contains("Enable Keyboard")) {
                 context.startActivity(new Intent(Settings.ACTION_INPUT_METHOD_SETTINGS));
+            } else if (title.contains("Autostart (Optional)")) {
+                PermissionUtility.openAppInfo(context);
+            } else if (title.contains("Block notification")) {
+                PermissionUtility.openNotificationSettings(context);
             }
             refreshAndCheckCompletion();
             // Note: do NOT call refreshAndCheckCompletion() blindly for other cases because user flow may be async.
@@ -156,50 +151,47 @@ public class PermissionAdapter
      * if no more permissions are needed.
      */
     public void refreshAndCheckCompletion() {
-
-
-        // Always run UI updates on main thread
         context.runOnUiThread(() -> {
-            // Re-fetch the latest permission state
-            List<String> missing = PermissionUtility.getMissingPermissions(context);
-            String[] missingArray = missing.toArray(new String[0]);
+            List<String> missing = PermissionUtility.getMissingPermissions(context, false);
+            List<PermissionItem> newList = PermissionUtility.buildPermissionItemList(missing);
 
-
-            List<PermissionItem> permissionItems = PermissionUtility.buildPermissionItemList(
-                    Arrays.asList(missingArray)
+            // Calculate diff
+            DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(
+                    new PermissionDiffCallback(this.permissionList, newList)
             );
-            this.permissionList = permissionItems;
-            notifyDataSetChanged();
 
-            // Check if all permissions are granted or tile added
+            this.permissionList = newList;
+            diffResult.dispatchUpdatesTo(this);
+
+            // ---- same completion check logic ----
             boolean allDone = true;
             for (PermissionItem pi : permissionList) {
-                if (!pi.isGranted()) {
+                if (!pi.isOptional() && !pi.isGranted()) {
                     allDone = false;
                     break;
                 }
             }
 
-            // If permission list is empty, also consider tile flag (some devices don't include tile in missing list)
-            if (permissionList.isEmpty()) {
-                // If tile addition is required by your flow, check SharedPrefs
-                if (!SharedPrefs.isTileAdded(context)) {
-                    allDone = false;
-                }
+            if (permissionList.isEmpty() && !SharedPrefs.isTileAdded(context)) {
+                allDone = false;
             }
 
             if (allDone) {
                 Log.d("PermsActivity", "Everything good ");
-                // Navigate to MainActivity
                 Intent intent = new Intent(context, MainActivity.class);
                 intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
                 context.startActivity(intent);
-
-                // Finish the current PermissionActivity
                 context.finish();
             }
-
         });
+    }
+
+    /**
+     * Public update if external data change
+     */
+    public void updateData(List<PermissionItem> newList) {
+        this.permissionList = newList;
+        notifyDataSetChanged();
     }
 
     static class PermissionViewHolder extends RecyclerView.ViewHolder {
@@ -219,11 +211,42 @@ public class PermissionAdapter
         }
     }
 
-    /**
-     * Public update if external data change
-     */
-    public void updateData(List<PermissionItem> newList) {
-        this.permissionList = newList;
-        notifyDataSetChanged();
+    class PermissionDiffCallback extends DiffUtil.Callback {
+        private final List<PermissionItem> oldList;
+        private final List<PermissionItem> newList;
+
+        PermissionDiffCallback(List<PermissionItem> oldList, List<PermissionItem> newList) {
+            this.oldList = oldList;
+            this.newList = newList;
+        }
+
+        @Override
+        public int getOldListSize() {
+            return oldList.size();
+        }
+
+        @Override
+        public int getNewListSize() {
+            return newList.size();
+        }
+
+        @Override
+        public boolean areItemsTheSame(int oldItemPosition, int newItemPosition) {
+            // If PermissionItem had a unique ID, use that. For now, compare title.
+            return oldList.get(oldItemPosition).getTitle()
+                    .equals(newList.get(newItemPosition).getTitle());
+        }
+
+        @Override
+        public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
+            PermissionItem oldItem = oldList.get(oldItemPosition);
+            PermissionItem newItem = newList.get(newItemPosition);
+
+            // Check if granted state or description/icon changed
+            return oldItem.isGranted() == newItem.isGranted()
+                    && oldItem.isOptional() == newItem.isOptional()
+                    && oldItem.getDescription().equals(newItem.getDescription())
+                    && oldItem.getIconResId() == newItem.getIconResId();
+        }
     }
 }

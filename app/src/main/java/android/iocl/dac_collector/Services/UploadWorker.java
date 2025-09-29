@@ -35,9 +35,8 @@ public class UploadWorker extends Worker {
     }
 
     private boolean sendToServer(String data) {
-        FirebaseDBClient dbClient = new FirebaseDBClient(context);
 
-        dbClient.syncDac(data, "", Utility.getCurrentTime());
+        FirebaseDBClient.syncDac(context,data, "", Utility.getCurrentTime());
 
         Log.d("WorkerUpload", "sendToServer: Sent To Server");
         return true; // Return true if successful

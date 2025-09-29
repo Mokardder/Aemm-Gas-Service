@@ -9,9 +9,6 @@ import android.os.Bundle;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -32,6 +29,7 @@ public class BankStatementActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_bank_statement);
+        EdgeToEdge.enable(this);
 
         recyclerView = findViewById(R.id.recycler_view);
 
@@ -60,7 +58,7 @@ public class BankStatementActivity extends AppCompatActivity {
                 // Map SubsidyRecord to BankStatementItem
                 String bookDate = order.getOrderDate(); // or deliveryDate
                 String status = order.getSubsidyStatus();
-                String amount = "₹" + order.getSubsidyAmount();
+                String amount =  !order.getSubsidyAmount().isEmpty() ? "₹" + order.getSubsidyAmount() : "";
                 String Dos = order.getBankDOS();
                 String account = order.getBankAccountNumber();
 
@@ -72,7 +70,7 @@ public class BankStatementActivity extends AppCompatActivity {
 
             String bookDate = order.getOrderDate(); // or deliveryDate
             String status = order.getSubsidyStatus();
-            String amount = "₹" + order.getSubsidyAmount();
+            String amount =  !order.getSubsidyAmount().isEmpty() ? "₹" + order.getSubsidyAmount() : "";
             String Dos = order.getBankDOS();
             String account = order.getBankAccountNumber();
 

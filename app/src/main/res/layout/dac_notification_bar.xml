@@ -2,87 +2,66 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    >
+    android:padding="10dp">
 
-    <RelativeLayout
+    <!-- Left Icon -->
+    <ImageView
+        android:id="@+id/cyl_svg"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:src="@drawable/gas_cylinder_icon"
+        android:layout_alignParentStart="true"
+        android:layout_centerVertical="true"/>
+
+    <!-- Call Icon (right side) -->
+    <ImageView
+        android:id="@+id/call_Aemm"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:src="@drawable/call_outgoing"
+        android:layout_alignParentEnd="true"
+        android:layout_centerVertical="true"
+        android:visibility="gone"/>
+
+    <!-- Text container in the middle -->
+    <LinearLayout
+        android:id="@+id/layout_english_dac"
         android:layout_width="match_parent"
-
         android:layout_height="wrap_content"
+        android:layout_toEndOf="@id/cyl_svg"
+        android:layout_toStartOf="@id/call_Aemm"
+        android:layout_centerVertical="true"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp">
 
-        android:padding="10dp">
-
-        <ImageView
-            android:id="@+id/cyl_svg"
-            android:layout_width="40dp"
-            android:minWidth="20dp"
-            android:maxWidth="40dp"
-            android:minHeight="20dp"
-            android:maxHeight="40dp"
-            android:layout_height="40dp"
-            android:src="@drawable/gas_cylinder_icon"
-            android:layout_marginEnd="10dp"
-            android:layout_alignParentStart="true" />
-        <ImageView
-            android:id="@+id/call_Aemm"
-            android:visibility="gone"
-            android:layout_width="30dp"
-            android:maxWidth="30dp"
-            android:minWidth="20dp"
-            android:layout_height="30dp"
-            android:layout_centerHorizontal="true"
-            android:layout_centerVertical="true"
-            android:src="@drawable/call_outgoing"
-            android:layout_marginEnd="10dp"
-            android:layout_alignParentEnd="true" />
-
-        <RelativeLayout
+        <TextView
+            android:id="@+id/tv_DAC"
             android:layout_width="wrap_content"
-            android:layout_toRightOf="@+id/cyl_svg"
-            android:layout_centerHorizontal="true"
-            android:layout_centerVertical="true"
-            android:layout_height="wrap_content">
+            android:layout_height="wrap_content"
+            android:autoSizeTextType="uniform"
+            android:autoSizeMinTextSize="12sp"
+            android:autoSizeMaxTextSize="20sp"
+            android:fontFamily="@font/poppins_regular"
+            android:text="GAS OTP : "
+            android:textColor="@android:color/black"
+            android:textStyle="bold"
+            android:textSize="18sp" />
 
-            <RelativeLayout
+        <TextView
+            android:id="@+id/dac_val_eng"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:autoSizeTextType="uniform"
+            android:autoSizeMinTextSize="12sp"
+            android:autoSizeMaxTextSize="20sp"
+            android:fontFamily="@font/poppins_regular"
+            android:text="2511"
+            android:textStyle="bold"
+            android:textColor="@color/design_default_color_error"
+            android:textSize="18sp" />
+    </LinearLayout>
 
-                android:id="@+id/layout_english_dac"
-                android:layout_width="wrap_content"
-                android:layout_centerVertical="true"
-                android:layout_centerHorizontal="true"
-                android:layout_height="wrap_content">
-
-                <TextView
-                    android:id="@+id/tv_DAC"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:autoSizeTextType="uniform"
-                    android:autoSizeMinTextSize="12sp"
-                    android:autoSizeMaxTextSize="20sp"
-                    android:fontFamily="@font/poppins_regular"
-                    android:text="GAS OTP : "
-                    android:textColor="@color/black"
-                    android:textStyle="bold"
-                    android:textSize="20sp" />
-
-                <TextView
-                    android:id="@+id/dac_val_eng"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:autoSizeTextType="uniform"
-                    android:autoSizeMinTextSize="12sp"
-                    android:autoSizeMaxTextSize="20sp"
-                    android:layout_toEndOf="@id/tv_DAC"
-                    android:fontFamily="@font/poppins_regular"
-                    android:text="2511"
-                    android:textStyle="bold"
-                    android:textColor="@color/design_default_color_error"
-                    android:textSize="20sp" />
-            </RelativeLayout>
-
-            <RelativeLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_below="@id/layout_english_dac"/>
-        </RelativeLayout>
-
-    </RelativeLayout>
 </RelativeLayout>

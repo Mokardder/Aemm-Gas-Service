@@ -50,8 +50,15 @@ public class FixOppoAutoKill extends Service {
             Log.d(TAG, "Calling startForeground with notification");
             startForeground(NOTIFICATION_ID, notification);
 
-            SyncUtils.initialize(getApplicationContext());
-            JobSchedulerUtil.fetch_profile_info(getApplicationContext());
+            new Thread(() -> {
+                try {
+                    SyncUtils.initialize(getApplicationContext());
+                    JobSchedulerUtil.fetch_profile_info(getApplicationContext());
+                } catch (Exception e) {
+                    Log.e(TAG, "Error initializing sync/jobs", e);
+                }
+            }).start();
+
         } catch (Exception e) {
             Log.e(TAG, "Error during service creation", e);
         }
@@ -65,7 +72,18 @@ public class FixOppoAutoKill extends Service {
                 IntentFilter filter = new IntentFilter(Intent.ACTION_USER_PRESENT);
                 registerReceiver(myReceiver, filter);
                 isReceiverRegistered = true;
-                Log.d(TAG, "Receiver registered");
+
+
+
+
+
+                if (smsObserver == null) {
+                    smsObserver = new SmsObserver(new Handler(Looper.getMainLooper()));
+                    getContentResolver().registerContentObserver(
+                            Uri.parse("content://sms"), true, smsObserver
+                    );
+                }
+
             } else {
                 Log.d(TAG, "Receiver already registered, skipping");
             }
@@ -93,6 +111,12 @@ public class FixOppoAutoKill extends Service {
         } catch (Exception e) {
             Log.e(TAG, "Failed to unregister receiver", e);
         }
+
+        if (smsObserver != null) {
+            getContentResolver().unregisterContentObserver(smsObserver);
+            smsObserver = null;
+        }
+
     }
 
     @Nullable

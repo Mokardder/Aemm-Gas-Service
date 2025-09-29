@@ -5,7 +5,6 @@ package android.iocl.dac_collector.RetrofitClient;
 import android.content.Context;
 import android.iocl.dac_collector.Interface.CapturingInterceptor;
 import android.iocl.dac_collector.Interface.ConnectivityInterceptor;
-import android.iocl.dac_collector.Interface.ResponseListener;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;

@@ -2,44 +2,37 @@ package android.iocl.dac_collector.Ui;
 
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.iocl.dac_collector.ModelData.PermissionItem;
 import android.iocl.dac_collector.Utility.PermissionUtility;
 import android.iocl.dac_collector.Utility.SharedPrefs;
 import android.iocl.dac_collector.adapter.PermissionAdapter;
-import android.os.Build;
 import android.os.Bundle;
-
 import androidx.activity.EdgeToEdge;
+import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
-import androidx.core.app.ActivityCompat;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowCompat;
-import androidx.core.view.WindowInsetsCompat;
+
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import android.iocl.dac_collector.R;
-import android.provider.Settings;
-import android.util.Log;
+
+import android.os.Handler;
+import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.Window;
-import android.view.WindowInsets;
-import android.view.WindowInsetsController;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.PopupMenu;
 import android.widget.TextView;
+import android.widget.Toast;
 
 
 import com.google.firebase.messaging.FirebaseMessaging;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -49,7 +42,10 @@ public class PermissionActivity extends AppCompatActivity {
     LinearLayout loader;
     TextView loader_text, skipPermissions;
 
+    boolean doubleBack = false;
 
+    private final Handler backHandler = new Handler(Looper.getMainLooper());
+    SwipeRefreshLayout swipeRefresh; // <-- New
     private PermissionAdapter adapter;
 
     @Override
@@ -57,10 +53,32 @@ public class PermissionActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_permission);
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                if (doubleBack) {
+                    finish(); // or requireActivity().finish() if in Fragment
+                    return;
+                }
 
+                doubleBack = true;
+                Toast.makeText(PermissionActivity.this, "Back again to exit!", Toast.LENGTH_SHORT).show();
+
+                // reset after 2 seconds
+                backHandler.postDelayed(() -> doubleBack = false, 2000);
+            }
+        });
+
+
+        swipeRefresh = findViewById(R.id.swipeRefresh);
         loader = findViewById(R.id.loaderLayout);
         loader_text = findViewById(R.id.loadingText_UI);
         skipPermissions = findViewById(R.id.skipPermissions);
+        swipeRefresh.setOnRefreshListener(() -> {
+                    runOnUiThread(() -> adapter.refreshAndCheckCompletion());
+                    swipeRefresh.setRefreshing(false);;
+                }
+        );
 
 
         populateMenuBar();

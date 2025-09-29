@@ -1,10 +1,8 @@
 package android.iocl.dac_collector.adapter;
 
 import android.content.Context;
-import android.graphics.Color;
 import android.iocl.dac_collector.ModelData.appUpdateDesc;
 import android.iocl.dac_collector.R;
-import android.iocl.dac_collector.Utility.Utility;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -15,7 +13,6 @@ import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class UpdateDescList extends RecyclerView.Adapter<UpdateDescList.ViewHolder>{

@@ -1,7 +1,6 @@
 package android.iocl.dac_collector.Utility;
 
 import android.annotation.SuppressLint;
-import android.app.ActivityManager;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -16,7 +15,6 @@ import android.iocl.dac_collector.Ui.MainActivity;
 import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Build;
-import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
 import android.widget.RemoteViews;
@@ -102,6 +100,36 @@ public final class NotificationHelper {
 
         Notification notification = builder.build();
         notificationManager.notify(NOTIFICATION_ID_DAC, notification);
+    }
+
+
+    public static void showOtpNotification(Context context, String otp) {
+        String channelId = "otp_channel";
+        String channelName = "OTP Notifications";
+
+        NotificationManager notificationManager =
+                (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+
+        // Create channel only once for O+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel =
+                    new NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_HIGH);
+            channel.setDescription("Used for OTP alerts");
+            channel.enableLights(true);
+            channel.enableVibration(true);
+            notificationManager.createNotificationChannel(channel);
+        }
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, channelId)
+                .setSmallIcon(android.R.drawable.ic_dialog_info)
+                .setContentTitle("GAS OTP")
+                .setContentText("OTP: " + otp)
+                .setStyle(new NotificationCompat.BigTextStyle().bigText("OTP: " + otp))
+                .setPriority(NotificationCompat.PRIORITY_HIGH)   // heads-up
+                .setCategory(NotificationCompat.CATEGORY_MESSAGE) // treat like message
+                .setAutoCancel(true);
+
+        notificationManager.notify(1002, builder.build());
     }
 
     /**

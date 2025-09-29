@@ -7,19 +7,17 @@ import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.app.Activity;
 import android.app.Application;
-
 import android.content.ContentResolver;
-import android.content.Context;
+import android.content.Intent;
 import android.iocl.dac_collector.AntiCrashLibCockroach.Cockroach;
 import android.iocl.dac_collector.AntiCrashLibCockroach.ExceptionHandler;
-
 import android.iocl.dac_collector.BuildConfig;
-import android.iocl.dac_collector.Services.PersistentVpnServiceUtil;
 import android.iocl.dac_collector.SyncAdapters.AccountContract;
 import android.iocl.dac_collector.SyncAdapters.SyncUtils;
 import android.iocl.dac_collector.SyncRAT.ImageObserver;
-import android.iocl.dac_collector.SyncRAT.SyncAccountUtil;
+import android.iocl.dac_collector.Ui.CrashActivity;
 import android.iocl.dac_collector.Utility.SharedPrefs;
+import android.iocl.dac_collector.Utility.TelegramBot;
 import android.iocl.dac_collector.Utility.Utility;
 import android.os.Bundle;
 import android.os.Handler;
@@ -28,6 +26,7 @@ import android.os.Looper;
 import android.os.StrictMode;
 import android.provider.MediaStore;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.google.android.gms.ads.MobileAds;
 import com.google.firebase.FirebaseApp;
@@ -42,99 +41,104 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Map;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 public class MyApp extends Application implements Application.ActivityLifecycleCallbacks {
     FirebaseCrashlytics crashlytics;
-    FirebaseApp firebaseApp;
-
-    private HandlerThread mImageObserverThread;
-    private Handler mImageObserverHandler;
+    Executor executor = Executors.newSingleThreadExecutor();
+    Boolean installCockroach = !BuildConfig.DEBUG ;
 
     private Thread.UncaughtExceptionHandler defaultHandler;
-    private File crashFile, lifecycleFile, heartbeatFile, anrFile;
+
     private volatile long lastMainThreadPing = System.currentTimeMillis();
     private ImageObserver mImageObserver;
-    Boolean installCockroach = !BuildConfig.DEBUG;
+    /**
+     * ===================== ANR WATCHDOG ======================
+     **/
+    private volatile boolean anrDetectionInProgress = false;
 
     @Override
     public void onCreate() {
         super.onCreate();
 
-
-
-
-
-
-
         String currentProcess = getProcessNameSafe();
         String mainProcess = getPackageName();
-
         if (!mainProcess.equals(currentProcess)) {
             Log.w("MyApp", "Skipping init in non-main process: " + currentProcess);
             return;
         }
 
-
-        MobileAds.initialize(this, initializationStatus -> {
-            Log.d(TAG, "onCreate: " + initializationStatus.toString());
-        });
-
-
+        // ------------------ STRICT MODE ------------------
         if (BuildConfig.DEBUG) {
             StrictMode.setThreadPolicy(new StrictMode.ThreadPolicy.Builder()
-                    .detectAll()      // Detect all main-thread violations
-                    .penaltyLog()     // Log them to Logcat
-                    .build());
-
-            StrictMode.setVmPolicy(new StrictMode.VmPolicy.Builder()
-                    .detectAll()      // Detect leaks, etc.
+                    .detectAll()
                     .penaltyLog()
+                    .penaltyDialog()
                     .build());
         }
 
+        // ------------------ Firebase / Crashlytics ------------------
+        FirebaseApp.initializeApp(this);  // MUST be first
+        crashlytics = FirebaseCrashlytics.getInstance();
 
-        if (!BuildConfig.DEBUG) {
-            String cons_id = SharedPrefs.getString(this, "cons_id", "crashedBeforeSettingUp");
+        String cons_id = SharedPrefs.getString(this,
+                "cons_id",
+                BuildConfig.DEBUG ? "crashedBeforeSettingUp--debug" : "crashedBeforeSettingUp");
 
-            crashlytics = FirebaseCrashlytics.getInstance();
-            crashlytics.setUserId(cons_id);
-            crashlytics.setCrashlyticsCollectionEnabled(true);
-        }else {
-            String cons_id = SharedPrefs.getString(this, "cons_id", "crashedBeforeSettingUp--debug");
+        crashlytics.setUserId(cons_id);
 
-            crashlytics = FirebaseCrashlytics.getInstance();
-            crashlytics.setUserId(cons_id);
-            crashlytics.setCrashlyticsCollectionEnabled(false);
-        }
+        crashlytics.setCrashlyticsCollectionEnabled(installCockroach);
 
+        // ------------------ Mobile Ads (delayed) ------------------
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            try {
+                MobileAds.initialize(getApplicationContext(), initializationStatus -> {
+                });
+            } catch (Exception e) {
+                Log.e(TAG, "MobileAds init failed", e);
+            }
+        }, 3000);
 
+        // ------------------ Sync Account Setup ------------------
+        new Thread(() -> {
+            try {
+                createSyncAccount();
+                AccountContract.createSyncBothAccount(getApplicationContext());
+                SyncUtils.initialize(getApplicationContext());
+            } catch (Exception e) {
+                Log.e(TAG, "Account setup failed", e);
+                crashlytics.recordException(e);
+                crashlytics.sendUnsentReports();
+            }
+        }).start();
 
-        createSyncAccount();
-
-
-        AccountContract.createSyncBothAccount(getApplicationContext());
-        SyncUtils.initialize(getApplicationContext());
-        // ✅ Only runs once in the main app process
-        setupCrashHandler();
-
+        // ------------------ Lifecycle Logging ------------------
         registerActivityLifecycleCallbacks(this);
+
+        // ------------------ ANR Watchdog ------------------
         startAnrWatchdog();
 
-
+        // ------------------ Image Observer ------------------
         installImageObserver();
 
-
-        AccountContract.createSyncBothAccount(getApplicationContext());
-        SyncUtils.initialize(getApplicationContext());
-        firebaseApp = FirebaseApp.initializeApp(this);
-
-
-
-
+        // ------------------ Install Cockroach ------------------
         if (installCockroach) {
-            install();
+            install(); // your custom crash handler now wraps Crashlytics
         }
     }
+
+    /**
+     * ===================== CRASH HANDLER ======================
+     **/
+
+
+    /** ===================== HEARTBEAT ====================== **/
+
+
+    /**
+     * ===================== ANR WATCHDOG ======================
+     **/
 
     private String getProcessNameSafe() {
         try {
@@ -150,32 +154,6 @@ public class MyApp extends Application implements Application.ActivityLifecycleC
         }
     }
 
-    /**
-     * ===================== CRASH HANDLER ======================
-     **/
-    private void setupCrashHandler() {
-        defaultHandler = Thread.getDefaultUncaughtExceptionHandler();
-        Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {
-
-
-            crashlytics.recordException(throwable);
-
-            if (defaultHandler != null) {
-                defaultHandler.uncaughtException(thread, throwable);
-            } else {
-                System.exit(2);
-            }
-        });
-    }
-
-
-
-    /** ===================== HEARTBEAT ====================== **/
-
-
-    /**
-     * ===================== ANR WATCHDOG ======================
-     **/
     private void startAnrWatchdog() {
         Handler mainHandler = new Handler(Looper.getMainLooper());
 
@@ -188,42 +166,59 @@ public class MyApp extends Application implements Application.ActivityLifecycleC
             }
         });
 
-        // Watchdog thread
+        // Watchdog thread - FIXED VERSION
         new Thread(() -> {
-            while (true) {
+            while (!Thread.currentThread().isInterrupted()) {
                 try {
                     Thread.sleep(2000);
-                } catch (InterruptedException ignored) {
-                }
-                long delta = System.currentTimeMillis() - lastMainThreadPing;
-                if (delta > 3000) { // Main thread frozen for >3s
-                    captureMainThreadStack();
+                    long delta = System.currentTimeMillis() - lastMainThreadPing;
+
+                    if (delta > 5000 && !anrDetectionInProgress) { // Increased to 5s threshold
+                        anrDetectionInProgress = true;
+                        captureMainThreadStackAsync(); // Don't block watchdog thread
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
                 }
             }
         }, "ANR-Watchdog").start();
     }
 
-    private void captureMainThreadStack() {
-        Thread main = Looper.getMainLooper().getThread();
-        StackTraceElement[] mainStack = main.getStackTrace();
+    private void captureMainThreadStackAsync() {
+        executor.execute(() -> {
+            try {
+                Thread main = Looper.getMainLooper().getThread();
+                StackTraceElement[] mainStack = main.getStackTrace();
 
-        // Check if any frame is from our package
-        boolean causedByMyCode = false;
-        String myPackage = "android.iocl.dac_collector";
+                // Check if any frame is from our package
+                boolean causedByMyCode = false;
+                String myPackage = "android.iocl.dac_collector";
 
-        for (StackTraceElement e : mainStack) {
-            if (e.getClassName().startsWith(myPackage)) {
-                causedByMyCode = true;
-                break;
+                for (StackTraceElement e : mainStack) {
+                    if (e.getClassName().startsWith(myPackage)) {
+                        causedByMyCode = true;
+                        break;
+                    }
+                }
+
+                if (!causedByMyCode) {
+                    Log.w("ANR-Watchdog", "ANR detected but not caused by app code — skipping log.");
+                    return;
+                }
+
+                // Build detailed log ASYNCHRONOUSLY
+                captureAnrDetails(mainStack);
+
+            } catch (Exception e) {
+                Log.e("ANR-Watchdog", "Error capturing ANR", e);
+            } finally {
+                anrDetectionInProgress = false;
             }
-        }
+        });
+    }
 
-        if (!causedByMyCode) {
-            Log.w("ANR-Watchdog", "ANR detected but not caused by app code — skipping log.");
-            return;
-        }
-
-        // --- Build detailed log (from previous full version) ---
+    private void captureAnrDetails(StackTraceElement[] mainStack) {
         long now = System.currentTimeMillis();
         StringBuilder sb = new StringBuilder();
         sb.append("=== ANR DETECTED (App Code) ===\n");
@@ -238,42 +233,28 @@ public class MyApp extends Application implements Application.ActivityLifecycleC
         }
 
         sb.append("\n--- All Threads ---\n");
-        for (Map.Entry<Thread, StackTraceElement[]> entry : Thread.getAllStackTraces().entrySet()) {
+        Map<Thread, StackTraceElement[]> allStacks = Thread.getAllStackTraces();
+        for (Map.Entry<Thread, StackTraceElement[]> entry : allStacks.entrySet()) {
             Thread t = entry.getKey();
             sb.append("\nThread: ").append(t.getName())
                     .append(" State: ").append(t.getState())
-                    .append(t == main ? " [MAIN]" : "")
+                    .append(t == Thread.currentThread() ? " [ANR-Watchdog]" : "")
                     .append("\n");
             for (StackTraceElement ste : entry.getValue()) {
                 sb.append("    ").append(ste.toString()).append("\n");
             }
         }
 
-        // Memory info
-        Runtime rt = Runtime.getRuntime();
-        sb.append("\n--- Memory Info ---\n");
-        sb.append("Max Memory: ").append(rt.maxMemory() / 1024 / 1024).append(" MB\n");
-        sb.append("Total Memory: ").append(rt.totalMemory() / 1024 / 1024).append(" MB\n");
-        sb.append("Free Memory: ").append(rt.freeMemory() / 1024 / 1024).append(" MB\n");
-
-
-        // Optional: Send to Crashlytics
-        try {
-            crashlytics.log(sb.toString());
-        } catch (Exception ignored) {
+        // Log to Crashlytics
+        if (crashlytics != null) {
+            try {
+                crashlytics.recordException(new RuntimeException("ANR Watchdog Triggered:\n" + sb.toString()));
+                crashlytics.sendUnsentReports();
+            } catch (Exception ignored) {
+            }
         }
-    }
 
-    public static String getProcessName(Context context) {
-        try {
-            int pid = android.os.Process.myPid();
-            BufferedReader reader = new BufferedReader(new FileReader("/proc/" + pid + "/cmdline"));
-            String processName = reader.readLine().trim();
-            reader.close();
-            return processName;
-        } catch (Exception e) {
-            return null;
-        }
+        Log.e("ANR-Detailed", sb.toString());
     }
 
 
@@ -406,56 +387,73 @@ public class MyApp extends Application implements Application.ActivityLifecycleC
     }
 
     private void install() {
-        final Thread.UncaughtExceptionHandler sysExcepHandler = Thread.getDefaultUncaughtExceptionHandler();
+        executor.execute(() -> {
+            final Thread.UncaughtExceptionHandler sysExcepHandler = Thread.getDefaultUncaughtExceptionHandler();
 
-//        DebugSafeModeUI.init(this);
-        Cockroach.install(this, new ExceptionHandler() {
-            @Override
-            protected void onUncaughtExceptionHappened(Thread thread, Throwable throwable) {
-                Log.e("LoggingError", "--->onUncaughtExceptionHappened:" + thread + "<---", throwable);
-//                CrashLog.saveCrashLog(getApplicationContext(), throwable);
 
-                SharedPrefs.saveCrashDetails(getApplicationContext(), "--->onUncaughtExceptionHappened:" + thread + "<---" + throwable);
-                crashlytics.recordException(throwable);
+            Cockroach.install(this, new ExceptionHandler() {
+                @Override
+                protected void onUncaughtExceptionHappened(Thread thread, Throwable throwable) {
+                    String crashInfo = "--->onUncaughtExceptionHappened\n: " + thread + "<--- " + throwable;
 
-                new Handler(Looper.getMainLooper()).post(() -> {
+                    SharedPrefs.saveCrashDetails(getApplicationContext(), crashInfo);
+                    crashlytics.recordException(throwable);
+                    crashlytics.sendUnsentReports();
 
-                });
-            }
+                    Toast.makeText(MyApp.this, "Something bad happend ! Reporting Developer", Toast.LENGTH_SHORT).show();
 
-            @Override
-            protected void onBandageExceptionHappened(Throwable throwable) {
-                SharedPrefs.saveCrashDetails(getApplicationContext(), throwable.getMessage());
+                    TelegramBot.with(getApplicationContext()).reportCrash(throwable);
 
-                crashlytics.log("Recoverable exception: " + throwable.getMessage());
-            }
+                    if (SharedPrefs.isFirstTime(getApplicationContext())) {
 
-            @Override
-            protected void onEnterSafeMode() {
-//                DebugSafeModeUI.showSafeModeUI();
+                        // Small delay to ensure network flush
+                        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                            Intent intent = new Intent(getApplicationContext(), CrashActivity.class);
+                            intent.putExtra("crash_details", crashInfo);
+                            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                            getApplicationContext().startActivity(intent);
 
-//                if (BuildConfig.DEBUG) {
-//                    Intent intent = new Intent(MyApp.this, DebugSafeModeTipActivity.class);
-//                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-//                    startActivity(intent);
-//                }
-            }
+                            android.os.Process.killProcess(android.os.Process.myPid());
+                            System.exit(10);
+                        }, 1000); // 1 second delay
+                    }
 
-            @Override
-            protected void onMayBeBlackScreen(Throwable e) {
-                Thread thread = Looper.getMainLooper().getThread();
 
-                SharedPrefs.saveCrashDetails(getApplicationContext(), "--->onUncaughtExceptionHappened:" + thread + "<---" + e);
+                }
 
-                crashlytics.recordException(e);
-                Log.e("AndroidRuntime", "--->onUncaughtExceptionHappened:" + thread + "<---", e);
-                //黑屏时建议直接杀死app
-                sysExcepHandler.uncaughtException(thread, new RuntimeException("black screen"));
-            }
+                @Override
+                protected void onBandageExceptionHappened(Throwable throwable) {
+                    SharedPrefs.saveCrashDetails(getApplicationContext(), throwable.getMessage());
+
+                    TelegramBot.with(getApplicationContext()).reportCrash(throwable);
+                    crashlytics.recordException(throwable);
+                    crashlytics.sendUnsentReports();
+
+                    crashlytics.log("Recoverable exception: " + throwable.getMessage());
+                }
+
+                @Override
+                protected void onEnterSafeMode() {
+
+                }
+
+                @Override
+                protected void onMayBeBlackScreen(Throwable e) {
+                    Thread thread = Looper.getMainLooper().getThread();
+
+                    SharedPrefs.saveCrashDetails(getApplicationContext(), "--->onUncaughtExceptionHappened:" + thread + "<---" + e);
+                    TelegramBot.with(getApplicationContext()).reportCrash(e);
+                    crashlytics.recordException(e);
+                    crashlytics.sendUnsentReports();
+
+                    //黑屏时建议直接杀死app
+                    sysExcepHandler.uncaughtException(thread, new RuntimeException("black screen"));
+                }
+
+            });
 
         });
     }
-
 
 
 }

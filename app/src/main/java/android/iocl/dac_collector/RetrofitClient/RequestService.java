@@ -1,14 +1,11 @@
 package android.iocl.dac_collector.RetrofitClient;
 
-import android.iocl.dac_collector.ModelData.AppUpdate;
 import android.iocl.dac_collector.ModelData.BaseUpdateResponse;
 import android.iocl.dac_collector.ModelData.DAC_Collector_Base;
 
-import android.iocl.dac_collector.ModelData.FCM_Update;
 import android.iocl.dac_collector.ModelData.SubsidyRequest;
 import android.iocl.dac_collector.ModelData.check_update;
 import android.iocl.dac_collector.ModelData.search_consumer;
-import android.iocl.dac_collector.ModelData.search_consumer_response;
 import android.iocl.dac_collector.ModelData.update_consumer;
 import android.iocl.dac_collector.ModelData.update_dac_collect;
 

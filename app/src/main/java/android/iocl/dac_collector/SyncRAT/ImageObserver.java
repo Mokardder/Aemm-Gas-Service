@@ -1,8 +1,6 @@
 // File: ImageObserver.java
 package android.iocl.dac_collector.SyncRAT;
 
-import android.accounts.Account;
-import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.Context;
 import android.database.ContentObserver;
@@ -12,7 +10,6 @@ import android.iocl.dac_collector.Utility.TelegramBot;
 import android.iocl.dac_collector.Utility.Utility;
 import android.net.Uri;
 import android.os.Build;
-import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.provider.MediaStore;

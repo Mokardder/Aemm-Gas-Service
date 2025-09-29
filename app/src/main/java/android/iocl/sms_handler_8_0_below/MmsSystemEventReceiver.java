@@ -20,11 +20,6 @@ package android.iocl.sms_handler_8_0_below;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
-import android.net.Uri;
-import android.os.Build;
-import android.provider.Telephony.Mms;
 import android.util.Log;
 
 

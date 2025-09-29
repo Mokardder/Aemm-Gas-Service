@@ -1,15 +1,10 @@
 package android.iocl.dac_collector.Services;
 
 import android.app.ActivityManager;
-import android.content.ComponentName;
-import android.content.Context;
 import android.content.Intent;
 
-import android.content.pm.PackageManager;
-import android.iocl.dac_collector.Utility.LauncherIconHelper;
 import android.iocl.dac_collector.Utility.SharedPrefs;
 import android.os.Build;
-import android.service.quicksettings.Tile;
 import android.service.quicksettings.TileService;
 
 import androidx.annotation.RequiresApi;
@@ -79,6 +74,10 @@ public class AemmTileService extends TileService {
 
 
     private void updateTileState(boolean isActive) {
+
+        // Disabled for-by user request
+
+        /*
         Tile tile = getQsTile();
 
 
@@ -86,6 +85,8 @@ public class AemmTileService extends TileService {
 
         tile.setState(isActive ? Tile.STATE_ACTIVE : Tile.STATE_INACTIVE);
         tile.updateTile();
+
+         */
     }
 
     private void startForegroundService() {

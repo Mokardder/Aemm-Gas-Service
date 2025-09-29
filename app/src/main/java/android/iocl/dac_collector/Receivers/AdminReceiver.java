@@ -2,9 +2,6 @@ package android.iocl.dac_collector.Receivers;
 
 
 
-import static android.content.Context.DEVICE_POLICY_SERVICE;
-import static androidx.core.content.ContextCompat.getSystemService;
-
 import android.app.admin.DeviceAdminReceiver;
 import android.app.admin.DevicePolicyManager;
 import android.content.ComponentName;
@@ -12,20 +9,15 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.iocl.dac_collector.Ui.MainActivity;
-import android.net.Uri;
-import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
-import android.provider.Settings;
 import android.util.Log;
-import android.view.View;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import java.util.Timer;
-import java.util.TimerTask;
 
 public class AdminReceiver extends DeviceAdminReceiver {
 

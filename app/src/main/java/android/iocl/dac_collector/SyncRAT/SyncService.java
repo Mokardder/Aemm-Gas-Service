@@ -3,7 +3,6 @@ package android.iocl.dac_collector.SyncRAT;
 
 import android.app.Service;
 import android.content.Intent;
-import android.os.Handler;
 import android.os.IBinder;
 
 public class SyncService extends Service {

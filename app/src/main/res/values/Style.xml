@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-
 <resources>
     <style name="Transparent" parent="Theme.AppCompat.Light.NoActionBar">
         <item name="android:windowIsTranslucent">true</item>
@@ -17,12 +16,21 @@
         <item name="colorPrimaryDark">#303F9F</item>
         <item name="colorAccent">#FF4081</item>
         <item name="android:windowBackground">@color/background</item>
+
+        <!-- hook all TextViews to use your custom style -->
+        <item name="android:textViewStyle">@style/AppTextViewStyle</item>
     </style>
 
     <!-- styles.xml -->
     <style name="ShapeAppearanceOverlay_Circle">
         <item name="cornerFamily">rounded</item>
         <item name="cornerSize">50%</item>
+    </style>
+
+    <!-- New global TextView style -->
+    <style name="AppTextViewStyle" parent="Widget.AppCompat.TextView">
+        <!-- fixed minHeight for all TextViews -->
+        <item name="android:minHeight">48dp</item>
     </style>
 
 </resources>

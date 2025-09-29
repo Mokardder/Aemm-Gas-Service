@@ -11,8 +11,6 @@ import android.iocl.dac_collector.Ui.MainActivity;
 import android.net.Uri;
 import android.os.Build;
 
-import org.checkerframework.checker.units.qual.C;
-
 public class App_Installation_Receiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {

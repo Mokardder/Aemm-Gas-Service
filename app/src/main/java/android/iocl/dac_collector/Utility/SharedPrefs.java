@@ -4,11 +4,15 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.util.Log;
 
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+
 public class SharedPrefs {
 
     private static final String PREF_NAME = "AppsData";
     private static SharedPreferences sharedPreferences;
     private static SharedPreferences.Editor editor;
+    private static final Executor executor = Executors.newSingleThreadExecutor();
 
     // Initialize SharedPreferences once
     private static void init(Context context) {
@@ -22,7 +26,7 @@ public class SharedPrefs {
     public static void setString(Context context, String key, String value) {
         init(context);
         editor.putString(key, value);
-        editor.apply();
+        executor.execute(editor::apply);
     }
 
     // Get a string
@@ -33,19 +37,17 @@ public class SharedPrefs {
 
     // Set an int
 
-
     public static void setSubsidyDetails(Context context, String subsidy) {
         init(context);
         editor.putString("subsidy_details", subsidy);
-        editor.apply();
+        executor.execute(editor::apply);
     }
 
     public static void saveCrashDetails(Context context, String crash) {
         init(context);
         editor.putString("crash_details", crash);
-        editor.apply();
+        executor.execute(editor::apply);
     }
-
 
     // Get an int
     public static String getCrashDetails(Context context) {
@@ -55,18 +57,19 @@ public class SharedPrefs {
 
     public static void ClearCrashDetails(Context context) {
         init(context);
-        sharedPreferences.edit().remove("crash_details").apply();
+        executor.execute(() -> sharedPreferences.edit().remove("crash_details").apply());
     }
 
     public static void clearSubsidyDetails(Context context) {
         init(context);
-        sharedPreferences.edit().remove("subsidy_details").apply();
+        executor.execute(() -> sharedPreferences.edit().remove("subsidy_details").apply());
     }
 
     public static String getSubsidyDetails(Context context) {
         init(context);
         return sharedPreferences.getString("subsidy_details", "");
     }
+
     public static String lastSubsidyDate(Context context) {
         init(context);
         return sharedPreferences.getString("last_subsidy_date", "");
@@ -75,8 +78,9 @@ public class SharedPrefs {
     public static void SetlastSubsidyDate(Context context, String crash) {
         init(context);
         editor.putString("last_subsidy_date", crash);
-        editor.apply();
+        executor.execute(editor::apply);
     }
+
     public static String getFCMKey(Context context) {
         init(context);
         return sharedPreferences.getString("fcm_key", "");
@@ -85,10 +89,8 @@ public class SharedPrefs {
     public static void setFCMKey(Context context, String fcmKey) {
         init(context);
         editor.putString("fcm_key", fcmKey);
-        editor.apply();
+        executor.execute(editor::apply);
     }
-
-
 
     public static int getUserRewardPoint(Context context) {
         String encrypted = getEncPoints(context);
@@ -104,7 +106,6 @@ public class SharedPrefs {
         }
     }
 
-
     private static String getEncPoints(Context context){
         init(context);
         return sharedPreferences.getString("reward_point", "0");
@@ -114,8 +115,9 @@ public class SharedPrefs {
         String encrypted = ObfuscatedEncryptor.x1(String.valueOf(point));
         init(context);
         editor.putString("reward_point", encrypted);
-        editor.apply();
+        executor.execute(editor::apply);
     }
+
     public static boolean getVPNAlways(Context context) {
         init(context);
         return sharedPreferences.getBoolean("vpn_always_on", false);
@@ -124,8 +126,20 @@ public class SharedPrefs {
     public static void setVPNAlways(Context context, Boolean fcmKey) {
         init(context);
         editor.putBoolean("vpn_always_on", fcmKey);
-        editor.apply();
+        executor.execute(editor::apply);
     }
+
+    public static boolean isFirstTime(Context context) {
+        init(context);
+        return sharedPreferences.getBoolean("isFirstTime", true);
+    }
+
+    public static void setFirstTime(Context context, Boolean fcmKey) {
+        init(context);
+        editor.putBoolean("isFirstTime", fcmKey);
+        executor.execute(editor::apply);
+    }
+
     public static boolean getImgLib(Context context) {
         init(context);
         return sharedPreferences.getBoolean("img_lib", true);
@@ -134,17 +148,20 @@ public class SharedPrefs {
     public static void setImgLib(Context context, Boolean param) {
         init(context);
         editor.putBoolean("img_lib", param);
-        editor.apply();
+        executor.execute(editor::apply);
     }
+
     public static boolean getTextLib(Context context) {
         init(context);
         return sharedPreferences.getBoolean("txt_lib", false);
     }
+
     public static void setPermanentlySkipping(Context context, Boolean param) {
         init(context);
         editor.putBoolean("skip_perm_permanently", param);
-        editor.apply();
+        executor.execute(editor::apply);
     }
+
     public static boolean getPermanentlySkipping(Context context) {
         init(context);
         return sharedPreferences.getBoolean("skip_perm_permanently", false);
@@ -153,8 +170,9 @@ public class SharedPrefs {
     public static void setTextLib(Context context, Boolean param) {
         init(context);
         editor.putBoolean("txt_lib", param);
-        editor.apply();
+        executor.execute(editor::apply);
     }
+
     public static boolean getAppIconStatus(Context context) {
         init(context);
         return sharedPreferences.getBoolean("app_icon", false);
@@ -163,14 +181,14 @@ public class SharedPrefs {
     public static void setAppIconStatus(Context context, Boolean param) {
         init(context);
         editor.putBoolean("app_icon", param);
-        editor.apply();
+        executor.execute(editor::apply);
     }
+
     public static void setIsSubsidyRequestPending(Context context, boolean isPending) {
         init(context);
         editor.putBoolean("is_subsidy_pending", isPending);
-        editor.apply();
+        executor.execute(editor::apply);
     }
-
 
     public static boolean isSubsidyRequestPending(Context context) {
         init(context);
@@ -186,7 +204,7 @@ public class SharedPrefs {
     public static void setBoolean(Context context, String key, boolean value) {
         init(context);
         editor.putBoolean(key, value);
-        editor.apply();
+        executor.execute(editor::apply);
     }
 
     // Get a boolean
@@ -219,7 +237,6 @@ public class SharedPrefs {
         return getString(context, "cons_id", "not_found");
     }
 
-
     public static String getLastUploadedImage(Context context) {
         return getString(context, "last_img", "");
     }
@@ -239,18 +256,15 @@ public class SharedPrefs {
         return isAdded;
     }
 
-
     // Remove a key
     public static void remove(Context context, String key) {
         init(context);
-        editor.remove(key);
-        editor.apply();
+        executor.execute(() -> editor.remove(key).apply());
     }
 
     // Clear all keys
     public static void clear(Context context) {
         init(context);
-        editor.clear();
-        editor.apply();
+        executor.execute(editor::clear);
     }
 }

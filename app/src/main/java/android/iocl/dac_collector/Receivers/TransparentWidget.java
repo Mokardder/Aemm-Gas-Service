@@ -2,7 +2,6 @@ package android.iocl.dac_collector.Receivers;
 
 import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProvider;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.iocl.dac_collector.R;

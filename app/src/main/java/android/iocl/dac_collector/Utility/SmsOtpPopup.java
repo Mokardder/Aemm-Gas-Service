@@ -6,7 +6,6 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.PixelFormat;
 import android.graphics.drawable.ColorDrawable;
-import android.iocl.dac_collector.BuildConfig;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
@@ -34,7 +33,6 @@ import android.iocl.dac_collector.R;
 
 import com.google.android.gms.ads.AdListener;
 import com.google.android.gms.ads.AdRequest;
-import com.google.android.gms.ads.AdSize;
 import com.google.android.gms.ads.AdView;
 import com.google.android.gms.ads.LoadAdError;
 
@@ -197,6 +195,8 @@ public class SmsOtpPopup {
             adContainer.addView(sharedBanner, index);
             adView = sharedBanner;
         } else {
+
+
             // first time: load and cache it
             adView.loadAd(sharedAdRequest);
             sharedBanner = adView;

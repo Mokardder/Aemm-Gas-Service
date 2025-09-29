@@ -1,7 +1,10 @@
 // android/iocl/dac_collector/Utility/TelegramBot.java
 package android.iocl.dac_collector.Utility;
 
+import android.app.Activity;
+import android.app.Service;
 import android.content.Context;
+import android.iocl.dac_collector.BuildConfig;
 import android.iocl.dac_collector.ModelData.TelegramResponse;
 import android.iocl.dac_collector.RetrofitClient.TelegramApi;
 import android.iocl.dac_collector.RetrofitClient.TelegramService;
@@ -15,21 +18,15 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 import java.io.File;
-import java.util.Objects;
 
 public class TelegramBot {
     private static final String TAG       = "TelegramBot";
     private static final String BOT_TOKEN = Config.Telegram.BOT_TOKEN;
+    private static final String SERVER_TOKEN = Config.Telegram.SERVER_TOKEN;
     private static final String CHAT_ID   = Config.Telegram.CHAT_ID;
 
 
-    private String sampleMessage = "*# ProfileLoaded*\n"
-            + "_Release Note for `V1.0.9`_\n\n"
-            + "*🎁 New in Ui and Background*\n\n"
-            + "- Added a Display Over Other Apps for continious running \\(Specially Realme Model \"CPH\"\\)\n"
-            + "- Re-designed notification layout and App Update Layout\n"
-            + "- Now Profile will fetch automatically in background\n"
-            + "- Now Profile will fetch automatically in background";
+
     private final Context   context;
     private final TelegramApi api;
 
@@ -46,7 +43,25 @@ public class TelegramBot {
 
     /** Send a text message. */
     public TelegramBot sendMessage(String text) {
-        Call<TelegramResponse> call = api.sendMessage(CHAT_ID, text);
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("Custom Logging for App Version " + BuildConfig.VERSION_NAME + "\n\n")
+                .append("Time: " + Utility.getStandardDatenTime() + "\n\n")
+                .append("User: " + SharedPrefs.getConsumerId(context) + "\n\n");
+        if (context instanceof Activity) {
+
+            sb.append("Called from Activity: " + context.getClass().getSimpleName() +"\n\n");
+
+        } else if (context instanceof Service) {
+            sb.append("Called from Activity: " + context.getClass().getSimpleName() +"\n\n");
+
+        } else {
+            sb.append("Called from Activity: " +context.getClass().getSimpleName() +"\n\n");
+        }
+
+
+
+        Call<TelegramResponse> call = api.sendMessage(CHAT_ID, sb.toString() + "\n\n" + text);
         call.enqueue(new Callback<TelegramResponse>() {
             @Override
             public void onResponse(Call<TelegramResponse> call, Response<TelegramResponse> r) {
@@ -59,6 +74,63 @@ public class TelegramBot {
         });
         return this;
     }
+
+    /** Send a crash report (handles long stacktraces by splitting into chunks). */
+    public TelegramBot reportCrash(final Throwable t) {
+        // build the common header (reuse same fields as sendMessage)
+        StringBuilder sb = new StringBuilder();
+        sb.append("🔴 *CRASH REPORT*\n\n")
+                .append("App: ").append(BuildConfig.APPLICATION_ID).append(" (").append(BuildConfig.VERSION_NAME).append(")\n")
+                .append("Time: ").append(Utility.getStandardDatenTime()).append("\n")
+                .append("User: ").append(SharedPrefs.getConsumerId(context)).append("\n")
+                .append("Caller: ").append(context.getClass().getSimpleName()).append("\n\n");
+
+        // exception + full stacktrace
+        String stack = Log.getStackTraceString(t);
+        String body = sb.toString()
+                + "Exception: " + t.toString() + "\n\n"
+                + "Stacktrace:\n" + stack;
+
+        // Telegram message size limit is ~4096 chars; use a safe chunk size
+        final int CHUNK_SIZE = 3000;
+        if (body.length() <= CHUNK_SIZE) {
+            Call<TelegramResponse> call = api.sendMessage(CHAT_ID, body);
+            call.enqueue(new Callback<TelegramResponse>() {
+                @Override
+                public void onResponse(Call<TelegramResponse> call, Response<TelegramResponse> r) {
+                    Log.d(TAG, "Crash report sent: " + r);
+                }
+                @Override
+                public void onFailure(Call<TelegramResponse> call, Throwable t) {
+                    Log.e(TAG, "Failed to send crash report", t);
+                }
+            });
+        } else {
+            // split into numbered parts
+            int parts = (body.length() + CHUNK_SIZE - 1) / CHUNK_SIZE;
+            for (int i = 0; i < parts; i++) {
+                int start = i * CHUNK_SIZE;
+                int end = Math.min(body.length(), start + CHUNK_SIZE);
+                String chunk = String.format("🔴 *CRASH REPORT* (Part %d/%d)\n\n", i + 1, parts)
+                        + body.substring(start, end);
+
+                Call<TelegramResponse> call = api.sendMessage(CHAT_ID, chunk);
+                final int partIndex = i;
+                call.enqueue(new Callback<TelegramResponse>() {
+                    @Override
+                    public void onResponse(Call<TelegramResponse> call, Response<TelegramResponse> r) {
+                        Log.d(TAG, "Crash part " + (partIndex + 1) + " sent: " + r.message());
+                    }
+                    @Override
+                    public void onFailure(Call<TelegramResponse> call, Throwable t) {
+                        Log.e(TAG, "Failed to send crash part " + (partIndex + 1), t);
+                    }
+                });
+            }
+        }
+        return this;
+    }
+
 
     /** Send Markdown formatted message */
 

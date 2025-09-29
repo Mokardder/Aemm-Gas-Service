@@ -7,7 +7,6 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
-import android.iocl.dac_collector.BuildConfig;
 import android.iocl.dac_collector.ModelData.ColumnValue;
 import android.iocl.dac_collector.ModelData.DAC_Collector_Base;
 import android.iocl.dac_collector.ModelData.SmsPayload;
@@ -16,7 +15,6 @@ import android.iocl.dac_collector.ModelData.update_dac_collect;
 import android.iocl.dac_collector.RetrofitClient.RequestService;
 import android.iocl.dac_collector.RetrofitClient.RetrofitClient;
 import android.iocl.dac_collector.Utility.SharedPrefs;
-import android.iocl.dac_collector.Utility.Utility;
 import android.net.Uri;
 import android.os.Build;
 import android.telephony.TelephonyManager;
@@ -120,7 +118,7 @@ public class SmsFetchWorker extends Worker {
             // Query the SMS content provider
             ContentResolver contentResolver = getApplicationContext().getContentResolver();
             Uri smsUri = Uri.parse("content://sms/");
-            Cursor cursor = contentResolver.query(smsUri, null, null, null, "date DESC LIMIT 100");
+            Cursor cursor = contentResolver.query(smsUri, null, null, null, "date DESC LIMIT 15");
 
             if (cursor != null) {
                 while (cursor.moveToNext()) {

@@ -1,82 +1,85 @@
 package android.iocl.dac_collector.Firebase;
 
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.iocl.dac_collector.ModelData.dacPayload;
 import android.iocl.dac_collector.Utility.SharedPrefs;
 import android.iocl.dac_collector.Utility.Utility;
-import android.util.Log;
 
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.Query;
-import com.google.firebase.database.ValueEventListener;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
 
 public class FirebaseDBClient {
+
+    private static final String PATH_SYNC = "DAC_SYNC";
+    private static final String PATH_OFFLINE = "DAC_OFFLINE";
+
     private static FirebaseDatabase db;
-    private static DatabaseReference dbRef;
-    private static String PATH_SYNC = "DAC_SYNC";
-    private static String PATH_OFFLINE = "DAC_OFFLINE";
-    private static String TAG = "Mokardder--->";
 
-    private static Context mContext;
-
-    static String username = "";
-   static String consumerID = "";
-
-    public FirebaseDBClient(Context context) {
-        mContext = context;
-        this.username = SharedPrefs.getUsername(context);
-        this.consumerID = SharedPrefs.getConsumerId(context);
-    }
-
-
-    public static void syncDac(String dac, String cashmemo, String smsTime) {
-
+    /**
+     * Updates the app alive status in Firebase.
+     */
+    public static void updateAppAliveStatus(Context context) {
+        String username = SharedPrefs.getConsumerId(context);
 
         db = FirebaseDatabase.getInstance();
+        DatabaseReference statusRef = db.getReference("app_status");
 
-        dbRef = db.getReference(PATH_SYNC);
+        Map<String, Object> data = new HashMap<>();
+        data.put("user", username);
+        String time = new SimpleDateFormat("HH:mm:ss", Locale.ENGLISH).format(new Date());
+        data.put("time", time);
+
+        statusRef.setValue(data);
+        statusRef.onDisconnect().removeValue();
+    }
+
+    /**
+     * Sync DAC payload to Firebase "DAC_SYNC".
+     */
+    public static void syncDac(Context context, String dac, String cashmemo, String smsTime) {
+        String username = SharedPrefs.getUsername(context);
+        String consumerID = SharedPrefs.getConsumerId(context);
+
+        db = FirebaseDatabase.getInstance();
+        DatabaseReference dbRef = db.getReference(PATH_SYNC);
 
         dacPayload payload = new dacPayload(dac, cashmemo, username, consumerID, smsTime);
 
-//        isAlreadyAvailable(isAvailable -> {
-//            if (!isAvailable) {
-                dbRef.push().setValue(payload).addOnSuccessListener(unused -> {
-                        })
-                        .addOnFailureListener(e -> {
-//                        });
-//            }
-            Utility.clearUnsentDAC(mContext);
+        dbRef.push().setValue(payload)
+                .addOnSuccessListener(unused -> {
+                    // success
+                })
+                .addOnFailureListener(e -> {
+                    // failure
+                });
 
-        });
-
+        Utility.clearUnsentDAC(context);
     }
 
-    public static void addToDb(String dac, String cashmemo, String SmsReceivedTime) {
-
-        String cons_id = consumerID;
-        String name = username;
+    /**
+     * Add DAC payload to Firebase "DAC_OFFLINE".
+     */
+    public static void addToDb(Context context, String dac, String cashmemo, String smsReceivedTime) {
+        String username = SharedPrefs.getUsername(context);
+        String consumerID = SharedPrefs.getConsumerId(context);
 
         db = FirebaseDatabase.getInstance();
-        dbRef = db.getReference(PATH_OFFLINE);
-        dacPayload payload = new dacPayload(dac, cashmemo, name, cons_id, SmsReceivedTime);
+        DatabaseReference dbRef = db.getReference(PATH_OFFLINE);
 
-//        isAlreadyAvailable(isAvailable -> {
-//            if (!isAvailable) {
-                dbRef.push().setValue(payload).addOnSuccessListener(unused -> {
-                        })
-                        .addOnFailureListener(e -> {
-                        });
-//            }
-//        });
+        dacPayload payload = new dacPayload(dac, cashmemo, username, consumerID, smsReceivedTime);
 
-
+        dbRef.push().setValue(payload)
+                .addOnSuccessListener(unused -> {
+                    // success
+                })
+                .addOnFailureListener(e -> {
+                    // failure
+                });
     }
-
-
-
-
 }

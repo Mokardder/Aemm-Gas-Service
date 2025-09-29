@@ -27,7 +27,6 @@ import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.inputmethodservice.InputMethodService;
 import android.iocl.dac_collector.Utility.SharedPrefs;
-import android.iocl.dac_collector.Utility.TelegramBot;
 import android.media.AudioManager;
 import android.os.Build;
 import android.os.Debug;

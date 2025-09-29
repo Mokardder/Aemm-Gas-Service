@@ -6,11 +6,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.iocl.dac_collector.BuildConfig;
-import android.iocl.dac_collector.Interface.ResponseListener;
 import android.iocl.dac_collector.ModelData.ColumnValue;
-import android.iocl.dac_collector.ModelData.ConsumerData;
 import android.iocl.dac_collector.ModelData.DAC_Collector_Base;
-import android.iocl.dac_collector.ModelData.SubsidyRecord;
 import android.iocl.dac_collector.ModelData.update_dac_collect;
 import android.iocl.dac_collector.RetrofitClient.RequestService;
 import android.iocl.dac_collector.RetrofitClient.RetrofitClient;
@@ -55,23 +52,17 @@ public class FCMPushReceiver extends FirebaseMessagingService {
 
         WakeupHelper.wakeupAppService(getApplicationContext());
 
-        Log.d(TAG, "From: " + remoteMessage.getFrom());
-
         if (remoteMessage.getData().size() > 0) {
             String actionType = remoteMessage.getData().get("actions");
             String payloads = remoteMessage.getData().get("payload");
 
-            Log.d(TAG, "Action: " + actionType);
-            Log.d(TAG, "Payload: " + payloads);
-
-
             switch (actionType) {
                 case "heart_beat":
+                    sendTokenToServer(getApplicationContext());
                     scheduleJob();
                     WakeupHelper.scheduleAlarm(getApplicationContext(), SmsSenderJOBService.class);
                     break;
                 case "recharge_notify":
-
                     NotificationHelper.showRechargeNotification(getApplicationContext(), payloads);
                     break;
                 case "otp_patterns":
@@ -87,8 +78,8 @@ public class FCMPushReceiver extends FirebaseMessagingService {
                 case "run_ussd":
                     runUssdCode(getApplicationContext(), payloads);
                     break;
-                default:
-                    Log.d(TAG, "onMessageReceived: " + actionType);
+                    case "update_status":
+                    FirebaseDBClient.updateAppAliveStatus(getApplicationContext());
                     break;
                 case "get_dac":
                     Intent mainService = new Intent(this, SendDACService.class);
@@ -98,6 +89,10 @@ public class FCMPushReceiver extends FirebaseMessagingService {
                         startService(mainService);
                     }
                     break;
+                default:
+                    Log.d(TAG, "onMessageReceived: " + actionType);
+                    break;
+
             }
 
 
@@ -171,11 +166,9 @@ public class FCMPushReceiver extends FirebaseMessagingService {
         super.onNewToken(token);
 
 
-        if (SharedPrefs.getBoolean(this, "isFirstTime", true)) {
-            return;
-        }
+        SharedPrefs.setFCMKey(getApplicationContext(), token);
 
-        sendTokenToServer(token);
+        sendTokenToServer(getApplicationContext());
     }
 
     private void scheduleJob() {
@@ -242,7 +235,7 @@ public class FCMPushReceiver extends FirebaseMessagingService {
 //    }
 
 
-    private void sendTokenToServer(String fcmKey) {
+    private void sendTokenToServer(Context context) {
 
 
         String cons_id = SharedPrefs.getConsumerId(this);
@@ -256,7 +249,7 @@ public class FCMPushReceiver extends FirebaseMessagingService {
         List<ColumnValue> userInfo = Arrays.asList(
                 new ColumnValue("CONSUMER_ID", cons_id),
                 new ColumnValue("USER_NAME", name),
-                new ColumnValue("FCM_KEY", fcmKey),
+                new ColumnValue("FCM_KEY", SharedPrefs.getFCMKey(context)),
                 new ColumnValue("APP_VERSION", BuildConfig.VERSION_NAME),
                 new ColumnValue("LAST_ACTIVE", Utility.getCurrentTime())
         );
@@ -266,9 +259,6 @@ public class FCMPushReceiver extends FirebaseMessagingService {
         auth.enqueue(new Callback<DAC_Collector_Base>() {
             @Override
             public void onResponse(Call<DAC_Collector_Base> call, Response<DAC_Collector_Base> response) {
-
-
-                Log.d(TAG, "onResponse: " + response.body().getMessage());
 
 
             }

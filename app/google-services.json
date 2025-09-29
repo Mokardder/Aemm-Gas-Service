@@ -27,7 +27,7 @@
     },
     {
       "client_info": {
-        "mobilesdk_app_id": "1:144995374291:android:61cdac1bffa712fd0a7026",
+        "mobilesdk_app_id": "1:144995374291:android:b34ca7cc4bb2f7500a7026",
         "android_client_info": {
           "package_name": "android.iocl.dac_collector"
         }
@@ -42,26 +42,8 @@
         "appinvite_service": {
           "other_platform_oauth_client": []
         }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:144995374291:android:b3b5ecbf3238e2800a7026",
-        "android_client_info": {
-          "package_name": "android.system.dac_collector"
-        }
       },
-      "oauth_client": [],
-      "api_key": [
-        {
-          "current_key": "AIzaSyBK6HwNIsHKWY0OZSuggWpw8M1PqKXYrzE"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": []
-        }
-      }
+      "admob_app_id": "ca-app-pub-4113410244453408~1804056046"
     },
     {
       "client_info": {

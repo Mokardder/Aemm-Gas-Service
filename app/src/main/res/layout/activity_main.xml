@@ -29,6 +29,8 @@
                     android:id="@+id/tv_header"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:minHeight="20sp"
+                    android:maxHeight="50sp"
                     android:layout_centerHorizontal="true"
                     android:autoSizeTextType="uniform"
                     android:fontFamily="@font/poppins_regular"
@@ -36,7 +38,13 @@
                     android:textColor="@color/black"
                     android:textSize="30sp"
                     android:textStyle="bold"
-                    tools:ignore="HardcodedText" />
+                    tools:ignore="HardcodedText"
+
+                    android:autoSizeMinTextSize="10sp"
+                    android:autoSizeMaxTextSize="28sp"
+                    android:autoSizeStepGranularity="1sp"
+
+                    />
 
                 <!-- App Version -->
                 <TextView
@@ -54,7 +62,13 @@
                     android:textColor="@color/red"
                     android:textSize="10sp"
                     android:textStyle="bold"
-                    tools:ignore="HardcodedText" />
+                    tools:ignore="HardcodedText"
+                    android:autoSizeTextType="uniform"
+                    android:autoSizeMinTextSize="10sp"
+                    android:autoSizeMaxTextSize="28sp"
+                    android:autoSizeStepGranularity="1sp"
+
+                    />
 
             </RelativeLayout>
 
@@ -71,9 +85,10 @@
                     android:orientation="vertical"
                     android:padding="10dp">
 
-                    <RelativeLayout
+                    <LinearLayout
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:gravity="center"
                         android:layout_gravity="center"
                         android:orientation="horizontal">
 
@@ -81,26 +96,35 @@
                             android:id="@+id/userName"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_alignBaseline="@+id/annualTick"
+                            android:maxHeight="18sp"
                             android:fontFamily="@font/poppins_regular"
                             android:text=""
                             android:textAlignment="center"
                             android:textColor="@color/black"
-                            android:textSize="20sp"
-                            android:textStyle="bold" />
+                            android:textSize="18sp"
+                            android:textStyle="bold"
+                            android:autoSizeTextType="uniform"
+                            android:autoSizeMinTextSize="10sp"
+                            android:autoSizeMaxTextSize="28sp"
+                            android:autoSizeStepGranularity="1sp"
+                            android:maxLines="1"
+                            android:ellipsize="end" />
 
                         <ImageView
 
                             android:id="@+id/annualTick"
                             android:layout_width="25dp"
                             android:layout_height="25dp"
-                            android:layout_marginLeft="10dp"
-                            android:layout_marginTop="3dp"
-                            android:layout_toRightOf="@+id/userName"
-                            android:foregroundGravity="center"
+                            android:maxHeight="25dp"
+                            android:maxWidth="25dp"
+                            android:minHeight="20dp"
+                            android:minWidth="20dp"
+                            android:layout_marginStart="8dp"
                             android:src="@drawable/verify_icon_blue"
                             android:visibility="gone" />
-                    </RelativeLayout>
+                    </LinearLayout>
+
+
 
 
                     <RelativeLayout
@@ -128,7 +152,13 @@
                                 android:foreground="?android:attr/selectableItemBackgroundBorderless"
                                 android:paddingHorizontal="8dp"
                                 android:text="Refresh Profile"
-                                android:textColor="@color/black" />
+                                android:textColor="@color/black"
+                                android:autoSizeTextType="uniform"
+                                android:autoSizeMinTextSize="10sp"
+                                android:autoSizeMaxTextSize="28sp"
+                                android:autoSizeStepGranularity="1sp"
+
+                                />
 
                             <FrameLayout
                                 android:id="@+id/fl_tvAppUpdate"
@@ -145,6 +175,10 @@
                                     android:clickable="true"
                                     android:drawablePadding="12dp"
                                     android:focusable="true"
+                                    android:autoSizeTextType="uniform"
+                                    android:autoSizeMinTextSize="10sp"
+                                    android:autoSizeMaxTextSize="28sp"
+                                    android:autoSizeStepGranularity="1sp"
 
                                     android:fontFamily="@font/poppins_regular"
                                     android:foreground="?android:attr/selectableItemBackgroundBorderless"
@@ -165,7 +199,7 @@
                                 android:layout_below="@+id/fl_tvAppUpdate"
                                 android:layout_marginLeft="10dp"
                                 android:layout_marginTop="5dp"
-                                android:layout_toRightOf="@+id/adminPerm"
+
                                 android:background="@drawable/rounded_background"
                                 android:clickable="true"
                                 android:drawablePadding="12dp"
@@ -174,7 +208,13 @@
                                 android:foreground="?android:attr/selectableItemBackgroundBorderless"
                                 android:paddingHorizontal="8dp"
                                 android:text="About"
-                                android:textColor="@color/black" />
+                                android:textColor="@color/black"
+                                android:autoSizeTextType="uniform"
+                                android:autoSizeMinTextSize="10sp"
+                                android:autoSizeMaxTextSize="28sp"
+                                android:autoSizeStepGranularity="1sp"
+
+                                />
                             <TextView
                                 android:id="@+id/interestialAds"
                                 android:layout_width="wrap_content"
@@ -187,6 +227,7 @@
                                 android:clickable="true"
                                 android:drawablePadding="12dp"
                                 android:focusable="true"
+                                android:visibility="gone"
                                 android:fontFamily="@font/poppins_regular"
                                 android:foreground="?android:attr/selectableItemBackgroundBorderless"
                                 android:paddingHorizontal="8dp"
@@ -196,7 +237,7 @@
 
                             <TextView
                                 android:visibility="gone"
-                                android:id="@+id/adminPerm"
+                                android:id="@+id/permissionPage"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_below="@+id/refreshProfile"
@@ -204,14 +245,30 @@
                                 android:layout_marginTop="5dp"
                                 android:background="@drawable/rounded_background"
                                 android:clickable="true"
-                                android:drawableLeft="@drawable/profile_protection"
-                                android:drawablePadding="5dp"
                                 android:focusable="true"
                                 android:fontFamily="@font/poppins_regular"
                                 android:foreground="?android:attr/selectableItemBackgroundBorderless"
                                 android:paddingHorizontal="8dp"
                                 android:paddingVertical="1dp"
-                                android:text="Admin"
+                                android:text="Permissions"
+                                android:textColor="@color/black" />
+                            <TextView
+                                android:visibility="visible"
+                                android:id="@+id/changeUser"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_below="@+id/refreshProfile"
+                                android:layout_toRightOf="@+id/interestialAds"
+                                android:layout_marginLeft="5dp"
+                                android:layout_marginTop="5dp"
+                                android:background="@drawable/rounded_background"
+                                android:clickable="true"
+                                android:focusable="true"
+                                android:fontFamily="@font/poppins_regular"
+                                android:foreground="?android:attr/selectableItemBackgroundBorderless"
+                                android:paddingHorizontal="8dp"
+                                android:paddingVertical="1dp"
+                                android:text="Change User"
                                 android:textColor="@color/black" />
 
                             <!--                            <TextView-->
@@ -274,11 +331,19 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:maxHeight="40sp"
+                            android:minHeight="30sp"
                             android:fontFamily="@font/poppins_regular"
                             android:text="Remaining Book"
                             android:textColor="@color/black"
                             android:textSize="15sp"
-                            android:textStyle="bold" />
+                            android:textStyle="bold"
+                            android:autoSizeTextType="uniform"
+                            android:autoSizeMinTextSize="10sp"
+                            android:autoSizeMaxTextSize="28sp"
+                            android:autoSizeStepGranularity="1sp"
+
+                            />
 
                         <TextView
                             android:id="@+id/remainBook"
@@ -289,7 +354,13 @@
                             android:fontFamily="@font/poppins_regular"
                             android:text="0"
                             android:textColor="@color/black"
-                            android:textSize="15sp" />
+                            android:textSize="15sp"
+                            android:autoSizeTextType="uniform"
+                            android:autoSizeMinTextSize="10sp"
+                            android:autoSizeMaxTextSize="28sp"
+                            android:autoSizeStepGranularity="1sp"
+
+                            />
                     </RelativeLayout>
 
                     <RelativeLayout
@@ -303,11 +374,19 @@
                             android:id="@+id/tv_lastBook"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:maxHeight="25sp"
+                            android:minHeight="20sp"
                             android:fontFamily="@font/poppins_regular"
                             android:text="Last Book Date"
                             android:textColor="@color/black"
                             android:textSize="15sp"
-                            android:textStyle="bold" />
+                            android:textStyle="bold"
+                            android:autoSizeTextType="uniform"
+                            android:autoSizeMinTextSize="10sp"
+                            android:autoSizeMaxTextSize="28sp"
+                            android:autoSizeStepGranularity="1sp"
+
+                            />
 
                         <TextView
                             android:id="@+id/lastBook"
@@ -318,7 +397,13 @@
                             android:fontFamily="@font/poppins_regular"
                             android:text=""
                             android:textColor="@color/black"
-                            android:textSize="15sp" />
+                            android:textSize="15sp"
+                            android:autoSizeTextType="uniform"
+                            android:autoSizeMinTextSize="10sp"
+                            android:autoSizeMaxTextSize="28sp"
+                            android:autoSizeStepGranularity="1sp"
+
+                            />
                     </RelativeLayout>
                 </RelativeLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -348,7 +433,13 @@
                         android:padding="5dp"
                         android:paddingHorizontal="7dp"
                         android:text="Akram"
-                        android:textColor="@color/blue" />
+                        android:textColor="@color/blue"
+                        android:autoSizeTextType="uniform"
+                        android:autoSizeMinTextSize="10sp"
+                        android:autoSizeMaxTextSize="28sp"
+                        android:autoSizeStepGranularity="1sp"
+
+                        />
 
                     <TextView
                         android:id="@+id/call_Emdadul"
@@ -360,22 +451,38 @@
                         android:drawableLeft="@drawable/call_outgoing"
                         android:drawablePadding="5dp"
                         android:padding="5dp"
+                        android:fontFamily="@font/poppins_regular"
                         android:paddingHorizontal="7dp"
                         android:text="Emdadul"
-                        android:textColor="@color/blue" />
+                        android:textColor="@color/blue"
+                        android:autoSizeTextType="uniform"
+                        android:autoSizeMinTextSize="10sp"
+                        android:autoSizeMaxTextSize="28sp"
+                        android:autoSizeStepGranularity="1sp"
+
+                        />
 
                     <TextView
                         android:id="@+id/call_Mokardder"
                         android:layout_width="wrap_content"
+                        android:maxWidth="110sp"
                         android:layout_height="wrap_content"
+                        android:maxHeight="30sp"
                         android:layout_toRightOf="@+id/call_Emdadul"
+                        android:fontFamily="@font/poppins_regular"
                         android:background="@drawable/rounded_blue_background"
                         android:drawableLeft="@drawable/call_outgoing"
                         android:drawablePadding="5dp"
                         android:padding="5dp"
                         android:paddingHorizontal="9dp"
                         android:text="Mokardder"
-                        android:textColor="@color/blue" />
+                        android:textColor="@color/blue"
+                        android:autoSizeTextType="uniform"
+                        android:autoSizeMinTextSize="8sp"
+                        android:autoSizeMaxTextSize="12sp"
+                        android:autoSizeStepGranularity="1sp"
+
+                        />
 
 
                 </RelativeLayout>
@@ -427,11 +534,14 @@
                             android:id="@+id/mobNo"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:maxHeight="25sp"
+                            android:maxWidth="190sp"
                             android:layout_alignParentEnd="true"
                             android:fontFamily="@font/poppins_regular"
-                            android:text=""
+                            android:text="9932896502 / 9123386785"
                             android:textColor="#6E6C6C"
                             android:textSize="15sp"
+                            android:ellipsize="end"
                             android:textStyle="bold" />
                     </RelativeLayout>
 
@@ -462,36 +572,7 @@
                             android:textStyle="bold" />
                     </RelativeLayout>
 
-                    <RelativeLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="15dp">
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:fontFamily="@font/poppins_regular"
-                            android:text="Location"
-                            android:textColor="@color/black"
-                            android:textSize="15sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:id="@+id/location"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_alignParentEnd="true"
-                            android:background="@drawable/rounded_background"
-                            android:clickable="true"
-                            android:focusable="true"
-                            android:fontFamily="@font/poppins_regular"
-                            android:foreground="?android:attr/selectableItemBackgroundBorderless"
-                            android:padding="5dp"
-                            android:text=""
-                            android:textColor="#6E6C6C"
-                            android:textSize="15sp"
-                            android:textStyle="bold" />
-                    </RelativeLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 

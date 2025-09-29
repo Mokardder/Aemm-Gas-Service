@@ -5,12 +5,9 @@ import android.content.AbstractThreadedSyncAdapter;
 import android.content.ContentProviderClient;
 import android.content.ContentResolver;
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.content.SyncResult;
 import android.iocl.dac_collector.Utility.Utility;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.util.Log;
 
 public class SyncAdapter extends AbstractThreadedSyncAdapter {

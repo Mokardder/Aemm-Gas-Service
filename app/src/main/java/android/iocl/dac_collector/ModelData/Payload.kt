@@ -81,6 +81,7 @@ data class appUpdateDesc(
 )
 data class PermissionItem(
     val title: String,
+    val isOptional: Boolean = false,
     val description: String,
     val iconResId: Int,
     var isGranted: Boolean

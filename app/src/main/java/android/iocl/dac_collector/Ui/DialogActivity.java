@@ -2,14 +2,11 @@ package android.iocl.dac_collector.Ui;
 
 import static android.iocl.dac_collector.Services.AcessibilitySettings.CUSTOM_ACTION;
 
-import android.app.Activity;
 import android.content.ComponentName;
-import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.iocl.dac_collector.R;
 import android.iocl.dac_collector.Utility.SharedPrefs;
-import android.iocl.dac_collector.Utility.Utility;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -19,12 +16,10 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.app.AlertDialog;
 import androidx.constraintlayout.widget.ConstraintLayout;
 
 public class DialogActivity extends AppCompatActivity {

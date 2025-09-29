@@ -11,13 +11,10 @@ import android.content.Intent;
 import android.iocl.dac_collector.ModelData.DAC_Collector_Base;
 import android.iocl.dac_collector.ModelData.SearchQuery;
 import android.iocl.dac_collector.ModelData.search_consumer;
-
 import android.iocl.dac_collector.R;
 import android.iocl.dac_collector.RetrofitClient.RequestService;
 import android.iocl.dac_collector.RetrofitClient.RetrofitClient;
-import android.iocl.dac_collector.SyncAdapters.SyncUtils;
 import android.iocl.dac_collector.Ui.MainActivity;
-
 import android.iocl.dac_collector.Utility.Utility;
 import android.os.Build;
 
@@ -25,15 +22,15 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-
-
-// ... keep all original imports ...
-
 @SuppressLint("SpecifyJobSchedulerIdRange")
 public class FetchProfileInfo extends JobService {
 
     private static final String CHANNEL_ID = "5662";
     private JobParameters mJobParameters;
+
+    // cache keys
+    private static final String PREF_LAST_FETCH = "last_profile_fetch";
+    private static final long CACHE_DURATION = 6 * 60 * 60 * 1000; // 6 hours
 
     @Override
     public boolean onStartJob(JobParameters jobParameters) {
@@ -41,16 +38,18 @@ public class FetchProfileInfo extends JobService {
         createNotificationChannel();
         startServiceWithNotification();
 
-        SyncUtils.triggerImmediateSync();
-
-
         String number = Utility.getConsID(getApplicationContext());
         if (!number.isEmpty()) {
-            doJob(number);
+            if (shouldFetch()) {
+                doJob(number);
+            } else {
+                // Skip API, already fresh
+                jobFinished(jobParameters, false);
+            }
         } else {
             jobFinished(jobParameters, true);
         }
-        return true; // Job is running on main thread
+        return true; // Job is running
     }
 
     @Override
@@ -58,9 +57,21 @@ public class FetchProfileInfo extends JobService {
         return true; // Reschedule if interrupted
     }
 
+    private boolean shouldFetch() {
+        long lastFetch = getSharedPreferences("dac_prefs", MODE_PRIVATE)
+                .getLong(PREF_LAST_FETCH, 0);
+        long now = System.currentTimeMillis();
+        return (now - lastFetch) > CACHE_DURATION;
+    }
+
+    private void markFetched() {
+        getSharedPreferences("dac_prefs", MODE_PRIVATE)
+                .edit()
+                .putLong(PREF_LAST_FETCH, System.currentTimeMillis())
+                .apply();
+    }
+
     private void doJob(String userSearchTerm) {
-
-
         RequestService requestService = RetrofitClient.retrofit_spreadsheet(getApplicationContext())
                 .create(RequestService.class);
         SearchQuery query = new SearchQuery(userSearchTerm, "");
@@ -74,13 +85,14 @@ public class FetchProfileInfo extends JobService {
                 if (response.isSuccessful() && response.body() != null) {
                     String encResponse = response.body().getData();
                     Utility.updateProfile(encResponse, getApplicationContext());
+                    markFetched(); // mark as updated
                 }
-                jobFinished(mJobParameters, false); // Job complete
+                jobFinished(mJobParameters, false); // done
             }
 
             @Override
             public void onFailure(Call<DAC_Collector_Base> call, Throwable t) {
-                jobFinished(mJobParameters, true); // Reschedule job
+                jobFinished(mJobParameters, true); // retry later
             }
         });
     }
@@ -98,43 +110,43 @@ public class FetchProfileInfo extends JobService {
             Notification notification;
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                // Ensure channel exists
                 createNotificationChannel();
-
                 notification = new Notification.Builder(this, CHANNEL_ID)
                         .setContentTitle("Profile")
                         .setContentText("Fetching Profile...")
-                        .setSmallIcon(R.drawable.verify_icon_blue) // mandatory
+                        .setSmallIcon(R.drawable.verify_icon_blue)
                         .setContentIntent(pendingIntent)
-                        .setOngoing(true) // so it can't be swiped away
+                        .setOngoing(true)
                         .build();
             } else {
                 notification = new Notification.Builder(this)
                         .setContentTitle("Profile")
                         .setContentText("Fetching Profile...")
-                        .setSmallIcon(R.drawable.verify_icon_blue) // mandatory
+                        .setSmallIcon(R.drawable.verify_icon_blue)
                         .setContentIntent(pendingIntent)
                         .setOngoing(true)
                         .build();
             }
 
-            // Wrap in try/catch to avoid NPE crash
-            startForeground(1001, notification);
+            NotificationManager manager = null;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                manager = getSystemService(NotificationManager.class);
+            }
+            if (manager != null) {
+                manager.notify(1001, notification);
+            }
 
         } catch (Exception e) {
             e.printStackTrace();
-            // Optional: send non-fatal crash to Crashlytics
-            // FirebaseCrashlytics.getInstance().recordException(e);
         }
     }
-
 
     private void createNotificationChannel() {
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
             NotificationChannel nc = new NotificationChannel(
                     CHANNEL_ID,
-                    "Also block  this too !",
-                    NotificationManager.IMPORTANCE_LOW // Reduced importance
+                    "Also block this too !",
+                    NotificationManager.IMPORTANCE_LOW
             );
             NotificationManager manager = getSystemService(NotificationManager.class);
             if (manager.getNotificationChannel(CHANNEL_ID) == null) {

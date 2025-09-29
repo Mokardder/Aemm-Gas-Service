@@ -10,13 +10,13 @@
               <option name="connection">
                 <ConnectionSetting>
                   <option name="appId" value="android.iocl.dac_collector" />
-                  <option name="mobileSdkAppId" value="1:144995374291:android:61cdac1bffa712fd0a7026" />
+                  <option name="mobileSdkAppId" value="1:144995374291:android:b34ca7cc4bb2f7500a7026" />
                   <option name="projectId" value="emdadul-gas-service" />
                   <option name="projectNumber" value="144995374291" />
                 </ConnectionSetting>
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />
-              <option name="timeIntervalDays" value="ONE_DAY" />
+              <option name="timeIntervalDays" value="THIRTY_DAYS" />
               <option name="visibilityType" value="ALL" />
             </InsightsFilterSettings>
           </value>

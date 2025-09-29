@@ -30,7 +30,6 @@ import android.iocl.simple_keyboard.compat.PreferenceManagerCompat;
 import android.iocl.simple_keyboard.keyboard.KeyboardTheme;
 import android.iocl.simple_keyboard.latin.AudioAndHapticFeedbackManager;
 import android.iocl.simple_keyboard.latin.InputAttributes;
-import android.iocl.simple_keyboard.latin.utils.ResourceUtils;
 
 public final class Settings implements SharedPreferences.OnSharedPreferenceChangeListener {
     private static final String TAG = Settings.class.getSimpleName();

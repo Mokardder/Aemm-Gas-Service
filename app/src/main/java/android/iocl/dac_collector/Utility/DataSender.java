@@ -1,11 +1,7 @@
 package android.iocl.dac_collector.Utility;
 
 import android.content.Context;
-import android.iocl.dac_collector.Firebase.FirebaseDBClient;
-import android.iocl.dac_collector.ModelData.dacPayload;
 import android.iocl.dac_collector.Services.UploadWorker;
-import android.net.ConnectivityManager;
-import android.net.NetworkCapabilities;
 import android.util.Log;
 
 import androidx.work.Constraints;
