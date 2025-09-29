@@ -3,7 +3,7 @@ name: Android Auto Release
 on:
   push:
     branches:
-      - main   # triggers on every push to main branch
+      - master   # triggers on every push to main branch
 
 jobs:
   build-and-release:
