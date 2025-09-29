@@ -1,0 +1,52 @@
+name: Android Auto Release
+
+on:
+  push:
+    branches:
+      - master   # triggers on every push to main branch
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout repo
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. Set up JDK 17
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      # 3. Build the release APK
+      - name: Build Release APK
+        run: ./gradlew assembleRelease
+
+      # 4. Get last commit message
+      - name: Get commit message
+        id: commit_msg
+        run: echo "COMMIT_MSG<<$(git log -1 --pretty=%B)" >> $GITHUB_ENV
+
+      # 5. Get version from version.properties
+      - name: Read version.properties
+        id: version
+        run: |
+          PATCH=$(grep PATCH version.properties | cut -d '=' -f2)
+          MINOR=$(grep MINOR version.properties | cut -d '=' -f2)
+          MAJOR=$(grep MAJOR version.properties | cut -d '=' -f2)
+          VERSION_CODE=$(grep VERSION_CODE version.properties | cut -d '=' -f2)
+          echo "APP_VERSION=${MAJOR}.${MINOR}.${PATCH}-${VERSION_CODE}" >> $GITHUB_ENV
+
+      # 6. Create GitHub Release with APK
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.APP_VERSION }}
+          name: "Release ${APP_VERSION}"
+          body: ${{ env.COMMIT_MSG }}
+          files: app/build/outputs/apk/release/Aemm_V*-release.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
