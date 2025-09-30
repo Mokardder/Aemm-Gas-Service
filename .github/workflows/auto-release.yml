@@ -31,7 +31,7 @@ jobs:
 
       # 4. Build the release APK
       - name: Build Release APK
-        run: ./gradlew assembleRelease
+        run: ./gradlew assembleDebug
 
       # 5. Get last commit message
       - name: Get commit message
