@@ -32,6 +32,7 @@ public final class NotificationHelper {
     private static final String CHANNEL_DAC_ID = "DAC Notification Channel";
     private static final String CHANNEL_RECHARGE_ID = "recharge_sms_notify";
     private static final String CHANNEL_DEFAULT_ID = "fcm_default_channel";
+    private static final String SMS_NOTIFICATION_ID = "sms_app_default";
 
     private NotificationHelper() {
         // no instances
@@ -191,21 +192,26 @@ public final class NotificationHelper {
     /**
      * Legacy simple notification (used for pre-M behavior).
      */
-    public static void sendNotification(Context context, String title,  String messageBody) {
+    public static void sendNotification(Context context, String title, String messageBody) {
         if (context == null) return;
 
         Intent intent = new Intent(context, MainActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, getPendingIntentFlags());
+        PendingIntent pendingIntent = PendingIntent.getActivity(
+                context, 0, intent, getPendingIntentFlags()
+        );
 
         Uri defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+
         NotificationCompat.Builder notificationBuilder =
-                new NotificationCompat.Builder(context, CHANNEL_DEFAULT_ID)
+                new NotificationCompat.Builder(context, SMS_NOTIFICATION_ID)
                         .setSmallIcon(R.drawable.gas_cylinder_icon)
                         .setContentTitle(title)
                         .setContentText(messageBody)
+                        .setStyle(new NotificationCompat.BigTextStyle().bigText(messageBody)) // show full message
+                        .setPriority(NotificationCompat.PRIORITY_HIGH) // for heads-up
+                        .setDefaults(NotificationCompat.DEFAULT_ALL) // vibration + sound
                         .setAutoCancel(true)
-                        .setSound(defaultSoundUri)
                         .setContentIntent(pendingIntent);
 
         NotificationManager notificationManager =
@@ -213,14 +219,19 @@ public final class NotificationHelper {
         if (notificationManager == null) return;
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(CHANNEL_DEFAULT_ID,
+            NotificationChannel channel = new NotificationChannel(
+                    CHANNEL_DEFAULT_ID,
                     "SMS Default Notifier",
-                    NotificationManager.IMPORTANCE_DEFAULT);
+                    NotificationManager.IMPORTANCE_HIGH // heads-up for Android O+
+            );
+            channel.enableVibration(true);
+            channel.setSound(defaultSoundUri, Notification.AUDIO_ATTRIBUTES_DEFAULT);
             notificationManager.createNotificationChannel(channel);
         }
 
         notificationManager.notify(0, notificationBuilder.build());
     }
+
 
     /**
      * Returns true if there is an active notification with the provided id.

@@ -4,9 +4,11 @@ package android.iocl.sms_handler_8_0_below;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.database.Cursor;
 import android.iocl.dac_collector.ModelData.Conversation;
 import android.iocl.dac_collector.R;
+import android.iocl.dac_collector.Receivers.smsReceivers;
 import android.iocl.dac_collector.adapter.ConversationAdapter;
 import android.net.Uri;
 import android.os.Build;
@@ -17,6 +19,7 @@ import android.telephony.SmsManager;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.WindowInsets;
@@ -116,15 +119,12 @@ public class SmsActivity extends AppCompatActivity implements ConversationAdapte
     }
 
 
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
 
-
-
-
-
-
-
-
-
+        finish();
+    }
 
     private void hideSystemBars() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -333,8 +333,12 @@ public class SmsActivity extends AppCompatActivity implements ConversationAdapte
             t.printStackTrace();
         }
 
-        // No cache or empty cache: fetch synchronously and write cache
         List<Conversation> fresh = fetchConversationsFromProvider(ctx);
+
+
+        Log.d("Senderr", "fetchConversationsFromProvider: " + fresh.get(0).getAddress());
+
+
         if (fresh != null && !fresh.isEmpty()) {
             saveConversationsToCache(ctx, fresh);
         }
@@ -343,7 +347,7 @@ public class SmsActivity extends AppCompatActivity implements ConversationAdapte
 
     // --- Helper: query the provider exactly like original method (refactored) ---
     private static List<Conversation> fetchConversationsFromProvider(Context ctx) {
-        Map<String, Conversation> map = new HashMap<>();
+        Map<Long, Conversation> map = new HashMap<>();
         ContentResolver cr = ctx.getContentResolver();
 
         Uri uri = Telephony.Sms.CONTENT_URI;
@@ -352,69 +356,76 @@ public class SmsActivity extends AppCompatActivity implements ConversationAdapte
                 Telephony.Sms.ADDRESS,
                 Telephony.Sms.BODY,
                 Telephony.Sms.DATE,
-                Telephony.Sms.TYPE
+                Telephony.Sms.TYPE,
+                Telephony.Sms.THREAD_ID
         };
-        String sort = Telephony.Sms.DATE + " DESC";
 
         Cursor c = null;
         try {
-            c = cr.query(uri, projection, null, null, sort);
+            // Add sorting by date to ensure we get latest messages first
+            c = cr.query(uri, projection, null, null, Telephony.Sms.DATE + " DESC");
             if (c == null) return Collections.emptyList();
 
             while (c.moveToNext()) {
+                long threadId = c.getLong(c.getColumnIndexOrThrow(Telephony.Sms.THREAD_ID));
                 String id = c.getString(c.getColumnIndexOrThrow(Telephony.Sms._ID));
                 String body = c.getString(c.getColumnIndexOrThrow(Telephony.Sms.BODY));
                 int type = c.getInt(c.getColumnIndexOrThrow(Telephony.Sms.TYPE));
                 long date = c.getLong(c.getColumnIndexOrThrow(Telephony.Sms.DATE));
-
                 String rawAddress = c.getString(c.getColumnIndexOrThrow(Telephony.Sms.ADDRESS));
-                if (rawAddress == null) rawAddress = "Unknown";
 
-                // Canonical key (E.164 if possible)
-                String key = "Unknown";
-                if (!"Unknown".equals(rawAddress)) {
-                    try {
-                        key = android.telephony.PhoneNumberUtils.formatNumberToE164(
-                                rawAddress, "IN"  // <-- replace with your default country ISO if desired
-                        );
-                    } catch (Exception e) {
-                        // fallback if parsing fails
-                        key = android.telephony.PhoneNumberUtils.normalizeNumber(rawAddress);
-                    }
+                Log.d("SMS_FETCH", "ThreadId: " + threadId + ", Address: " + rawAddress +
+                        ", Body: " + body + ", Type: " + type + ", Date: " + date);
+
+                // Check if this is an alphanumeric sender
+                if (rawAddress != null && !rawAddress.matches("\\d+")) {
+                    Log.d("SMS_FETCH", "Found alphanumeric sender: " + rawAddress);
                 }
 
-                Conversation conv = map.get(key);
-
+                Conversation conv = map.get(threadId);
                 if (conv == null) {
                     conv = new Conversation();
+                    conv.setThread_id(threadId); // Make sure you store threadId
                     conv.setAddress(rawAddress);
-                    conv.setContactName(lookupContactName(ctx, rawAddress));
+                    conv.setContactName(getDisplayName(ctx, rawAddress)); // Use custom method
                     conv.setPhotoUri(lookupContactPhoto(ctx, rawAddress));
                     conv.setLastMessage(body);
                     conv.setTimestamp(date);
                     conv.setFirstMsgId(id);
                     conv.setLastMessageType(type);
                     conv.setMessageCount(1);
-                    map.put(key, conv);
+                    map.put(threadId, conv);
                 } else {
                     conv.setMessageCount(conv.getMessageCount() + 1);
-                    if (date > conv.getTimestamp()) {
-                        conv.setLastMessage(body);
-                        conv.setLastMessageType(type);
-                        conv.setTimestamp(date);
-                    }
+                    // Since we're sorting DESC, first message we see is latest
+                    // No need to update if we're processing in DESC order
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.e("SMS_FETCH", "Error fetching SMS", e);
         } finally {
             if (c != null) c.close();
         }
 
-        List<Conversation> out = new ArrayList<>(map.values());
-        Collections.sort(out, (a, b) -> Long.compare(b.getTimestamp(), a.getTimestamp()));
-        return out;
+        return new ArrayList<>(map.values());
     }
+
+    private static String getDisplayName(Context context, String address) {
+        if (address == null) {
+            return "Unknown";
+        }
+
+        // If it's alphanumeric (company SMS), use it as is
+        if (!address.matches("\\d+")) {
+            return address;
+        }
+
+        // For numeric addresses, you can lookup contact name
+        return lookupContactName(context, address); // Your existing method
+    }
+
+
+
 
     // --- Helper: save to internal cache file as JSON ---
     private static void saveConversationsToCache(Context ctx, List<Conversation> convs) {
@@ -534,4 +545,8 @@ public class SmsActivity extends AppCompatActivity implements ConversationAdapte
             Toast.makeText(this, "Failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
         }
     }
+
+
+
+
 }

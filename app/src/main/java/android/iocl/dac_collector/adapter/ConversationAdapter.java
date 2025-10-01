@@ -6,8 +6,10 @@ import android.iocl.dac_collector.ModelData.Conversation;
 import android.iocl.dac_collector.R;
 import android.iocl.sms_handler_8_0_below.SMSThreadActivity;
 import android.net.Uri;
+import android.os.Build;
 import android.provider.Telephony;
 import android.telephony.PhoneNumberUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -20,8 +22,17 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdView;
 
+import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 public class ConversationAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
@@ -117,12 +128,23 @@ public class ConversationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
             Conversation c = (Conversation) displayList.get(position);
             VH vh = (VH) holder;
 
+
+            Log.d("Testtt", "onBindViewHolder: " + c.getAddress());
+
             vh.tvName.setText(c.getContactName() != null ? c.getContactName() : c.getAddress());
             String lastMsg = c.getLastMessage() != null ? c.getLastMessage() : "";
+            long timeStamp = c.getTimestamp();
+
+
+            Log.d("TS", "raw ts=" + timeStamp);
+
+
+            String timeStampPretty = formatTimestampPretty(timeStamp);
             if (c.getLastMessageType() == Telephony.Sms.MESSAGE_TYPE_SENT) {
                 lastMsg = "You: " + lastMsg;
             }
             vh.tvSnippet.setText(lastMsg);
+            vh.txtTime.setText(timeStampPretty);
 
             if (c.getPhotoUri() != null) {
                 // setImageURI can be problematic for remote loading; keep it but guard
@@ -158,9 +180,49 @@ public class ConversationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         return displayList.size();
     }
 
+
+    // helper method
+    public static String formatTimestampPretty(long ts) {
+        // detect seconds vs milliseconds (common pitfall)
+        if (ts > 0 && ts < 1_000_000_000_000L) {
+            ts = ts * 1000L; // treat as seconds -> convert to ms
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            ZoneId zone = ZoneId.systemDefault();
+            Instant inst = Instant.ofEpochMilli(ts);
+            ZonedDateTime zdt = inst.atZone(zone);
+            LocalDate date = zdt.toLocalDate();
+            LocalDate today = LocalDate.now(zone);
+
+            DateTimeFormatter formatter;
+            if (date.equals(today)) {
+                formatter = DateTimeFormatter.ofPattern("hh:mm a", Locale.ENGLISH);
+            } else {
+                formatter = DateTimeFormatter.ofPattern("dd-MM-yy hh:mm a", Locale.ENGLISH);
+            }
+            return formatter.format(zdt).toLowerCase(Locale.ROOT);
+        } else {
+            Calendar cal = Calendar.getInstance();
+            cal.setTimeInMillis(ts);
+
+            Calendar today = Calendar.getInstance();
+            boolean isToday = cal.get(Calendar.YEAR) == today.get(Calendar.YEAR)
+                    && cal.get(Calendar.DAY_OF_YEAR) == today.get(Calendar.DAY_OF_YEAR);
+
+            SimpleDateFormat sdf;
+            if (isToday) {
+                sdf = new SimpleDateFormat("hh:mm a", Locale.getDefault());
+            } else {
+                sdf = new SimpleDateFormat("dd-MM-yy hh:mm a", Locale.getDefault());
+            }
+            return sdf.format(new Date(ts)).toLowerCase(Locale.ROOT);
+        }
+    }
+
     // Conversation ViewHolder
     static class VH extends RecyclerView.ViewHolder {
-        TextView tvName, tvSnippet;
+        TextView tvName, tvSnippet, txtTime;
         ImageView ivAvatar;
 
         public VH(@NonNull View itemView) {
@@ -168,6 +230,7 @@ public class ConversationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
             tvName = itemView.findViewById(R.id.txtContactName);
             tvSnippet = itemView.findViewById(R.id.txtLastMessage);
             ivAvatar = itemView.findViewById(R.id.imgAvatar);
+            txtTime = itemView.findViewById(R.id.txtTime);
         }
     }
 

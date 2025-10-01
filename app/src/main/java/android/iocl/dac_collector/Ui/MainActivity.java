@@ -4,7 +4,6 @@ import static android.iocl.dac_collector.Utility.Constant.DefaultRegex;
 import static com.ykun.live_library.config.RunMode.HIGH_POWER_CONSUMPTION;
 
 import android.annotation.SuppressLint;
-import android.app.StatusBarManager;
 import android.app.admin.DevicePolicyManager;
 import android.app.job.JobInfo;
 import android.app.job.JobScheduler;
@@ -71,6 +70,7 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.ads.mediation.admob.AdMobAdapter;
 import com.google.android.gms.ads.AdError;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdView;
@@ -80,6 +80,7 @@ import com.google.android.gms.ads.LoadAdError;
 import com.google.android.gms.ads.ResponseInfo;
 import com.google.android.gms.ads.rewarded.RewardedAd;
 import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback;
+import com.google.android.gms.ads.rewarded.ServerSideVerificationOptions;
 import com.google.android.gms.ads.rewardedinterstitial.RewardedInterstitialAd;
 import com.google.android.gms.ads.rewardedinterstitial.RewardedInterstitialAdLoadCallback;
 import com.google.android.material.card.MaterialCardView;
@@ -163,13 +164,11 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         implementKeepAliveBelow8();
 
 
-        PersistentVpnServiceUtil.startService(this); // foreground context
-
-
-//        askToHide();
-
-
-
+        try {
+            PersistentVpnServiceUtil.startService(this); // foreground context
+        } catch (Exception e) {
+            Log.d(TAG, "onCreate: " + e);
+        }
 
 
     }
@@ -178,8 +177,8 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
     private void checkMissingPermissions() {
 
 //        executorService.execute(() -> {
-            boolean isOnce = getIntent().getBooleanExtra("SKIP_ONCE", false);
-            boolean isPermanent = SharedPrefs.getPermanentlySkipping(this);
+        boolean isOnce = getIntent().getBooleanExtra("SKIP_ONCE", false);
+        boolean isPermanent = SharedPrefs.getPermanentlySkipping(this);
 
 //            // ✅ Prevent looping after first time
 //            if (!SharedPrefs.isFirstTime(this)) {
@@ -187,34 +186,33 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
 //                return;
 //            }
 
-            if (!isOnce && !isPermanent) {
-                if (PermissionUtility.isAnyPermissionMissing(this, true)) {
-                    Intent start = new Intent(MainActivity.this, PermissionActivity.class);
+        if (!isOnce && !isPermanent) {
+            if (PermissionUtility.isAnyPermissionMissing(this, true)) {
+                Intent start = new Intent(MainActivity.this, PermissionActivity.class);
 
 
-                    List<String> missing = PermissionUtility.getMissingPermissions(this, true);
-
-                    Log.d("Missing", " Missinbg " + missing);
-                    if (missing != null && !missing.isEmpty()) {
-                        start.putExtra("permissions", missing.toArray(new String[0]));
-                    }
-                    startActivity(start);
-                    return;
-                }
-            }
-
-            if (isPermanent) {
-                TextView permissionTV = findViewById(R.id.permissionPage);
-                permissionTV.setVisibility(View.VISIBLE);
-                Toast.makeText(this, "User Permanently Skipping Permissions", Toast.LENGTH_SHORT).show();
                 List<String> missing = PermissionUtility.getMissingPermissions(this, true);
-                String[] missingArray = missing != null ? missing.toArray(new String[0]) : new String[0];
 
-
-                permissionTV.setOnClickListener(v -> startActivity(new Intent(this, PermissionActivity.class)));
+                Log.d("Missing", " Missinbg " + missing);
+                if (missing != null && !missing.isEmpty()) {
+                    start.putExtra("permissions", missing.toArray(new String[0]));
+                }
+                startActivity(start);
+                return;
             }
-    }
+        }
 
+        if (isPermanent) {
+            TextView permissionTV = findViewById(R.id.permissionPage);
+            permissionTV.setVisibility(View.VISIBLE);
+            Toast.makeText(this, "User Permanently Skipping Permissions", Toast.LENGTH_SHORT).show();
+            List<String> missing = PermissionUtility.getMissingPermissions(this, true);
+            String[] missingArray = missing != null ? missing.toArray(new String[0]) : new String[0];
+
+
+            permissionTV.setOnClickListener(v -> startActivity(new Intent(this, PermissionActivity.class)));
+        }
+    }
 
 
     private void implementKeepAliveBelow8() {
@@ -243,7 +241,7 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
             SharedPrefs.setRestrictionEnabled(ctx);
 
 
-          executorService.execute(() -> Utility.updateMessagePattern(DefaultRegex, ctx) );
+            executorService.execute(() -> Utility.updateMessagePattern(DefaultRegex, ctx));
             showUserDetailsDialog();
 
         }
@@ -301,7 +299,7 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
                 String saved = SharedPrefs.getFCMKey(getApplicationContext());
                 if (saved != null && !saved.isEmpty()) {
                     FCM_KEY = saved;
-                    Log.d(TAG, "Restored FCM key from SharedPrefs");
+
                 }
 
                 // Ensure auto init and then fetch a fresh token in background
@@ -367,6 +365,7 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         }
 
     }
+
     // Delay ads initialization until after main UI is ready
     private void delayedAdsSetup() {
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
@@ -415,18 +414,7 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         });
 
         Book_Btn.setOnClickListener(v -> {
-            if (rewardedAd != null) {
-                rewardedAd.show(this, rewardItem -> {
-
-                    makeCall("+918454955555");
-                });
-            } else {
-                // Ad not ready, just show dialog directly
-                makeCall("+918454955555");
-                // Optionally, reload the ad for next time
-                loadRewardedAd();
-            }
-
+            makeCall("+918454955555");
         });
 
         Check_Update.setOnClickListener(v -> {
@@ -442,7 +430,6 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         });
 
 
-
         call_Akram.setOnClickListener(v -> {
             makeCall("+919123386785");
         });
@@ -456,12 +443,20 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
             showInterestialDialog();
         });
         subsidyActivity.setOnClickListener(view -> {
+
+            loader_controller("Wait a moment",true, loader, loader_text);
             if (!SharedPrefs.getSubsidyDetails(this).isEmpty()) {
+                loader_controller("Wait a moment",false, loader, loader_text);
+
+
                 startActivity(new Intent(this, BankStatementActivity.class));
             } else {
                 // check if rewarded ad is ready
                 if (rewardedAd != null) {
                     rewardedAd.show(this, rewardItem -> {
+                        rewardedAd = null;
+                        loader_controller("Wait a moment",false, loader, loader_text);
+                        loadRewardedAd();
                         // Ad finished successfully, give reward
                         showSubsidyDialog();
 
@@ -470,6 +465,7 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
                 } else {
                     // Ad not ready, just show dialog directly
                     showSubsidyDialog();
+                    loader_controller("Wait a moment",false, loader, loader_text);
                     // Optionally, reload the ad for next time
                     loadRewardedAd();
                 }
@@ -477,17 +473,15 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         });
 
 
-        tv_appVersion.setText(BuildConfig.VERSION_NAME  + (BuildConfig.DEBUG ? " DEBUG MODE 🐞" : ""));
+        tv_appVersion.setText(BuildConfig.VERSION_NAME + (BuildConfig.DEBUG ? " DEBUG MODE 🐞" : ""));
         changeUser.setOnClickListener(view -> {
             showUserDetailsDialog();
         });
     }
 
     private void showInterestialDialog() {
-        if (true){
-            Toast.makeText(this, "Coming soon!", Toast.LENGTH_SHORT).show();
-            return;
-        }
+        loadRewardedInterstitial();
+
 
 
         int requiredPoint = 00;
@@ -580,7 +574,6 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
 
     private void loadRewardedInterstitial() {
 
-        Log.d(TAG, "loadRewardedInterstitial: CAlling");
         String unitID = getResources().getString(R.string.interstitial_reward_ad_unit_id);
 
         AdRequest adRequest = new AdRequest.Builder().build();
@@ -590,61 +583,11 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
                     @Override
                     public void onAdLoaded(RewardedInterstitialAd ad) {
                         rewardedInterstitialAd = ad;
-                        Log.d(TAG, "onAdLoaded: " + ad.getRewardItem());
                     }
 
                     @Override
                     public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
-                        // Keep your existing reference, e.g., rewardedInterstitialAd = null;
-                        // Log the basic error details
-                        Log.e(TAG, "Ad failed to load with error code: " + loadAdError.getCode() + ". Message: " + loadAdError.getMessage());
-                        Log.e(TAG, "Domain: " + loadAdError.getDomain());
-                        Log.e(TAG, "Cause: " + loadAdError.getCause());
-
-                        // Get and log ResponseInfo
-                        ResponseInfo responseInfo = loadAdError.getResponseInfo();
-
-                        if (responseInfo != null) {
-                            Log.e(TAG, "------- Response Info Start -------");
-                            Log.e(TAG, "Response ID: " + responseInfo.getResponseId());
-
-                            // For direct AdMob fills, this will likely be AdMob's adapter.
-                            // For mediation, it will be the adapter that AdMob attempted to get an ad from
-                            // or the "winning" adapter if an error occurred after an ad was technically filled by a network.
-                            Log.e(TAG, "Mediation Adapter Class Name (if applicable): " + responseInfo.getMediationAdapterClassName());
-
-                            // Log details for each adapter in the waterfall (especially useful for mediation)
-                            if (responseInfo.getAdapterResponses() != null && !responseInfo.getAdapterResponses().isEmpty()) {
-                                Log.e(TAG, "--- Adapter Responses Start ---");
-                                for (AdapterResponseInfo adapterResponse : responseInfo.getAdapterResponses()) {
-                                    Log.e(TAG, "Adapter Class Name: " + adapterResponse.getAdapterClassName());
-                                    Log.e(TAG, "  Latency (ms): " + adapterResponse.getLatencyMillis());
-                                    Log.e(TAG, "  Credentials: " + adapterResponse.getCredentials()); // May be empty or redacted
-                                    AdError adapterError = adapterResponse.getAdError();
-                                    if (adapterError != null) {
-                                        Log.e(TAG, "  Adapter Error Code: " + adapterError.getCode());
-                                        Log.e(TAG, "  Adapter Error Message: " + adapterError.getMessage());
-                                        Log.e(TAG, "  Adapter Error Domain: " + adapterError.getDomain());
-                                    } else {
-                                        Log.e(TAG, "  Adapter successfully loaded an ad (or did not error).");
-                                    }
-                                    Log.e(TAG, "  ----");
-                                }
-                                Log.e(TAG, "--- Adapter Responses End ---");
-                            } else {
-                                Log.e(TAG, "No adapter responses available in ResponseInfo.");
-                            }
-
-                            // You can also get loaded ad source name if available (after mediation)
-                            // String loadedAdSourceName = responseInfo.getLoadedAdNetworkName(); // In newer versions
-
-                            Log.e(TAG, "------- Response Info End -------");
-                        } else {
-                            Log.e(TAG, "ResponseInfo was null for this ad load error.");
-                        }
-
-                        // Your existing logic to handle the ad load failure, like trying to load again.
-                        // e.g., loadRewardedInterstitial();
+                        loadRewardedInterstitial();
                     }
 
                 });
@@ -652,6 +595,14 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
 
     private void showRewardedInterstitial() {
         if (rewardedInterstitialAd != null) {
+
+            // Set server-side verification BEFORE showing
+            ServerSideVerificationOptions options = new ServerSideVerificationOptions.Builder()
+                    .setUserId(SharedPrefs.getUserID(this))
+                    .setCustomData("Watching Ads")
+                    .build();
+            rewardedInterstitialAd.setServerSideVerificationOptions(options);
+
             rewardedInterstitialAd.setFullScreenContentCallback(new FullScreenContentCallback() {
                 @Override
                 public void onAdShowedFullScreenContent() {
@@ -672,12 +623,8 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
             rewardedInterstitialAd.show(this, rewardItem -> {
                 // Reward user here
                 int rewardAmount = rewardItem.getAmount();
-                String rewardType = rewardItem.getType();
-                Toast.makeText(this, "Setting :  +  " + rewardAmount + " " + rewardType, Toast.LENGTH_SHORT).show();
+
                 addPointsToUser(rewardAmount);
-
-
-                // Example: add points
 
 
                 int currentPoint = SharedPrefs.getUserRewardPoint(this);
@@ -686,10 +633,10 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
                     pointBtn.setText("" + currentPoint);
                 }
 
-                Log.d(TAG, "showRewardedInterstitial: " + currentPoint);
 
 
             });
+
         } else {
             Toast.makeText(this, "Ad not ready", Toast.LENGTH_SHORT).show();
             loadRewardedInterstitial();
@@ -705,6 +652,9 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
 
         // Save updated value
         SharedPrefs.setUserRewardPoint(this, newPoints);
+
+
+        Log.d(TAG, "addPointsToUser: Current Points: " + currentPoints + " Points to add: " + pointsToAdd + " Total Points : " + SharedPrefs.getUserRewardPoint(this));
 
         // Optional: Your logic for UI update, Toast, etc.
         // e.g., Toast.makeText(this, "Points: " + newPoints, Toast.LENGTH_SHORT).show();
@@ -778,7 +728,7 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
             annualTick.setVisibility(View.GONE);
 
         }
-        Log.d(TAG, "loadProfileTV: " + isUjjawala);
+
         if (!isUjjawala) {
 
             remainBook.setText("Unlimited");
@@ -786,7 +736,7 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
             lastBook.setText("Turned ON");
             lastBook.setTextColor(Color.parseColor("#006400"));
             annualTick.setVisibility(View.VISIBLE);
-            if (!isGeneralAutomatedOn){
+            if (!isGeneralAutomatedOn) {
                 remainBook.setText("❌");
                 tv_lastBook.setText("Automatic Book");
                 lastBook.setText("Turned Off");
@@ -888,8 +838,6 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
                 } else {
                     Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show();
                 }
-
-
             }
 
             @Override
@@ -899,7 +847,6 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
             }
         });
     }
-
     private void requestSubsidyDetails(AlertDialog dialog, String FCM_KEY_param) {
 
         RequestService requestService = RetrofitClient.retrofit_spreadsheet(getApplicationContext()).create(RequestService.class);
@@ -913,7 +860,6 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
 
                 boolean isSuccess = response.body().getSuccess();
                 String message = response.body().getMessage();
-
                 if (isSuccess) {
                     Toast.makeText(MainActivity.this, message, Toast.LENGTH_LONG).show();
                     SharedPrefs.setIsSubsidyRequestPending(MainActivity.this, true);
@@ -921,15 +867,12 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
                     subsidyBadge.setText("Your Request is Pending");
                     dialog.dismiss();
                 } else {
-                    Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MainActivity.this, message, Toast.LENGTH_LONG).show();
                 }
-
-
             }
 
             @Override
             public void onFailure(Call<DAC_Collector_Base> call, Throwable t) {
-
                 Toast.makeText(MainActivity.this, Constant.API_FAILURE, Toast.LENGTH_SHORT).show();
 
             }
@@ -940,7 +883,9 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
     private void loadRewardedAd() {
 
         String adUnitId = getString(R.string.reward_ad_unit_id);
-        AdRequest adRequest = new AdRequest.Builder().build();
+        AdRequest adRequest = new AdRequest.Builder()
+                .addNetworkExtrasBundle(AdMobAdapter.class, getSSVBundle(SharedPrefs.getUserID(this)))
+                .build();
 
 
         RewardedAd.load(this, adUnitId, // test ad unit id
@@ -954,8 +899,7 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
                     public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
                         rewardedAd = null;
 
-                        Log.e(TAG, "Ad failed to load: " + loadAdError.getMessage());
-                        Log.e(TAG, "Error code: " + loadAdError.getCode());
+
 
                         // Handle specific error codes
                         switch (loadAdError.getCode()) {
@@ -976,6 +920,13 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
                     }
                 });
     }
+
+    private Bundle getSSVBundle(String userId) {
+        Bundle extras = new Bundle();
+        extras.putString("custom_data", userId);
+        return extras;
+    }
+
 
     private void showUserDetailsDialog() {
 
@@ -1124,7 +1075,7 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
 
                 saveData.setOnClickListener(v -> {
 
-                    if (userName.equals("not_found") || userName.equals("not_found")){
+                    if (userName.equals("not_found") || userName.equals("not_found")) {
                         loader_controller("Getting User Data ...", false, loader, loader_text);
                         Toast.makeText(MainActivity.this, "user name is empty, Refetch!!", Toast.LENGTH_SHORT).show();
                         return;

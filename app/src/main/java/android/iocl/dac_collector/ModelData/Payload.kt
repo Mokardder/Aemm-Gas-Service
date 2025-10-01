@@ -20,6 +20,7 @@ data class SmsData(
 
 data class Conversation(
     var address: String = "",
+    var thread_id: Long = 0L,
     var contactName: String? = null,
     var lastMessage: String = "",
     var timestamp: Long = 0L,

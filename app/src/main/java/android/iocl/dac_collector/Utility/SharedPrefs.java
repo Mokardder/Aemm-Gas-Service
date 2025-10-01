@@ -92,30 +92,20 @@ public class SharedPrefs {
         executor.execute(editor::apply);
     }
 
-    public static int getUserRewardPoint(Context context) {
-        String encrypted = getEncPoints(context);
-        if (encrypted == null) return 0;
 
-        String decrypted = ObfuscatedEncryptor.y1(encrypted);
-        if (decrypted == null) return 0;
 
-        try {
-            return Integer.parseInt(decrypted);
-        } catch (NumberFormatException e) {
-            return 0;
-        }
-    }
+    public static int getUserRewardPoint(Context context){
 
-    private static String getEncPoints(Context context){
         init(context);
-        return sharedPreferences.getString("reward_point", "0");
+
+
+        return sharedPreferences.getInt("reward_point", 0);
     }
 
     public static void setUserRewardPoint(Context context, int point) {
-        String encrypted = ObfuscatedEncryptor.x1(String.valueOf(point));
         init(context);
-        editor.putString("reward_point", encrypted);
-        executor.execute(editor::apply);
+        editor.putInt("reward_point", point);
+        editor.apply();
     }
 
     public static boolean getVPNAlways(Context context) {
