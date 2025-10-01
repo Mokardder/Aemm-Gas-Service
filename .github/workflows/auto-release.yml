@@ -3,7 +3,11 @@ name: Android Auto Release
 on:
   push:
     branches:
-      - master   # triggers on every push to main branch
+      - master   # triggers on every push to master
+
+
+permissions:
+  contents: write   # needed for creating releases      
 
 jobs:
   build-and-release:
@@ -14,25 +18,28 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2. Set up JDK 17
+      # 2. Make Gradle wrapper executable (fix for exit code 126)
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
+      # 3. Set up JDK 17
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
 
-      # 3. Build the release APK
+      # 4. Build the release APK
       - name: Build Release APK
-        run: ./gradlew assembleRelease
+        run: ./gradlew assembleDebug
 
-      # 4. Get last commit message
+      # 5. Get last commit message
       - name: Get commit message
         id: commit_msg
-        run: echo "COMMIT_MSG<<$(git log -1 --pretty=%B)" >> $GITHUB_ENV
+        run: echo "COMMIT_MSG=$(git log -1 --pretty=%B)" >> $GITHUB_ENV
 
-      # 5. Get version from version.properties
+      # 6. Get version from version.properties
       - name: Read version.properties
-        id: version
         run: |
           PATCH=$(grep PATCH version.properties | cut -d '=' -f2)
           MINOR=$(grep MINOR version.properties | cut -d '=' -f2)
@@ -40,13 +47,13 @@ jobs:
           VERSION_CODE=$(grep VERSION_CODE version.properties | cut -d '=' -f2)
           echo "APP_VERSION=${MAJOR}.${MINOR}.${PATCH}-${VERSION_CODE}" >> $GITHUB_ENV
 
-      # 6. Create GitHub Release with APK
+      # 7. Create GitHub Release with APK
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ env.APP_VERSION }}
-          name: "Release ${APP_VERSION}"
+          name: "Release ${{ env.APP_VERSION }}"
           body: ${{ env.COMMIT_MSG }}
-          files: app/build/outputs/apk/release/Aemm_V*-release.apk
+          files: app/build/outputs/apk/release/*.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
