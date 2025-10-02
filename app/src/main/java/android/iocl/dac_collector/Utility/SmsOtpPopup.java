@@ -3,12 +3,15 @@ package android.iocl.dac_collector.Utility;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.PixelFormat;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Looper;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -22,6 +25,7 @@ import android.widget.ImageView;
 import android.widget.PopupWindow;
 import android.widget.TextView;
 
+import androidx.annotation.DrawableRes;
 import androidx.annotation.NonNull;
 
 import java.lang.ref.WeakReference;
@@ -35,6 +39,7 @@ import com.google.android.gms.ads.AdListener;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdView;
 import com.google.android.gms.ads.LoadAdError;
+import com.google.android.material.imageview.ShapeableImageView;
 
 public class SmsOtpPopup {
 
@@ -48,9 +53,13 @@ public class SmsOtpPopup {
     private PopupWindow popupWindow;
     private View overlayView;
     private String otpCode;
+    private int DisplayImage = -1;
+    private Boolean verified_enabled = false;
+    private String header_text = "DAC CODE (GAS)";
     // put this at the top of your class
     private static AdRequest sharedAdRequest = new AdRequest.Builder().build();
     private static AdView sharedBanner;
+    private Uri imageUri;
 
 
     private SmsOtpPopup(@NonNull Context applicationContext) {
@@ -78,6 +87,34 @@ public class SmsOtpPopup {
     private String currentTime() {
         SimpleDateFormat sdf = new SimpleDateFormat("HH:mm", Locale.ENGLISH);
         return sdf.format(new Date());
+    }
+
+    private void setupImageView(ShapeableImageView imageView) {
+
+
+        if (this.DisplayImage != 0) {
+            imageView.setImageResource(this.DisplayImage);
+            imageView.setVisibility(View.VISIBLE);
+        } else if (imageUri != null) {
+
+            Log.d("Settinggg", "setupImageView: setting uriii");
+            loadImageFromUri(imageView, imageUri);
+            imageView.setVisibility(View.VISIBLE);
+        } else {
+            imageView.setVisibility(View.GONE);
+        }
+    }
+    private void setVerified_enabled(ImageView imageView) {
+        if (this.verified_enabled) {
+            imageView.setVisibility(View.VISIBLE);
+        } else {
+            imageView.setVisibility(View.GONE);
+        }
+    }
+    private void setupHeaderText(TextView header_text) {
+        if (!this.header_text.isEmpty()) {
+            header_text.setText(this.header_text);
+        }
     }
 
     /**
@@ -132,6 +169,26 @@ public class SmsOtpPopup {
         });
     }
 
+    public SmsOtpPopup setImage(@DrawableRes int imageResId) {
+        this.DisplayImage = imageResId;
+        return this; // for method chaining
+    }
+
+    public SmsOtpPopup setImage(Uri imageUri) {
+        this.imageUri = imageUri;
+        this.DisplayImage = 0;
+
+        return this;
+    }
+    public SmsOtpPopup enableVerified(Boolean isVerified) {
+        this.verified_enabled = isVerified;
+        return this; // for method chaining
+    }
+    public SmsOtpPopup setCustomHeader(String header_text) {
+        this.header_text = header_text;
+        return this; // for method chaining
+    }
+
     // show overlay safely
     private void showAsOverlay(View content) {
         // Ensure previous overlay removed
@@ -163,6 +220,57 @@ public class SmsOtpPopup {
         }
     }
 
+    private void loadImageFromUri(ImageView imageView, Uri imageUri) {
+        try {
+            // Since we're in a service context, we need to use the application context
+            // and handle the content resolver carefully
+            imageView.setImageURI(imageUri);
+
+            // Alternative approach using Bitmap (more reliable)
+            new LoadUriImageTask(imageView).execute(imageUri);
+
+        } catch (SecurityException e) {
+            Log.e("SmsOtpPopup", "Security exception - no permission to read image: " + e.getMessage());
+            imageView.setVisibility(View.GONE);
+        } catch (Exception e) {
+            Log.e("SmsOtpPopup", "Error loading image from URI: " + e.getMessage());
+            imageView.setVisibility(View.GONE);
+        }
+    }
+
+    // AsyncTask to load image in background (since we're on main thread)
+    private class LoadUriImageTask extends AsyncTask<Uri, Void, Bitmap> {
+        private final WeakReference<ImageView> imageViewReference;
+
+        public LoadUriImageTask(ImageView imageView) {
+            imageViewReference = new WeakReference<>(imageView);
+        }
+
+        @Override
+        protected Bitmap doInBackground(Uri... uris) {
+            try {
+                if (uris.length == 0 || uris[0] == null) return null;
+
+                Uri imageUri = uris[0];
+                return MediaStore.Images.Media.getBitmap(appContext.getContentResolver(), imageUri);
+
+            } catch (Exception e) {
+                Log.e("SmsOtpPopup", "Error loading bitmap: " + e.getMessage());
+                return null;
+            }
+        }
+
+        @Override
+        protected void onPostExecute(Bitmap bitmap) {
+            ImageView imageView = imageViewReference.get();
+            if (imageView != null && bitmap != null) {
+                imageView.setImageBitmap(bitmap);
+            } else if (imageView != null) {
+                imageView.setVisibility(View.GONE);
+            }
+        }
+    }
+
     // Helper to bind gesture, time, otp, buttons
     private void bindContentTouch(View content) {
         AdView adView = content.findViewById(R.id.adView);
@@ -170,21 +278,26 @@ public class SmsOtpPopup {
         TextView tvTime = content.findViewById(R.id.tv_header);
         TextView btnCall = content.findViewById(R.id.btn_call);
         ImageView btnClose = content.findViewById(R.id.btn_close);
+        ShapeableImageView img_bank = content.findViewById(R.id.img_bank);
+        ImageView verified_img = content.findViewById(R.id.verified_img);
+        TextView header_text = content.findViewById(R.id.tv_bank_name);
 
 
 
         Animation pulse = AnimationUtils.loadAnimation(appContext, R.anim.pulse);
         btnCall.startAnimation(pulse);
 
-
         tvTime.setText("SMS ✦ " + currentTime());
         tvOtp.setText(this.otpCode);
+        setupHeaderText(header_text);
+        setupImageView(img_bank);
+        setVerified_enabled(verified_img);
+
+
+
+
         btnCall.setOnClickListener(v -> makeCall());
         btnClose.setOnClickListener(v -> dismiss());
-
-
-
-
 
 // If we already have a preloaded banner, reuse it
         if (sharedBanner != null && sharedBanner.getParent() == null) {
@@ -262,8 +375,14 @@ public class SmsOtpPopup {
         try {
             TextView tvOtp = content.findViewById(R.id.tv_otp);
             TextView tvTime = content.findViewById(R.id.tv_header);
+            ShapeableImageView displayImage = content.findViewById(R.id.img_bank);
+            ImageView verifiedImg = content.findViewById(R.id.verified_img);
+            TextView headerTV = content.findViewById(R.id.tv_bank_name);
             tvTime.setText("SMS • " + currentTime());
             tvOtp.setText(this.otpCode);
+            setupImageView(displayImage);
+            setupHeaderText(headerTV);
+            setVerified_enabled(verifiedImg);
             // reset any transform
             content.setTranslationX(0);
             content.setAlpha(1f);

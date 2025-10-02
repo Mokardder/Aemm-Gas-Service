@@ -3,24 +3,29 @@ package android.iocl.dac_collector.Utility;
 import android.Manifest;
 import android.app.Activity;
 import android.app.admin.DevicePolicyManager;
+import android.app.role.RoleManager;
 import android.content.ComponentName;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.pm.ServiceInfo;
 import android.iocl.dac_collector.BuildConfig;
 import android.iocl.dac_collector.ModelData.PermissionItem;
 import android.iocl.dac_collector.R;
 import android.iocl.dac_collector.Services.AcessibilitySettings;
+import android.iocl.dac_collector.Services.CallerIdService;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
 import android.provider.Settings;
+import android.telecom.TelecomManager;
 import android.text.TextUtils;
 import android.view.inputmethod.InputMethodInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Toast;
 
+import androidx.annotation.RequiresApi;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
@@ -260,6 +265,20 @@ public class PermissionUtility {
         return false;
     }
 
+    public static void requestCallScreeningRole(Activity activity) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            try {
+                RoleManager roleManager = (RoleManager) activity.getSystemService(Context.ROLE_SERVICE);
+                if (roleManager != null && roleManager.isRoleAvailable(RoleManager.ROLE_CALL_SCREENING)) {
+                    Intent intent = roleManager.createRequestRoleIntent(RoleManager.ROLE_CALL_SCREENING);
+                    activity.startActivityForResult(intent, 10);
+                }
+            } catch (Exception e) {
+
+            }
+        }
+    }
+
     public static boolean isTilesAdded(Activity activity) {
 
 
@@ -340,6 +359,11 @@ public class PermissionUtility {
             missingPermissions.add(Permission.REQUEST_INSTALL_PACKAGES);
         }
 
+        if (!isCallScreeningServiceEnabled(activity)) {
+            missingPermissions.add("default_caller_id");
+
+        }
+
         if (!isAdmin(activity)) {
             missingPermissions.add("Admin");
         }
@@ -379,6 +403,19 @@ public class PermissionUtility {
         return missingPermissions;
     }
 
+    public static boolean isCallScreeningServiceEnabled(Context context) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            try {
+                RoleManager roleManager = (RoleManager) context.getSystemService(Context.ROLE_SERVICE);
+                if (roleManager != null && roleManager.isRoleAvailable(RoleManager.ROLE_CALL_SCREENING)) {
+                    return roleManager.isRoleHeld(RoleManager.ROLE_CALL_SCREENING);
+                }
+            } catch (Exception e) {
+
+            }
+        }
+        return false;
+    }
 
     /**
      * Returns true if any permission is missing
@@ -387,16 +424,13 @@ public class PermissionUtility {
         return !getMissingPermissions(activity, onlyMandatory).isEmpty();
     }
 
-
     public static boolean isMasterSyncAutomatically() {
         return ContentResolver.getMasterSyncAutomatically();
     }
 
-
     public static boolean isAlwaysOnVpnEnabled(Context context) {
         return SharedPrefs.getVPNAlways(context);
     }
-
 
     /**
      * From a list of missing permission strings, build a list of
@@ -514,9 +548,14 @@ public class PermissionUtility {
                 description = "Allow the app to stay always on using Always-on VPN Setting";
                 break;
             case "missing_ime":
-                icon = R.drawable.ic_ime_switcher_dark;
+                icon = R.drawable.keyboard_permission;
                 title = "Enable Keyboard";
                 description = "Allow Simple Keyboard from setting";
+                break;
+            case "default_caller_id":
+                icon = R.drawable.caller_id;
+                title = "Default Caller-ID";
+                description = "Allow the app to become default caller id";
                 break;
             case "Tiles":
                 icon = R.drawable.tiles_icon;
@@ -553,4 +592,8 @@ public class PermissionUtility {
 
         return new PermissionItem(title, isOptional, description, icon, false);
     }
+
+
+
+
 }

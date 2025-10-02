@@ -74,10 +74,8 @@ import com.google.ads.mediation.admob.AdMobAdapter;
 import com.google.android.gms.ads.AdError;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdView;
-import com.google.android.gms.ads.AdapterResponseInfo;
 import com.google.android.gms.ads.FullScreenContentCallback;
 import com.google.android.gms.ads.LoadAdError;
-import com.google.android.gms.ads.ResponseInfo;
 import com.google.android.gms.ads.rewarded.RewardedAd;
 import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback;
 import com.google.android.gms.ads.rewarded.ServerSideVerificationOptions;
@@ -89,6 +87,8 @@ import com.google.firebase.analytics.FirebaseAnalytics;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.ykun.live_library.KeepAliveManager;
 import com.ykun.live_library.config.ForegroundNotification;
+
+import org.json.JSONObject;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
@@ -444,9 +444,9 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         });
         subsidyActivity.setOnClickListener(view -> {
 
-            loader_controller("Wait a moment",true, loader, loader_text);
+            loader_controller("Wait a moment", true, loader, loader_text);
             if (!SharedPrefs.getSubsidyDetails(this).isEmpty()) {
-                loader_controller("Wait a moment",false, loader, loader_text);
+                loader_controller("Wait a moment", false, loader, loader_text);
 
 
                 startActivity(new Intent(this, BankStatementActivity.class));
@@ -455,7 +455,7 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
                 if (rewardedAd != null) {
                     rewardedAd.show(this, rewardItem -> {
                         rewardedAd = null;
-                        loader_controller("Wait a moment",false, loader, loader_text);
+                        loader_controller("Wait a moment", false, loader, loader_text);
                         loadRewardedAd();
                         // Ad finished successfully, give reward
                         showSubsidyDialog();
@@ -465,7 +465,7 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
                 } else {
                     // Ad not ready, just show dialog directly
                     showSubsidyDialog();
-                    loader_controller("Wait a moment",false, loader, loader_text);
+                    loader_controller("Wait a moment", false, loader, loader_text);
                     // Optionally, reload the ad for next time
                     loadRewardedAd();
                 }
@@ -481,7 +481,6 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
 
     private void showInterestialDialog() {
         loadRewardedInterstitial();
-
 
 
         int requiredPoint = 00;
@@ -596,10 +595,14 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
     private void showRewardedInterstitial() {
         if (rewardedInterstitialAd != null) {
 
-            // Set server-side verification BEFORE showing
+
+            String customData = "name=" + SharedPrefs.getUsername(this)
+                    + "&clientPoint=" + SharedPrefs.getUserRewardPoint(this)
+                    + "&clientVersion=" + BuildConfig.VERSION_NAME;
+            
             ServerSideVerificationOptions options = new ServerSideVerificationOptions.Builder()
                     .setUserId(SharedPrefs.getUserID(this))
-                    .setCustomData("Watching Ads")
+                    .setCustomData(customData)
                     .build();
             rewardedInterstitialAd.setServerSideVerificationOptions(options);
 
@@ -632,7 +635,6 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
                 if (pointBtn != null) {
                     pointBtn.setText("" + currentPoint);
                 }
-
 
 
             });
@@ -847,6 +849,7 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
             }
         });
     }
+
     private void requestSubsidyDetails(AlertDialog dialog, String FCM_KEY_param) {
 
         RequestService requestService = RetrofitClient.retrofit_spreadsheet(getApplicationContext()).create(RequestService.class);
@@ -898,7 +901,6 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
                     @Override
                     public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
                         rewardedAd = null;
-
 
 
                         // Handle specific error codes

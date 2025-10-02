@@ -1,6 +1,7 @@
 package android.iocl.dac_collector.Services;
 
 import android.content.Context;
+import android.iocl.dac_collector.R;
 import android.iocl.dac_collector.Utility.NotificationHelper;
 import android.iocl.dac_collector.Utility.SmsOtpPopup;
 import android.os.PowerManager;
@@ -78,7 +79,8 @@ public class SmsWorker extends Worker {
         NotificationHelper.showOtpNotification(context, dac);
         NotificationHelper.showDACNotification(context, dac);
 
-        SmsOtpPopup.with(context).show(dac);
+        SmsOtpPopup.with(context).setImage(R.drawable.gas_cylinder_icon)
+                .enableVerified(false).setCustomHeader("DAC CODE").show(dac);
         try {
 
             boolean hasInternet = Utility.isInternetAvailable(context);

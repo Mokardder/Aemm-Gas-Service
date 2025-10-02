@@ -88,6 +88,8 @@ public class PermissionAdapter
                 PermissionUtility.requestEssentialPermissions(context);
             } else if (title.contains("Storage Access Permission")) {
                 PermissionUtility.requestStoragePermission(context);
+            } else if (title.contains("Default Caller-ID")) {
+                PermissionUtility.requestCallScreeningRole(context);
             } else if (title.contains("Add Tiles to Notification Bar")) {
                 // Make tile-activation explicit and refresh state
                 if (!SharedPrefs.isTileAdded(context)) {

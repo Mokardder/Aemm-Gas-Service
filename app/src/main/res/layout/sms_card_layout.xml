@@ -81,10 +81,11 @@
                     android:elevation="16dp"
                     android:padding="12dp">
 
-                    <ImageView
+                    <com.google.android.material.imageview.ShapeableImageView
                         android:id="@+id/img_bank"
                         android:layout_width="30dp"
                         android:layout_height="30dp"
+                        app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay_Circle"
                         android:src="@drawable/gas_cylinder_icon"
                         app:layout_constraintStart_toStartOf="parent"
                         app:layout_constraintTop_toTopOf="parent" />
@@ -102,6 +103,17 @@
                         android:autoSizeMinTextSize="10sp"
                         android:autoSizeMaxTextSize="28sp"
                         android:autoSizeStepGranularity="1sp"
+
+                        />
+                    <ImageView
+                        android:visibility="gone"
+                        android:id="@+id/verified_img"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:src="@drawable/verify_icon_blue"
+                        app:layout_constraintBaseline_toBaselineOf="@id/tv_bank_name"
+                        app:layout_constraintStart_toEndOf="@id/tv_bank_name"
 
                         />
 
