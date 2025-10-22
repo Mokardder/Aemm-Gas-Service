@@ -1151,6 +1151,20 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         }
     }
 
+
+
+
+    // Applied
+    private void subscribeToConsID (String consumer_no) {
+        if (!SharedPrefs.isFirstTime(MainActivity.this))return;
+        FirebaseMessaging.getInstance().subscribeToTopic("user_" + consumer_no).addOnCompleteListener(task -> {
+            if (!task.isSuccessful()) {
+                Toast.makeText(this, "Failed to subscript private topic", Toast.LENGTH_SHORT).show();
+            }
+
+        });
+    }
+
     private void checkAppUpdate() {
 
 //        loader_controller("Checking Update....", true, loader, loader_text);
