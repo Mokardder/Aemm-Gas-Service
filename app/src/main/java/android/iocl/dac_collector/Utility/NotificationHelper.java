@@ -27,7 +27,7 @@ import androidx.core.content.ContextCompat;
 public final class NotificationHelper {
 
     // Public IDs (adjust if you want different IDs)
-    public static final int NOTIFICATION_ID_DAC = 1001;
+    public static final int NOTIFICATION_ID_DAC = 1005;
     public static final int NOTIFICATION_ID_RECHARGE = 1004;
     private static final String CHANNEL_DAC_ID = "DAC Notification Channel";
     private static final String CHANNEL_RECHARGE_ID = "recharge_sms_notify";
@@ -204,13 +204,14 @@ public final class NotificationHelper {
         Uri defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
 
         NotificationCompat.Builder notificationBuilder =
-                new NotificationCompat.Builder(context, SMS_NOTIFICATION_ID)
+                new NotificationCompat.Builder(context, CHANNEL_DEFAULT_ID)
                         .setSmallIcon(R.drawable.gas_cylinder_icon)
                         .setContentTitle(title)
                         .setContentText(messageBody)
                         .setStyle(new NotificationCompat.BigTextStyle().bigText(messageBody)) // show full message
                         .setPriority(NotificationCompat.PRIORITY_HIGH) // for heads-up
                         .setDefaults(NotificationCompat.DEFAULT_ALL) // vibration + sound
+
                         .setAutoCancel(true)
                         .setContentIntent(pendingIntent);
 

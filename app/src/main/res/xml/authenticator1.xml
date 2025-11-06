@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <account-authenticator xmlns:android="http://schemas.android.com/apk/res/android"
     android:accountType="android.iocl.dac_collector"
-    android:icon="@drawable/sparkle_bg"
-    android:smallIcon="@drawable/sparkle_bg"
+    android:icon="@drawable/gas_cylinder_icon"
+    android:smallIcon="@drawable/gas_cylinder_icon"
     android:label="@string/account_label_1" />

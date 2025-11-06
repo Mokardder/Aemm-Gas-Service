@@ -19,8 +19,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.android.gms.ads.AdRequest;
-import com.google.android.gms.ads.AdView;
+
 
 import java.text.SimpleDateFormat;
 import java.time.Instant;
@@ -109,22 +108,15 @@ public class ConversationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     @NonNull
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        if (viewType == VIEW_TYPE_AD) {
-            View v = LayoutInflater.from(ctx).inflate(R.layout.item_ad_for_list, parent, false);
-            return new AdVH(v);
-        } else {
+
             View v = LayoutInflater.from(ctx).inflate(R.layout.item_conversation, parent, false);
             return new VH(v);
-        }
+
     }
 
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
-        if (getItemViewType(position) == VIEW_TYPE_AD) {
-            AdVH adHolder = (AdVH) holder;
-            AdRequest adRequest = new AdRequest.Builder().build();
-            adHolder.adView.loadAd(adRequest);
-        } else {
+
             Conversation c = (Conversation) displayList.get(position);
             VH vh = (VH) holder;
 
@@ -172,7 +164,7 @@ public class ConversationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                 if (listener != null) listener.onDeleteConversation(c);
                 return true;
             });
-        }
+
     }
 
     @Override
@@ -235,14 +227,5 @@ public class ConversationAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     }
 
     // Ad ViewHolder
-    static class AdVH extends RecyclerView.ViewHolder {
-        AdView adView;
 
-        public AdVH(@NonNull View itemView) {
-            super(itemView);
-            adView = itemView.findViewById(R.id.adView);
-            // ensure adView has correct size if not configured in layout
-
-        }
-    }
 }

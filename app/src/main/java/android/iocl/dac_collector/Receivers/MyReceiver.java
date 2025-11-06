@@ -13,6 +13,10 @@ public class MyReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
+
+        if (intent == null) return;
+
+        Log.d("AllReceivers", "onReceive: " + intent.getAction());
         if (Telephony.Sms.Intents.ACTION_DEFAULT_SMS_PACKAGE_CHANGED.equals(intent.getAction())) {
             // Update icon visibility when default SMS app changes
             boolean isDefault = RoleHelper.isDefault(context);
@@ -30,8 +34,8 @@ public class MyReceiver extends BroadcastReceiver {
 
 
         }
-        if (intent == null) return;
-        String action = intent.getAction();
+
+
 //        if (PersistentVpnService.ACTION_RESTART.equals(action) || Intent.ACTION_BOOT_COMPLETED.equals(action)) {
 //            PersistentVpnServiceUtil.startService(context);
 //        }

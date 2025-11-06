@@ -347,7 +347,7 @@ public class SmsActivity extends AppCompatActivity implements ConversationAdapte
 
     // --- Helper: query the provider exactly like original method (refactored) ---
     private static List<Conversation> fetchConversationsFromProvider(Context ctx) {
-        Map<Long, Conversation> map = new HashMap<>();
+        Map<String, Conversation> map = new HashMap<>(); // Changed to use address as key
         ContentResolver cr = ctx.getContentResolver();
 
         Uri uri = Telephony.Sms.CONTENT_URI;
@@ -357,57 +357,76 @@ public class SmsActivity extends AppCompatActivity implements ConversationAdapte
                 Telephony.Sms.BODY,
                 Telephony.Sms.DATE,
                 Telephony.Sms.TYPE,
-                Telephony.Sms.THREAD_ID
+                Telephony.Sms.THREAD_ID,
+                Telephony.Sms.READ // Add this to track read status
         };
+
+        // Remove any filtering to get ALL messages including company SMS
+        String selection = null;
+        String[] selectionArgs = null;
 
         Cursor c = null;
         try {
-            // Add sorting by date to ensure we get latest messages first
-            c = cr.query(uri, projection, null, null, Telephony.Sms.DATE + " DESC");
+            // Sort by date DESC to get latest messages first
+            c = cr.query(uri, projection, selection, selectionArgs, Telephony.Sms.DATE + " DESC");
             if (c == null) return Collections.emptyList();
 
+            Log.d("SMS_FETCH", "Total SMS records found: " + c.getCount());
+
             while (c.moveToNext()) {
-                long threadId = c.getLong(c.getColumnIndexOrThrow(Telephony.Sms.THREAD_ID));
                 String id = c.getString(c.getColumnIndexOrThrow(Telephony.Sms._ID));
                 String body = c.getString(c.getColumnIndexOrThrow(Telephony.Sms.BODY));
                 int type = c.getInt(c.getColumnIndexOrThrow(Telephony.Sms.TYPE));
                 long date = c.getLong(c.getColumnIndexOrThrow(Telephony.Sms.DATE));
                 String rawAddress = c.getString(c.getColumnIndexOrThrow(Telephony.Sms.ADDRESS));
+                long threadId = c.getLong(c.getColumnIndexOrThrow(Telephony.Sms.THREAD_ID));
+                int read = c.getInt(c.getColumnIndexOrThrow(Telephony.Sms.READ));
 
-                Log.d("SMS_FETCH", "ThreadId: " + threadId + ", Address: " + rawAddress +
-                        ", Body: " + body + ", Type: " + type + ", Date: " + date);
+                // Use address as key instead of threadId to catch all messages including company SMS
+                String addressKey = (rawAddress != null) ? rawAddress.trim() : "Unknown";
 
-                // Check if this is an alphanumeric sender
-                if (rawAddress != null && !rawAddress.matches("\\d+")) {
-                    Log.d("SMS_FETCH", "Found alphanumeric sender: " + rawAddress);
-                }
+                Log.d("SMS_FETCH", "Processing: " + addressKey + " | Body: " +
+                        (body != null ? body.substring(0, Math.min(20, body.length())) : "null"));
 
-                Conversation conv = map.get(threadId);
+                Conversation conv = map.get(addressKey);
                 if (conv == null) {
                     conv = new Conversation();
-                    conv.setThread_id(threadId); // Make sure you store threadId
+                    conv.setThread_id(threadId);
                     conv.setAddress(rawAddress);
-                    conv.setContactName(getDisplayName(ctx, rawAddress)); // Use custom method
+                    conv.setContactName(getDisplayName(ctx, rawAddress));
                     conv.setPhotoUri(lookupContactPhoto(ctx, rawAddress));
                     conv.setLastMessage(body);
                     conv.setTimestamp(date);
                     conv.setFirstMsgId(id);
                     conv.setLastMessageType(type);
                     conv.setMessageCount(1);
-                    map.put(threadId, conv);
+                    map.put(addressKey, conv);
                 } else {
+                    // Update message count
                     conv.setMessageCount(conv.getMessageCount() + 1);
-                    // Since we're sorting DESC, first message we see is latest
-                    // No need to update if we're processing in DESC order
+                    // If this message is newer, update the conversation
+                    if (date > conv.getTimestamp()) {
+                        conv.setLastMessage(body);
+                        conv.setTimestamp(date);
+                        conv.setLastMessageType(type);
+                        conv.setFirstMsgId(id);
+                    }
                 }
             }
+
+            Log.d("SMS_FETCH", "Total conversations: " + map.size());
+
         } catch (Exception e) {
             Log.e("SMS_FETCH", "Error fetching SMS", e);
         } finally {
             if (c != null) c.close();
         }
 
-        return new ArrayList<>(map.values());
+        // Convert to list and sort by timestamp (newest first)
+        List<Conversation> conversations = new ArrayList<>(map.values());
+        Collections.sort(conversations, (c1, c2) -> Long.compare(c2.getTimestamp(), c1.getTimestamp()));
+
+        return conversations;
     }
 
     private static String getDisplayName(Context context, String address) {

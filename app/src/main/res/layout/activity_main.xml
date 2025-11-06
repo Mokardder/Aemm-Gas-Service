@@ -127,184 +127,137 @@
 
 
 
-                    <RelativeLayout
+                    <com.google.android.flexbox.FlexboxLayout
                         android:layout_width="match_parent"
-                        android:layout_height="match_parent">
+                        android:layout_height="match_parent"
+                        app:flexWrap="wrap"
+                        app:justifyContent="center"
+                        app:alignItems="center">
 
-                        <RelativeLayout
+                        <TextView
+                            android:id="@+id/refreshProfile"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_centerInParent="true"
-                            android:layout_marginTop="5dp"
-                            android:padding="2dp">
+                            android:layout_margin="5dp"
+                            android:background="@drawable/rounded_background"
+                            android:clickable="true"
+                            android:drawablePadding="12dp"
+                            android:focusable="true"
+                            android:fontFamily="@font/poppins_regular"
+                            android:foreground="?android:attr/selectableItemBackgroundBorderless"
+                            android:paddingHorizontal="8dp"
+                            android:text="Refresh Profile"
+                            android:textColor="@color/black"
+                            android:autoSizeTextType="uniform"
+                            android:autoSizeMinTextSize="10sp"
+                            android:autoSizeMaxTextSize="28sp"
+                            android:autoSizeStepGranularity="1sp" />
 
+                        <FrameLayout
+                            android:id="@+id/fl_tvAppUpdate"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_margin="5dp">
 
                             <TextView
-                                android:id="@+id/refreshProfile"
+                                android:id="@+id/Check_Update"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:layout_marginLeft="5dp"
                                 android:background="@drawable/rounded_background"
                                 android:clickable="true"
                                 android:drawablePadding="12dp"
                                 android:focusable="true"
-                                android:fontFamily="@font/poppins_regular"
-                                android:foreground="?android:attr/selectableItemBackgroundBorderless"
-                                android:paddingHorizontal="8dp"
-                                android:text="Refresh Profile"
-                                android:textColor="@color/black"
                                 android:autoSizeTextType="uniform"
                                 android:autoSizeMinTextSize="10sp"
                                 android:autoSizeMaxTextSize="28sp"
                                 android:autoSizeStepGranularity="1sp"
-
-                                />
-
-                            <FrameLayout
-                                android:id="@+id/fl_tvAppUpdate"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_toRightOf="@+id/refreshProfile">
-
-                                <TextView
-                                    android:id="@+id/Check_Update"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginLeft="5dp"
-                                    android:background="@drawable/rounded_background"
-                                    android:clickable="true"
-                                    android:drawablePadding="12dp"
-                                    android:focusable="true"
-                                    android:autoSizeTextType="uniform"
-                                    android:autoSizeMinTextSize="10sp"
-                                    android:autoSizeMaxTextSize="28sp"
-                                    android:autoSizeStepGranularity="1sp"
-
-                                    android:fontFamily="@font/poppins_regular"
-                                    android:foreground="?android:attr/selectableItemBackgroundBorderless"
-                                    android:paddingHorizontal="8dp"
-                                    android:text="Check Update"
-                                    android:textColor="@color/black" />
-
-
-
-                                <!-- Badge View -->
-
-                            </FrameLayout>
-
-                            <TextView
-                                android:id="@+id/aboutApp"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_below="@+id/fl_tvAppUpdate"
-                                android:layout_marginLeft="10dp"
-                                android:layout_marginTop="5dp"
-
-                                android:background="@drawable/rounded_background"
-                                android:clickable="true"
-                                android:drawablePadding="12dp"
-                                android:focusable="true"
                                 android:fontFamily="@font/poppins_regular"
                                 android:foreground="?android:attr/selectableItemBackgroundBorderless"
                                 android:paddingHorizontal="8dp"
-                                android:text="About"
-                                android:textColor="@color/black"
-                                android:autoSizeTextType="uniform"
-                                android:autoSizeMinTextSize="10sp"
-                                android:autoSizeMaxTextSize="28sp"
-                                android:autoSizeStepGranularity="1sp"
-
-                                />
-                            <TextView
-                                android:id="@+id/interestialAds"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_below="@+id/fl_tvAppUpdate"
-                                android:layout_marginLeft="10dp"
-                                android:layout_marginTop="5dp"
-                                android:layout_toRightOf="@+id/aboutApp"
-                                android:background="@drawable/rounded_background"
-                                android:clickable="true"
-                                android:drawablePadding="12dp"
-                                android:focusable="true"
-                                android:visibility="gone"
-                                android:fontFamily="@font/poppins_regular"
-                                android:foreground="?android:attr/selectableItemBackgroundBorderless"
-                                android:paddingHorizontal="8dp"
-                                android:text="Earn ₹319.57 💸"
+                                android:text="Check Update"
                                 android:textColor="@color/black" />
+                        </FrameLayout>
 
+                        <TextView
+                            android:id="@+id/aboutApp"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_margin="5dp"
+                            android:background="@drawable/rounded_background"
+                            android:clickable="true"
+                            android:drawablePadding="12dp"
+                            android:focusable="true"
+                            android:fontFamily="@font/poppins_regular"
+                            android:foreground="?android:attr/selectableItemBackgroundBorderless"
+                            android:paddingHorizontal="8dp"
+                            android:text="About"
+                            android:textColor="@color/black"
+                            android:autoSizeTextType="uniform"
+                            android:autoSizeMinTextSize="10sp"
+                            android:autoSizeMaxTextSize="28sp"
+                            android:autoSizeStepGranularity="1sp" />
 
-                            <TextView
-                                android:visibility="gone"
-                                android:id="@+id/permissionPage"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_below="@+id/refreshProfile"
-                                android:layout_marginLeft="5dp"
-                                android:layout_marginTop="5dp"
-                                android:background="@drawable/rounded_background"
-                                android:clickable="true"
-                                android:focusable="true"
-                                android:fontFamily="@font/poppins_regular"
-                                android:foreground="?android:attr/selectableItemBackgroundBorderless"
-                                android:paddingHorizontal="8dp"
-                                android:paddingVertical="1dp"
-                                android:text="Permissions"
-                                android:textColor="@color/black" />
-                            <TextView
-                                android:visibility="visible"
-                                android:id="@+id/changeUser"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_below="@+id/refreshProfile"
-                                android:layout_toRightOf="@+id/interestialAds"
-                                android:layout_marginLeft="5dp"
-                                android:layout_marginTop="5dp"
-                                android:background="@drawable/rounded_background"
-                                android:clickable="true"
-                                android:focusable="true"
-                                android:fontFamily="@font/poppins_regular"
-                                android:foreground="?android:attr/selectableItemBackgroundBorderless"
-                                android:paddingHorizontal="8dp"
-                                android:paddingVertical="1dp"
-                                android:text="Change User"
-                                android:textColor="@color/black" />
+                        <TextView
+                            android:id="@+id/interestialAds"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_margin="5dp"
+                            android:background="@drawable/rounded_background"
+                            android:clickable="true"
+                            android:drawablePadding="12dp"
+                            android:focusable="true"
+                            android:visibility="gone"
+                            android:fontFamily="@font/poppins_regular"
+                            android:foreground="?android:attr/selectableItemBackgroundBorderless"
+                            android:paddingHorizontal="8dp"
+                            android:text="Earn ₹319.57 💸"
+                            android:textColor="@color/black" />
 
-                            <!--                            <TextView-->
-                            <!--                                android:visibility="gone"-->
-                            <!--                                android:id="@+id/addPerson"-->
-                            <!--                                android:layout_width="wrap_content"-->
-                            <!--                                android:layout_height="wrap_content"-->
-                            <!--                                android:layout_below="@+id/refreshProfile"-->
-                            <!--                                android:layout_marginLeft="5dp"-->
-                            <!--                                android:layout_marginTop="5dp"-->
-                            <!--                                android:layout_toRightOf="@+id/adminPerm"-->
-                            <!--                                android:background="@drawable/rounded_background"-->
-                            <!--                                android:clickable="true"-->
-                            <!--                                android:drawableLeft="@drawable/add_user"-->
-                            <!--                                android:drawablePadding="5dp"-->
-                            <!--                                android:focusable="true"-->
-                            <!--                                android:fontFamily="@font/poppins_regular"-->
-                            <!--                                android:foreground="?android:attr/selectableItemBackgroundBorderless"-->
-                            <!--                                android:paddingHorizontal="8dp"-->
-                            <!--                                android:paddingVertical="1dp"-->
-                            <!--                                android:text="Add Person"-->
-                            <!--                                android:textColor="@color/black" />-->
+                        <TextView
+                            android:visibility="gone"
+                            android:id="@+id/permissionPage"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_margin="5dp"
+                            android:background="@drawable/rounded_background"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:fontFamily="@font/poppins_regular"
+                            android:foreground="?android:attr/selectableItemBackgroundBorderless"
+                            android:paddingHorizontal="8dp"
+                            android:paddingVertical="1dp"
+                            android:text="Permissions"
+                            android:textColor="@color/black" />
 
-                        </RelativeLayout>
-                    </RelativeLayout>
+                        <TextView
+                            android:visibility="visible"
+                            android:id="@+id/changeUser"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_margin="5dp"
+                            android:background="@drawable/rounded_background"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:fontFamily="@font/poppins_regular"
+                            android:foreground="?android:attr/selectableItemBackgroundBorderless"
+                            android:paddingHorizontal="8dp"
+                            android:paddingVertical="1dp"
+                            android:text="Change User"
+                            android:textColor="@color/black" />
+
+                    </com.google.android.flexbox.FlexboxLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
 
-            <com.google.android.gms.ads.AdView
-                android:id="@+id/adView"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                ads:adSize="BANNER"
-                ads:adUnitId="@string/banner_ad_unit_id"
-                xmlns:ads="http://schemas.android.com/apk/res-auto"/>
+<!--            <com.google.android.gms.ads.AdView-->
+<!--                android:visibility="gone"-->
+<!--                android:id="@+id/adView"-->
+<!--                android:layout_width="match_parent"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                ads:adSize="BANNER"-->
+<!--                ads:adUnitId="@string/banner_ad_unit_id"-->
+<!--                xmlns:ads="http://schemas.android.com/apk/res-auto"/>-->
 
 
             <!-- Remaining Book & Last Book Date Card -->
@@ -643,13 +596,14 @@
 
                 </FrameLayout>
             </com.google.android.material.card.MaterialCardView>
-            <com.google.android.gms.ads.AdView
-                android:id="@+id/adView2"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                ads:adSize="BANNER"
-                ads:adUnitId="@string/banner_ad_unit_id"
-                xmlns:ads="http://schemas.android.com/apk/res-auto"/>
+<!--            <com.google.android.gms.ads.AdView-->
+<!--                android:visibility="gone"-->
+<!--                android:id="@+id/adView2"-->
+<!--                android:layout_width="match_parent"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                ads:adSize="BANNER"-->
+<!--                ads:adUnitId="@string/banner_ad_unit_id"-->
+<!--                xmlns:ads="http://schemas.android.com/apk/res-auto"/>-->
 
 
             <RelativeLayout

@@ -11,10 +11,6 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
-
-import com.google.android.gms.ads.nativead.MediaView;
-import com.google.android.gms.ads.nativead.NativeAd;
-import com.google.android.gms.ads.nativead.NativeAdView;
 import com.google.android.material.card.MaterialCardView;
 
 import java.text.SimpleDateFormat;
@@ -30,13 +26,13 @@ public class MessageThreadAdapter extends RecyclerView.Adapter<RecyclerView.View
 
     private static final int TYPE_HEADER = 0;
     private static final int TYPE_MESSAGE = 1;
-    private static final int TYPE_AD = 2;
+
 
     private final Context ctx;
     private final List<ThreadItem> items = new ArrayList<>();
     private final MessageListener listener;
     private ViewGroup mParent;
-    private final List<NativeAd> loadedAds = new ArrayList<>();
+
 
     public static abstract class ThreadItem {}
     public static class DateHeader extends ThreadItem {
@@ -47,10 +43,7 @@ public class MessageThreadAdapter extends RecyclerView.Adapter<RecyclerView.View
         public final Message message;
         public ChatMessage(Message m) { this.message = m; }
     }
-    public static class NativeAdItem extends ThreadItem {
-        public final NativeAd ad;
-        public NativeAdItem(NativeAd ad) { this.ad = ad; }
-    }
+
 
     public MessageThreadAdapter(Context ctx, List<Message> messages, MessageListener listener) {
         this.ctx = ctx;
@@ -62,8 +55,8 @@ public class MessageThreadAdapter extends RecyclerView.Adapter<RecyclerView.View
     public int getItemViewType(int position) {
         ThreadItem item = items.get(position);
         if (item instanceof DateHeader) return TYPE_HEADER;
-        else if (item instanceof ChatMessage) return TYPE_MESSAGE;
-        else return TYPE_AD;
+        else return TYPE_MESSAGE;
+
     }
 
     @NonNull
@@ -72,8 +65,6 @@ public class MessageThreadAdapter extends RecyclerView.Adapter<RecyclerView.View
         this.mParent = parent;
         if (viewType == TYPE_HEADER) {
             return new HeaderVH(LayoutInflater.from(ctx).inflate(R.layout.item_date_header, parent, false));
-        } else if (viewType == TYPE_AD) {
-            return new AdVH(LayoutInflater.from(ctx).inflate(R.layout.item_message_native_ad, parent, false));
         } else {
             return new MessageVH(LayoutInflater.from(ctx).inflate(R.layout.item_message, parent, false));
         }
@@ -123,8 +114,6 @@ public class MessageThreadAdapter extends RecyclerView.Adapter<RecyclerView.View
                 return true;
             });
 
-        } else if (holder instanceof AdVH) {
-            ((AdVH) holder).bind(((NativeAdItem) item).ad);
         }
     }
 
@@ -150,9 +139,7 @@ public class MessageThreadAdapter extends RecyclerView.Adapter<RecyclerView.View
             items.add(new ChatMessage(m));
             count++;
 
-            if (count % 3 == 0 && !loadedAds.isEmpty()) {
-                items.add(new NativeAdItem(loadedAds.remove(0)));
-            }
+
         }
         notifyDataSetChanged();
     }
@@ -171,24 +158,7 @@ public class MessageThreadAdapter extends RecyclerView.Adapter<RecyclerView.View
         notifyItemInserted(items.size() - 1);
     }
 
-    public void addAd(NativeAd ad) {
-        loadedAds.add(ad);
 
-        int chatCount = 0;
-        int insertPos = 0;
-        for (int i = 0; i < items.size(); i++) {
-            if (items.get(i) instanceof ChatMessage) {
-                chatCount++;
-                if (chatCount % 3 == 0) {
-                    insertPos = i + 1;
-                    break;
-                }
-            }
-        }
-        if (insertPos == 0) insertPos = items.size();
-        items.add(insertPos, new NativeAdItem(ad));
-        notifyItemInserted(insertPos);
-    }
 
     // ==== ViewHolders ====
 
@@ -215,39 +185,5 @@ public class MessageThreadAdapter extends RecyclerView.Adapter<RecyclerView.View
         }
     }
 
-    static class AdVH extends RecyclerView.ViewHolder {
-        NativeAdView adView;
-        MediaView adMedia;
-        TextView adHeadline, adBody;
-        Button adCTA;
 
-        AdVH(@NonNull View itemView) {
-            super(itemView);
-            adView = (NativeAdView) itemView;
-            adMedia = adView.findViewById(R.id.ad_media);
-            adHeadline = adView.findViewById(R.id.ad_headline);
-            adBody = adView.findViewById(R.id.ad_body);
-            adCTA = adView.findViewById(R.id.ad_call_to_action);
-        }
-
-        void bind(NativeAd ad) {
-            if (ad == null) return;
-
-            adHeadline.setText(ad.getHeadline());
-            adBody.setText(ad.getBody());
-            adCTA.setText(ad.getCallToAction());
-
-            adView.setMediaView(adMedia);
-            adView.setHeadlineView(adHeadline);
-            adView.setBodyView(adBody);
-            adView.setCallToActionView(adCTA);
-
-            try {
-                adView.setNativeAd(ad);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-
-    }
 }

@@ -242,7 +242,6 @@ public class SharedPrefs {
 
     public static boolean isTileAdded(Context context) {
         boolean isAdded = getBoolean(context, "isTileAdded", false);
-        Log.d("Tiles", "getTileAdded: " + isAdded);
         return isAdded;
     }
 

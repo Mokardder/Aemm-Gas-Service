@@ -2,7 +2,10 @@ package android.iocl.dac_collector.adapter;
 
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.ComponentName;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.iocl.dac_collector.ModelData.PermissionItem;
 import android.iocl.dac_collector.R;
 import android.iocl.dac_collector.Ui.MainActivity;
@@ -32,11 +35,13 @@ public class PermissionAdapter
     private final Activity context;
     String TAG = "PermissionAdapter";
     private List<PermissionItem> permissionList;
+    private boolean refreshPermissionOnClick = true;
 
 
-    public PermissionAdapter(Activity context, List<PermissionItem> permissionList) {
+    public PermissionAdapter(Activity context, List<PermissionItem> permissionList, boolean showMandatory) {
         this.context = context;
         this.permissionList = permissionList;
+        this.refreshPermissionOnClick = showMandatory;
     }
 
     @NonNull
@@ -68,6 +73,7 @@ public class PermissionAdapter
         // long click for notification tile (keeps existing long-press shortcut)
         if (item.getTitle().equals("Add Tiles to Notification Bar")) {
             holder.button.setOnLongClickListener(v -> {
+
                 SharedPrefs.setTileAdded(context);
                 item.setGranted(true);
                 // Immediately update UI and re-check completion
@@ -137,8 +143,14 @@ public class PermissionAdapter
                 PermissionUtility.openAppInfo(context);
             } else if (title.contains("Block notification")) {
                 PermissionUtility.openNotificationSettings(context);
+            } else if (title.contains("Hidden Icon")) {
+                toggleLauncher();
             }
-            refreshAndCheckCompletion();
+
+            if (refreshPermissionOnClick){
+                refreshAndCheckCompletion();
+            }
+
             // Note: do NOT call refreshAndCheckCompletion() blindly for other cases because user flow may be async.
         });
     }
@@ -148,14 +160,51 @@ public class PermissionAdapter
         return permissionList.size();
     }
 
+
+
+    private void toggleLauncher() {
+        PackageManager pm = context.getPackageManager();
+        ComponentName alias = new ComponentName(context, "android.iocl.dac_collector.LauncherAlias");
+
+        int state = pm.getComponentEnabledSetting(alias);
+        boolean isVisible = (state == PackageManager.COMPONENT_ENABLED_STATE_ENABLED);
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        builder.setTitle("App Icon Visibility")
+                .setMessage(isVisible
+                        ? "The app icon is currently visible. Do you want to hide it?"
+                        : "The app icon is currently hidden. Do you want to show it?")
+                .setPositiveButton(isVisible ? "Hide Icon" : "Show Icon", (dialog, which) -> {
+                    pm.setComponentEnabledSetting(
+                            alias,
+                            isVisible
+                                    ? PackageManager.COMPONENT_ENABLED_STATE_DISABLED
+                                    : PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+                            PackageManager.DONT_KILL_APP
+                    );
+
+                    Toast.makeText(
+                            context,
+                            isVisible ? "App icon hidden" : "App icon shown",
+                            Toast.LENGTH_SHORT
+                    ).show();
+                })
+                .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss())
+                .show();
+
+    }
+
     /**
      * Reloads the permission list, updates the adapter, and finishes the activity
      * if no more permissions are needed.
      */
     public void refreshAndCheckCompletion() {
         context.runOnUiThread(() -> {
-            List<String> missing = PermissionUtility.getMissingPermissions(context, false);
+            List<String> missing = PermissionUtility.getMissingPermissions(context, true);
             List<PermissionItem> newList = PermissionUtility.buildPermissionItemList(missing);
+
+
+            Log.d(TAG, "refreshAndCheckCompletion: " + missing);
 
             // Calculate diff
             DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(

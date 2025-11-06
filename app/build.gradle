@@ -109,8 +109,8 @@ android {
 
     buildTypes {
         release {
-            minifyEnabled true
-            shrinkResources true
+            minifyEnabled false
+            shrinkResources false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.release
             debuggable false
@@ -142,7 +142,7 @@ android {
 
 
 dependencies {
-    implementation project(path: ':live_library')
+
 
 
     // ---- Firebase (explicit modules instead of BOM) ----
@@ -151,7 +151,14 @@ dependencies {
     implementation "com.google.firebase:firebase-analytics:22.1.2"
     implementation "com.google.firebase:firebase-messaging:24.0.2"
 
-    // Other libs you originally had (unchanged)
+    // Acra Crash Handler
+    implementation 'ch.acra:acra-core:5.12.0'
+    implementation 'ch.acra:acra-http:5.12.0'
+
+
+
+
+    // Other libs you originally had
     implementation 'com.github.getActivity:XXPermissions:23.0'
     implementation "org.jetbrains.kotlin:kotlin-stdlib:1.8.0"
     implementation 'androidx.core:core-ktx:1.7.0'
@@ -163,19 +170,22 @@ dependencies {
     implementation("com.squareup.retrofit2:converter-gson:2.11.0")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation 'com.google.android.material:material:1.12.0'
-
-    implementation 'com.google.android.gms:play-services-ads:22.3.0'
-
+    // layout
+    implementation 'com.google.android.flexbox:flexbox:3.0.0'
+    // pulldown refresh
     implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.1.0" // or latest version
 
+    // reflection
     implementation 'com.github.tiann:FreeReflection:3.1.0'
+
+    // inbbuilt system
     implementation libs.appcompat
     implementation libs.material
     implementation libs.activity
     implementation libs.constraintlayout
     implementation libs.firebase.perf
     implementation libs.firebase.inappmessaging.display
-    implementation libs.swiperefreshlayout
+
 
     testImplementation libs.junit
     androidTestImplementation libs.ext.junit

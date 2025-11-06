@@ -1,5 +1,7 @@
 package android.iocl.dac_collector.Services;
 
+import static androidx.core.app.NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE;
+
 import android.app.AlarmManager;
 import android.app.Notification;
 import android.app.NotificationChannel;
@@ -17,6 +19,7 @@ import android.os.Build;
 import android.os.IBinder;
 import android.os.ParcelFileDescriptor;
 import android.util.Log;
+import android.view.View;
 
 import androidx.core.app.NotificationCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
@@ -61,17 +64,6 @@ public class PersistentVpnService extends VpnService {
 
         // default: allow restart
         getPrefs().edit().putBoolean(PREF_SHOULD_RESTART, true).apply();
-
-        // Ensure we create channel and promote to foreground immediately (cannot fail)
-        try {
-            createNotificationChannel();
-            // Start foreground here as early as possible to satisfy startForegroundService requirement.
-            Notification n = createNotification();
-            startForegroundSafe(n);
-        } catch (Exception e) {
-            // Log but continue. startForegroundSafe handles fallback defaults.
-            Log.e(TAG, "Error creating foreground notification", e);
-        }
     }
 
     @Override
@@ -87,34 +79,66 @@ public class PersistentVpnService extends VpnService {
      */
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        String action = intent != null ? intent.getAction() : ACTION_START;
-        Log.d(TAG, "onStartCommand action=" + action);
+        // PROMOTE TO FOREGROUND FIRST - before any other logic
+        ensureForeground();
 
-        // Ensure foreground again (harmless if already started). Some devices may call onStartCommand
-        // without onCreate or with different timings; this double-check is safe.
-        try {
-            if (!foregroundStarted) {
-                Notification n = createNotification();
-                startForegroundSafe(n);
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "Error ensuring foreground", e);
-        }
+        // Then handle the actual command
+        String action = intent != null ? intent.getAction() : ACTION_START;
 
         if (ACTION_DISCONNECT.equals(action)) {
-            // explicit user-initiated stop
             markShouldNotRestart();
             disconnect();
             return START_NOT_STICKY;
-        } else if (ACTION_RESTART.equals(action)) {
-            // restart requested externally
-            startVpnInternal(intent);
-            return START_STICKY;
-        } else { // ACTION_START or default
+        } else {
             startVpnInternal(intent);
             return START_STICKY;
         }
     }
+
+    private void ensureForeground() {
+        if (!foregroundStarted) {
+            try {
+                createNotificationChannel();
+                Notification notification = createMinimalNotification();
+                startForeground(NOTIFICATION_ID, notification);
+                foregroundStarted = true;
+                Log.d(TAG, "Foreground successfully started");
+            } catch (Exception e) {
+                Log.e(TAG, "Critical: Failed to start foreground", e);
+                // Last resort fallback
+                try {
+                    Notification fallback = createEmergencyNotification();
+                    startForeground(NOTIFICATION_ID, fallback);
+                    foregroundStarted = true;
+                } catch (Exception e2) {
+                    Log.e(TAG, "Emergency foreground also failed", e2);
+                }
+            }
+        }
+    }
+
+    private Notification createMinimalNotification() {
+        // Ultra-minimal notification that should never fail
+        return new NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
+                .setContentTitle("VPN Service")
+                .setContentText("Running")
+                .setSmallIcon(android.R.drawable.ic_dialog_info) // System icon - guaranteed to exist
+                .setOngoing(true)
+
+                .setPriority(NotificationCompat.PRIORITY_MIN)
+                .setCategory(NotificationCompat.CATEGORY_SERVICE)
+                .build();
+    }
+
+    private Notification createEmergencyNotification() {
+        // Even more basic fallback
+        return new Notification.Builder(this)
+                .setContentTitle("Service")
+                .setSmallIcon(android.R.drawable.ic_dialog_info)
+                .build();
+    }
+
+
 
     private void startVpnInternal(Intent intent) {
         if (isRunning) {
@@ -277,13 +301,14 @@ public class PersistentVpnService extends VpnService {
             }
 
             NotificationCompat.Builder builder = new NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
-                    .setContentTitle("Dummy VPN Active")
-                    .setContentText("VPN running (no-route dummy mode)")
+                    .setContentTitle("VPN Connected")
+                    .setContentText("Vpn Status - Active")
                     .setSmallIcon(smallIconRes)
                     .addAction(new NotificationCompat.Action(0, "Disconnect", disconnectPending))
-                    .setOngoing(true)
                     .setSilent(true)
-                    .setPriority(NotificationCompat.PRIORITY_LOW);
+                    .setShowWhen(false)
+
+                    .setPriority(NotificationCompat.PRIORITY_MIN);
 
             // For older API levels, ensure notification is valid
             Notification notification = builder.build();
@@ -296,7 +321,7 @@ public class PersistentVpnService extends VpnService {
                     .setContentText("Running")
                     .setSmallIcon(android.R.drawable.ic_dialog_info)
                     .setOngoing(true)
-                    .setPriority(NotificationCompat.PRIORITY_LOW);
+                    .setPriority(NotificationCompat.PRIORITY_MIN);
             return fallback.build();
         }
     }

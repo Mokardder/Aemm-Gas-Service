@@ -47,6 +47,9 @@ public class BankStatementActivity extends AppCompatActivity {
 
         String enc = SharedPrefs.getSubsidyDetails(BankStatementActivity.this);
 
+
+        Log.d("SubsidyValue", "setupRecyclerView: " + enc);
+
         Object result = Utility.decodeApiResponse(enc, SubsidyRecord.class);
 
         List<BankStatementItem> items = new ArrayList<>();

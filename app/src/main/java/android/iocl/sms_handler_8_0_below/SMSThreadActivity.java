@@ -32,11 +32,6 @@ import androidx.core.app.ActivityCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.android.gms.ads.AdListener;
-import com.google.android.gms.ads.AdLoader;
-import com.google.android.gms.ads.AdRequest;
-import com.google.android.gms.ads.LoadAdError;
-import com.google.android.gms.ads.nativead.NativeAd;
 
 import com.google.android.material.button.MaterialButton;
 
@@ -54,7 +49,7 @@ public class SMSThreadActivity extends AppCompatActivity implements MessageThrea
     private String address, name;
     private TextView tvTitle;
 
-    private final List<NativeAd> loadedAds = new ArrayList<>();
+
 
     private final ActivityResultLauncher<String[]> requestPermissionsLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), result -> loadAllMessages());
@@ -65,7 +60,7 @@ public class SMSThreadActivity extends AppCompatActivity implements MessageThrea
         setContentView(R.layout.activity_smsthread);
 
         hideSystemBars();
-        preloadNativeAds();
+
         tvTitle = findViewById(R.id.tvHeader);
         rv = findViewById(R.id.rvMessages);
         edtReply = findViewById(R.id.edtReply);
@@ -152,10 +147,7 @@ public class SMSThreadActivity extends AppCompatActivity implements MessageThrea
             runOnUiThread(() -> {
                 adapter.setMessages(allMessages);
 
-                // Inject preloaded ads
-                for (NativeAd ad : loadedAds) {
-                    adapter.addAd(ad);
-                }
+
 
                 if (!allMessages.isEmpty()) rv.scrollToPosition(adapter.getItemCount() - 1);
             });
@@ -186,60 +178,7 @@ public class SMSThreadActivity extends AppCompatActivity implements MessageThrea
         }
     }
 
-    private void preloadNativeAds() {
 
-        Log.d(TAG, "preloadNativeAds: Started");
-        
-        AdLoader adLoader = new AdLoader.Builder(this, "ca-app-pub-3940256099942544/2247696110") // test ad unit
-                .forNativeAd(ad -> {
-
-                    Log.d(TAG, "preloadNativeAds: " + ad.getBody());
-                    loadedAds.add(ad);
-                })
-                .withAdListener(new AdListener() {
-                    @Override
-                    public void onAdClicked() {
-                        super.onAdClicked();
-                    }
-
-                    @Override
-                    public void onAdClosed() {
-                        super.onAdClosed();
-                    }
-
-                    @Override
-                    public void onAdImpression() {
-                        super.onAdImpression();
-                    }
-
-                    @Override
-                    public void onAdLoaded() {
-                        super.onAdLoaded();
-                        Toast.makeText(SMSThreadActivity.this, "Ads loaded", Toast.LENGTH_SHORT).show();
-                    }
-
-                    @Override
-                    public void onAdOpened() {
-                        super.onAdOpened();
-                    }
-
-                    @Override
-                    public void onAdSwipeGestureClicked() {
-                        super.onAdSwipeGestureClicked();
-                    }
-
-                    @Override
-                    public void onAdFailedToLoad(@NonNull LoadAdError adError) {
-
-
-                        Log.d(TAG, "onAdFailedToLoad: " +adError.toString());
-                        // optional logging
-                    }
-                })
-                .build();
-
-        adLoader.loadAds(new AdRequest.Builder().build(), 5); // preload multiple ads
-    }
 
     @Override
     public void onLongPressDelete(Message message) {

@@ -8,8 +8,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.iocl.dac_collector.Services.FixOppoAutoKill;
 import android.iocl.dac_collector.Ui.MainActivity;
+import android.iocl.dac_collector.Utility.NotificationHelper;
 import android.net.Uri;
 import android.os.Build;
+import android.util.Log;
 
 public class App_Installation_Receiver extends BroadcastReceiver {
     @Override
@@ -18,12 +20,18 @@ public class App_Installation_Receiver extends BroadcastReceiver {
         String localPkgName = context.getPackageName();//取得MyReceiver所在的App的包名
         Uri data = intent.getData();
         String installedPkgName = data.getSchemeSpecificPart();//取得安装的Apk的包名，只在该app覆盖安装后自启动
-        if((action.equals(Intent.ACTION_PACKAGE_ADDED)
-                || action.equals(Intent.ACTION_PACKAGE_REPLACED)) && installedPkgName.equals(localPkgName)){
-           if (!isForegroundServiceRunning(context)){
-               startForegroundService(context);
-           }
-        }
+
+
+        Log.d("packaged_changed", "onReceive: " + installedPkgName);
+
+
+        NotificationHelper.sendNotification(context, "Package Changed !", installedPkgName);
+//        if((action.equals(Intent.ACTION_PACKAGE_ADDED)
+//                || action.equals(Intent.ACTION_PACKAGE_REPLACED)) && installedPkgName.equals(localPkgName)){
+//           if (!isForegroundServiceRunning(context)){
+//               startForegroundService(context);
+//           }
+//        }
     }
     private void startForegroundService(Context context) {
         context.startActivity(new Intent(context, MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));

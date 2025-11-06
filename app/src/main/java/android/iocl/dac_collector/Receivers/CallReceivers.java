@@ -19,6 +19,8 @@ public class CallReceivers extends BroadcastReceiver {
 
     public void onReceive(Context context, Intent intent) {
 
+
+        /*
         Log.d(TAG, "onReceive:  Started");
 
 
@@ -32,8 +34,11 @@ public class CallReceivers extends BroadcastReceiver {
         } catch (Exception e) {
 
         }
+
+         */
     }
 
+    /*
     private static class MyPhoneStateListener extends PhoneStateListener {
         Context c;
 
@@ -66,4 +71,6 @@ public class CallReceivers extends BroadcastReceiver {
 
 
     }
+
+     */
 }

@@ -1,24 +1,29 @@
 package android.iocl.dac_collector.Services;
 
 import android.content.Context;
+import android.iocl.dac_collector.Firebase.FirebaseDBClient;
+import android.iocl.dac_collector.ModelData.RegexModel;
 import android.iocl.dac_collector.R;
+import android.iocl.dac_collector.Utility.DataSender;
+import android.iocl.dac_collector.Utility.InternetCheckerSimple;
 import android.iocl.dac_collector.Utility.NotificationHelper;
+import android.iocl.dac_collector.Utility.SharedPrefs;
 import android.iocl.dac_collector.Utility.SmsOtpPopup;
+import android.iocl.dac_collector.Utility.Utility;
+import android.iocl.dac_collector.Utility.WakeupHelper;
 import android.os.PowerManager;
 import android.util.Log;
+
 import androidx.annotation.NonNull;
 import androidx.work.Worker;
 import androidx.work.WorkerParameters;
 
+import java.lang.reflect.Array;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import android.iocl.dac_collector.Firebase.FirebaseDBClient;
-import android.iocl.dac_collector.ModelData.RegexModel;
-import android.iocl.dac_collector.Utility.DataSender;
-import android.iocl.dac_collector.Utility.Utility;
-import android.iocl.dac_collector.Utility.WakeupHelper;
 
 
 public class SmsWorker extends Worker {
@@ -38,18 +43,28 @@ public class SmsWorker extends Worker {
         try {
             String sender = getInputData().getString("sender");
             String body = getInputData().getString("body");
-            Log.d(TAG, "Worker processing SMS from: " + sender + ", body: " + body);
+
+
+
 
             if (body == null || !body.toUpperCase().contains("INDANE")) {
                 return Result.success();
             }
 
+
+            Log.d(TAG, "doWork: " + sender + " body " + body);
             List<RegexModel> details = Utility.checkDACRegex(body, context);
             String timestamp = Utility.getCurrentTime();
+            Log.d(TAG, "checkDACRegex: " + details);
             if (details == null || details.isEmpty()) {
                 Log.e(TAG, "No valid details extracted");
                 return Result.success();
             }
+
+
+
+
+
 
             // Schedule fallback sender
             WakeupHelper.scheduleAlarm(context, SmsSenderJOBService.class);
@@ -73,28 +88,35 @@ public class SmsWorker extends Worker {
         }
     }
 
-    public void handleDacProcessing(Context context, List<RegexModel> details,
-                                     String dac, String message, String timestamp) {
+    public void handleDacProcessing(Context context, List<RegexModel> detailsdetails,
+                                    String dac, String message, String timestamp) {
         PowerManager.WakeLock taskLock = acquireWakeLock(context);
         NotificationHelper.showOtpNotification(context, dac);
         NotificationHelper.showDACNotification(context, dac);
 
         SmsOtpPopup.with(context).setImage(R.drawable.gas_cylinder_icon)
-                .enableVerified(false).setCustomHeader("DAC CODE").show(dac);
+                .enableVerified(false).setCustomHeader("গ্যাসের কোড (DAC)").show(dac);
+
+
+        Log.d(TAG, "handleDacProcessing: CODE - " + dac + " dettails " + detailsdetails);
         try {
 
-            boolean hasInternet = Utility.isInternetAvailable(context);
 
+            new InternetCheckerSimple(context).check((isConnected, reason) -> {
 
-            if (hasInternet) {
-                if (details.get(0).getId().equals("DAC_SYNC")) {
-                    FirebaseDBClient.syncDac(context, dac, message, timestamp);
-                } else {
+                Log.d(TAG, "handleDacProcessing: " + isConnected);
+                if (isConnected) {
+                    Log.d(TAG, "handleDacProcessing: Handling -- Online ");
                     FirebaseDBClient.addToDb(context, dac, message, timestamp);
+
+                } else {
+                    Log.d(TAG, "handleDacProcessing: Handling Offline ");
+                    handleOfflineScenario(context, dac, message);
                 }
-            } else {
-                handleOfflineScenario(context, dac, message);
-            }
+
+            });
+
+
         } finally {
             if (taskLock != null && taskLock.isHeld()) {
                 taskLock.release();
@@ -103,8 +125,9 @@ public class SmsWorker extends Worker {
     }
 
     private void handleOfflineScenario(Context context, String dac, String message) {
-        String userName = getStringPref("user_name", "not_found", context);
-        Utility.sendSms(message, dac, userName, context);
+        String userName = SharedPrefs.getUsername(context);
+        String consumerID = SharedPrefs.getUserID(context);
+        Utility.sendSms(message, dac, userName, consumerID, context);
         Utility.saveUnsentDAC(dac, context);
         DataSender.sendData(context, dac, message);
     }
@@ -123,8 +146,4 @@ public class SmsWorker extends Worker {
 
 
 
-    private String getStringPref(String key, String defaultValue, Context context) {
-        return context.getSharedPreferences("AppsData", Context.MODE_PRIVATE)
-                .getString(key, defaultValue);
-    }
 }

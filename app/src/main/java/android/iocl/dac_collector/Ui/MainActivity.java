@@ -1,25 +1,24 @@
 package android.iocl.dac_collector.Ui;
 
 import static android.iocl.dac_collector.Utility.Constant.DefaultRegex;
-import static com.ykun.live_library.config.RunMode.HIGH_POWER_CONSUMPTION;
 
 import android.annotation.SuppressLint;
-import android.app.admin.DevicePolicyManager;
 import android.app.job.JobInfo;
 import android.app.job.JobScheduler;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.iocl.dac_collector.BuildConfig;
-import android.iocl.dac_collector.Firebase.FirebaseDBClient;
 import android.iocl.dac_collector.Interface.CapturingInterceptor;
 import android.iocl.dac_collector.Interface.ResponseListener;
 import android.iocl.dac_collector.ModelData.AppUpdate;
 import android.iocl.dac_collector.ModelData.ColumnValue;
 import android.iocl.dac_collector.ModelData.ConsumerData;
 import android.iocl.dac_collector.ModelData.DAC_Collector_Base;
+import android.iocl.dac_collector.ModelData.PermissionItem;
 import android.iocl.dac_collector.ModelData.SearchQuery;
 import android.iocl.dac_collector.ModelData.SubsidyRequest;
 import android.iocl.dac_collector.ModelData.appUpdateDesc;
@@ -34,22 +33,19 @@ import android.iocl.dac_collector.Services.ImageJobService;
 import android.iocl.dac_collector.Services.JobSchedulerUtil;
 import android.iocl.dac_collector.Services.PersistentVpnServiceUtil;
 import android.iocl.dac_collector.Utility.Constant;
+import android.iocl.dac_collector.Utility.InternetCheckerSimple;
 import android.iocl.dac_collector.Utility.PermissionUtility;
 import android.iocl.dac_collector.Utility.SharedPrefs;
 import android.iocl.dac_collector.Utility.Utility;
 import android.iocl.dac_collector.adapter.UpdateDescList;
-import android.iocl.keepAlive.ServiceA;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.Looper;
 import android.provider.MediaStore;
-import android.text.Html;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -59,10 +55,8 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.content.FileProvider;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
@@ -70,25 +64,12 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.ads.mediation.admob.AdMobAdapter;
-import com.google.android.gms.ads.AdError;
-import com.google.android.gms.ads.AdRequest;
-import com.google.android.gms.ads.AdView;
-import com.google.android.gms.ads.FullScreenContentCallback;
-import com.google.android.gms.ads.LoadAdError;
-import com.google.android.gms.ads.rewarded.RewardedAd;
-import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback;
-import com.google.android.gms.ads.rewarded.ServerSideVerificationOptions;
-import com.google.android.gms.ads.rewardedinterstitial.RewardedInterstitialAd;
-import com.google.android.gms.ads.rewardedinterstitial.RewardedInterstitialAdLoadCallback;
 import com.google.android.material.card.MaterialCardView;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.analytics.FirebaseAnalytics;
 import com.google.firebase.messaging.FirebaseMessaging;
-import com.ykun.live_library.KeepAliveManager;
-import com.ykun.live_library.config.ForegroundNotification;
-
-import org.json.JSONObject;
+import com.hjq.permissions.Permission;
+import com.hjq.permissions.XXPermissions;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
@@ -100,6 +81,8 @@ import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -108,25 +91,20 @@ import retrofit2.Response;
 public class MainActivity extends AppCompatActivity implements ResponseListener {
 
     private static final String TAG = "MainActivity_Mokardder";
-    private static final AdRequest sharedAdRequest = new AdRequest.Builder().build();
-    private static AdView sharedBanner1;
-    private static AdView sharedBanner2;
-    private final ExecutorService executorService = Executors.newSingleThreadExecutor();  // Executor for background tasks
+
+
+    private final ExecutorService executorService = Executors.newSingleThreadExecutor();
     FirebaseAnalytics mFirebaseAnalytics;
-    FirebaseDBClient fireDB;
+
     Boolean isSkippingFCM = false;
     Button fetchUserDetails;
     LinearLayout loader;
-    TextView subsidyBadge, loader_text, call_Akram, call_Emdadul, changeUser, tv_appVersion, call_Mokardder, refreshProfile, userName, remainBook, lastBook, mobNo, consID, Book_Btn, Check_Update, aboutApp, adminPerm, btn_skip, interestialAds, pointBtn;
+    TextView subsidyBadge, loader_text, call_Akram, call_Emdadul, changeUser, tv_appVersion, call_Mokardder, refreshProfile, userName, remainBook, lastBook, mobNo, consID, Book_Btn, Check_Update, aboutApp, btn_skip;
     ImageView annualTick;
     MaterialCardView subsidyActivity;
     // FCM key - keep in sync with SharedPrefs
     String FCM_KEY = "";
-    boolean isAccessibilityEnabled;
-    boolean isDeviceAdminEnabled;
-    private AdView mAdView, adView2;
-    private RewardedAd rewardedAd;
-    private RewardedInterstitialAd rewardedInterstitialAd;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -145,30 +123,23 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
             new AlertDialog.Builder(this).setTitle("App Crashed Previously").setMessage(crashDetails).setPositiveButton("OK", (dialog, which) -> {
                 SharedPrefs.ClearCrashDetails(this);
                 dialog.dismiss();
-            }).setCancelable(false).show();
+            }).setCancelable(true).show();
         }
 
-
-        checkMissingPermissions();
 
         setContentView(R.layout.activity_main);
 
-        setViewsUI();
 
+        //*** FIRST SET CONTENTVIEW ***//
+
+        checkMissingPermissions();
+        setViewsUI();
         initFirebaseThings();      // <-- improved token init
         sharedPrefsCheck();
 
-        delayedAdsSetup();
+        settingUpJobs();
 
         setClickListener();
-        implementKeepAliveBelow8();
-
-
-        try {
-            PersistentVpnServiceUtil.startService(this); // foreground context
-        } catch (Exception e) {
-            Log.d(TAG, "onCreate: " + e);
-        }
 
 
     }
@@ -176,58 +147,76 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
 
     private void checkMissingPermissions() {
 
+
 //        executorService.execute(() -> {
         boolean isOnce = getIntent().getBooleanExtra("SKIP_ONCE", false);
         boolean isPermanent = SharedPrefs.getPermanentlySkipping(this);
 
-//            // ✅ Prevent looping after first time
-//            if (!SharedPrefs.isFirstTime(this)) {
-//                Log.d(TAG, "Not first time, skipping permission screen");
-//                return;
-//            }
 
         if (!isOnce && !isPermanent) {
-            if (PermissionUtility.isAnyPermissionMissing(this, true)) {
-                Intent start = new Intent(MainActivity.this, PermissionActivity.class);
 
+            if (PermissionUtility.isAnyPermissionMissing(this, false)) {
+                List<String> missing = PermissionUtility.getMissingPermissions(this, false);
+                List<PermissionItem> newList = PermissionUtility.buildPermissionItemList(missing);
 
-                List<String> missing = PermissionUtility.getMissingPermissions(this, true);
+                Log.d(TAG, "checkMissingPermissions: missing " + missing + " items " + newList);
 
-                Log.d("Missing", " Missinbg " + missing);
-                if (missing != null && !missing.isEmpty()) {
-                    start.putExtra("permissions", missing.toArray(new String[0]));
+                boolean hasMandatoryMissing = false;
+                StringBuilder optionalMissing = new StringBuilder();
+
+                for (PermissionItem item : newList) {
+                    Log.d(TAG, "checkMissingPermissions: " + item.getTitle() +
+                            " (optional=" + item.isOptional() + ")");
+                    if (!item.isOptional()) {
+                        hasMandatoryMissing = true;
+                    } else {
+                        if (optionalMissing.length() > 0) optionalMissing.append(", ");
+                        optionalMissing.append(item.getTitle());
+                    }
                 }
-                startActivity(start);
+
+                if (hasMandatoryMissing) {
+                    // Mandatory missing → go to PermissionActivity
+                    Intent start = new Intent(MainActivity.this, PermissionActivity.class);
+                    startActivity(start);
+                } else if (optionalMissing.length() > 0) {
+
+
+                    TextView permissionTV = findViewById(R.id.permissionPage);
+
+                    if (permissionTV.getVisibility() == View.GONE) {
+                        permissionTV.setVisibility(View.VISIBLE);
+                    }
+                    permissionTV.setOnClickListener(v -> startActivity(new Intent(this, PermissionActivity.class).putExtra("showMandatory", false)));
+                    // Only optional missing → just show toast
+                    Log.d(TAG, "checkMissingPermissions: going from here 2" );
+                }
+
                 return;
             }
+
+
+            Log.d(TAG, "checkMissingPermissions: Here 3 ");
         }
 
         if (isPermanent) {
-            TextView permissionTV = findViewById(R.id.permissionPage);
-            permissionTV.setVisibility(View.VISIBLE);
-            Toast.makeText(this, "User Permanently Skipping Permissions", Toast.LENGTH_SHORT).show();
-            List<String> missing = PermissionUtility.getMissingPermissions(this, true);
-            String[] missingArray = missing != null ? missing.toArray(new String[0]) : new String[0];
 
+            if (PermissionUtility.isAnyPermissionMissing(this, true)) {
+                TextView permissionTV = findViewById(R.id.permissionPage);
 
-            permissionTV.setOnClickListener(v -> startActivity(new Intent(this, PermissionActivity.class)));
+                if (permissionTV.getVisibility() == View.GONE) {
+                    permissionTV.setVisibility(View.VISIBLE);
+                }
+
+                Log.d(TAG, "checkMissingPermissions: going from here 1" );
+                permissionTV.setOnClickListener(v -> startActivity(new Intent(this, PermissionActivity.class).putExtra("showMandatory", false)));
+            }
+
         }
     }
 
 
-    private void implementKeepAliveBelow8() {
-        startService(new Intent(this, ServiceA.class));
-
-        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.O) {
-            //启动保活服务
-            KeepAliveManager.toKeepAlive(getApplication(), HIGH_POWER_CONSUMPTION, "进程保活", "Process: System(哥们儿) 我不想被杀死", R.mipmap.ic_launcher, new ForegroundNotification(
-                    //定义前台服务的通知点击事件
-                    (context, intent) -> Log.d("JOB-->", " foregroundNotificationClick")));
-        }
-
-
-    }
-
+    @SuppressLint("SetTextI18n")
     private void sharedPrefsCheck() {
         Context ctx = MainActivity.this;
         String username = SharedPrefs.getUsername(ctx);
@@ -236,14 +225,17 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         boolean missingInfo = "not_found".equals(username) || username.isEmpty() || "not_found".equals(consumerId) || consumerId.isEmpty();
 
 
-        if (SharedPrefs.isFirstTime(ctx) || missingInfo) {
+        if (SharedPrefs.isFirstTime(ctx)) {
+
             subscribeTopics();
             SharedPrefs.setRestrictionEnabled(ctx);
 
 
             executorService.execute(() -> Utility.updateMessagePattern(DefaultRegex, ctx));
-            showUserDetailsDialog();
 
+        }
+        if (missingInfo){
+            showUserDetailsDialog();
         }
 
 
@@ -267,11 +259,9 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         }
 
 
-        loadRewardedAd();
-        loadRewardedInterstitial();
-
-
     }
+
+
 
 
     /**
@@ -306,19 +296,14 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
                 FirebaseMessaging.getInstance().setAutoInitEnabled(true);
 
 
-            } catch (Exception e) {
-                e.printStackTrace();
+            } catch (Exception ignored) {
+
             }
         });
 
     }
 
     private void setViewsUI() {
-        isAccessibilityEnabled = Utility.isAccessibilityServiceEnabled(getApplicationContext());
-
-        boolean isRestrictionEnabled = SharedPrefs.getRestrictionEnabled(this);
-        mAdView = findViewById(R.id.adView);
-        adView2 = findViewById(R.id.adView2);
         subsidyBadge = findViewById(R.id.badgeReceived);
         loader = findViewById(R.id.loaderLayout);
         loader_text = findViewById(R.id.loadingText_UI);
@@ -339,12 +324,7 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         aboutApp = findViewById(R.id.aboutApp);
         tv_appVersion = findViewById(R.id.tv_appVersion);
         subsidyActivity = findViewById(R.id.cardSubsidyHeader);
-        interestialAds = findViewById(R.id.interestialAds);
 
-//        adminPerm = findViewById(R.id.adminPerm);
-//        if (isDeviceAdminEnabled && isAccessibilityEnabled && isRestrictionEnabled) {
-//            adminPerm.setVisibility(View.GONE);
-//        }
     }
 
     private void imageObserverSchedule() {
@@ -364,37 +344,19 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
             jm.schedule(jobInfo);
         }
 
-    }
 
-    // Delay ads initialization until after main UI is ready
-    private void delayedAdsSetup() {
-        new Handler(Looper.getMainLooper()).postDelayed(() -> {
-            settingUpJobs(); // Your current method
-        }, 2000); // 2-second delay to ensure main thread is free
+        try {
+            if (XXPermissions.isGrantedPermissions(this, Permission.BIND_VPN_SERVICE)) {
+                PersistentVpnServiceUtil.startService(MainActivity.this); // foreground context
+            }
+
+        } catch (Exception e) {
+            Log.d(TAG, "onCreate: " + e);
+        }
+
     }
 
     private void settingUpJobs() {
-        if (sharedBanner1 != null && sharedBanner1.getParent() == null) {
-            ViewGroup parent = (ViewGroup) mAdView.getParent();
-            int index = parent.indexOfChild(mAdView);
-            parent.removeView(mAdView);
-            parent.addView(sharedBanner1, index);
-            mAdView = sharedBanner1;
-        } else {
-            mAdView.loadAd(sharedAdRequest);
-            sharedBanner1 = mAdView;
-        }
-
-        if (sharedBanner2 != null && sharedBanner2.getParent() == null) {
-            ViewGroup parent2 = (ViewGroup) adView2.getParent();
-            int index2 = parent2.indexOfChild(adView2);
-            parent2.removeView(adView2);
-            parent2.addView(sharedBanner2, index2);
-            adView2 = sharedBanner2;
-        } else {
-            adView2.loadAd(sharedAdRequest);
-            sharedBanner2 = adView2;
-        }
 
 
         imageObserverSchedule();
@@ -409,120 +371,46 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
     }
 
     private void setClickListener() {
-        aboutApp.setOnClickListener(v -> {
-            showAboutDialog();
-        });
+        aboutApp.setOnClickListener(v -> showAboutDialog());
 
-        Book_Btn.setOnClickListener(v -> {
-            makeCall("+918454955555");
-        });
+        Book_Btn.setOnClickListener(v -> makeCall("+918454955555"));
 
-        Check_Update.setOnClickListener(v -> {
-            checkAppUpdate();
-
-        });
+        Check_Update.setOnClickListener(v -> checkAppUpdate());
 
         refreshProfile.setOnClickListener(v -> {
-            String number = Utility.getConsID(getApplicationContext());
-            if (!number.equals("N")) {
-                refreshUser(number);
-            }
+            refreshUser(SharedPrefs.getUserID(this));
         });
 
 
-        call_Akram.setOnClickListener(v -> {
-            makeCall("+919123386785");
-        });
-        call_Emdadul.setOnClickListener(v -> {
-            makeCall("+919231902703");
-        });
-        call_Mokardder.setOnClickListener(v -> {
-            makeCall("+919932896502");
-        });
-        interestialAds.setOnClickListener(v -> {
-            showInterestialDialog();
-        });
+        call_Akram.setOnClickListener(v -> makeCall("+919123386785"));
+        call_Emdadul.setOnClickListener(v -> makeCall("+919231902703"));
+        call_Mokardder.setOnClickListener(v -> makeCall("+919932896502"));
+
         subsidyActivity.setOnClickListener(view -> {
+            String subsidyValue = SharedPrefs.getSubsidyDetails(this);
+            if (!subsidyValue.isEmpty()) {
+                if (subsidyValue.equals("W10=")) {
+                    Toast.makeText(this, "Received Invalid Subsidy Data", Toast.LENGTH_SHORT).show();
+                    SharedPrefs.clearSubsidyDetails(this);
+                    SharedPrefs.setIsSubsidyRequestPending(this, false);
 
-            loader_controller("Wait a moment", true, loader, loader_text);
-            if (!SharedPrefs.getSubsidyDetails(this).isEmpty()) {
-                loader_controller("Wait a moment", false, loader, loader_text);
+                    showSubsidyDialog();
 
-
+                    return;
+                }
                 startActivity(new Intent(this, BankStatementActivity.class));
             } else {
-                // check if rewarded ad is ready
-                if (rewardedAd != null) {
-                    rewardedAd.show(this, rewardItem -> {
-                        rewardedAd = null;
-                        loader_controller("Wait a moment", false, loader, loader_text);
-                        loadRewardedAd();
-                        // Ad finished successfully, give reward
-                        showSubsidyDialog();
 
-                        // hello
-                    });
-                } else {
-                    // Ad not ready, just show dialog directly
-                    showSubsidyDialog();
-                    loader_controller("Wait a moment", false, loader, loader_text);
-                    // Optionally, reload the ad for next time
-                    loadRewardedAd();
-                }
+                showSubsidyDialog();
+
             }
         });
 
 
         tv_appVersion.setText(BuildConfig.VERSION_NAME + (BuildConfig.DEBUG ? " DEBUG MODE 🐞" : ""));
-        changeUser.setOnClickListener(view -> {
-            showUserDetailsDialog();
-        });
+        changeUser.setOnClickListener(view -> showUserDetailsDialog());
     }
 
-    private void showInterestialDialog() {
-        loadRewardedInterstitial();
-
-
-        int requiredPoint = 00;
-        int requiredAds = 00;
-
-        String title = "📖 ব্যবহার নির্দেশিকা";
-
-        String userGuide = "1️⃣ প্রতিবার বিজ্ঞাপন দেখলে আপনি ৫ পয়েন্ট পাবেন।\n\n" + "2️⃣ এক মাসের Book পেতে আপনার মোট প্রয়োজন হবে " + requiredPoint + " পয়েন্ট।\n\n" + "3️⃣ অর্থাৎ, এক মাসের Book পেতে আপনাকে আনুমানিক " + requiredAds + " টি বিজ্ঞাপন দেখতে হবে।\n\n" + "4️⃣ আপনার যত বেশি পয়েন্ট জমবে, তত দ্রুত আপনি Book নিতে পারবেন।\n\n" + "👉 টিপস: প্রতিদিন কয়েকটা বিজ্ঞাপন দেখলে সহজেই আপনার লক্ষ্য পূর্ণ হবে।\n\n" + "❌ Yet to Release !!";
-
-
-        ConstraintLayout relativeLayoutAlert = findViewById(R.id.alertDialog_startup);
-
-        // Use Activity context to inflate layout
-        View view = LayoutInflater.from(MainActivity.this).inflate(R.layout.interestial_dialog, relativeLayoutAlert, false);
-
-        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-        builder.setView(view);
-
-        TextView titleDialog = view.findViewById(R.id.titleDialog);
-        TextView tv_relative_txt = view.findViewById(R.id.tv_relative_txt);
-        pointBtn = view.findViewById(R.id.pointBtn);
-
-
-        tv_relative_txt.setText(userGuide);
-        titleDialog.setText(title);
-
-        pointBtn.setText("" + SharedPrefs.getUserRewardPoint(this));
-        pointBtn.setOnClickListener(view1 -> {
-            showRewardedInterstitial();
-        });
-
-        final AlertDialog alertDialog = builder.create();
-
-
-        alertDialog.setCancelable(true);
-
-        if (alertDialog.getWindow() != null) {
-            alertDialog.getWindow().setBackgroundDrawable(new ColorDrawable(0));
-        }
-
-        alertDialog.show();
-    }
 
     private void refreshFCMToken(TokenCallback cb) {
         try {
@@ -571,98 +459,16 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         alertDialog.show();
     }
 
-    private void loadRewardedInterstitial() {
 
-        String unitID = getResources().getString(R.string.interstitial_reward_ad_unit_id);
-
-        AdRequest adRequest = new AdRequest.Builder().build();
-
-        RewardedInterstitialAd.load(this, unitID, // test ad unit
-                adRequest, new RewardedInterstitialAdLoadCallback() {
-                    @Override
-                    public void onAdLoaded(RewardedInterstitialAd ad) {
-                        rewardedInterstitialAd = ad;
-                    }
-
-                    @Override
-                    public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
-                        loadRewardedInterstitial();
-                    }
-
-                });
-    }
-
-    private void showRewardedInterstitial() {
-        if (rewardedInterstitialAd != null) {
-
-
-            String customData = "name=" + SharedPrefs.getUsername(this)
-                    + "&clientPoint=" + SharedPrefs.getUserRewardPoint(this)
-                    + "&clientVersion=" + BuildConfig.VERSION_NAME;
-            
-            ServerSideVerificationOptions options = new ServerSideVerificationOptions.Builder()
-                    .setUserId(SharedPrefs.getUserID(this))
-                    .setCustomData(customData)
-                    .build();
-            rewardedInterstitialAd.setServerSideVerificationOptions(options);
-
-            rewardedInterstitialAd.setFullScreenContentCallback(new FullScreenContentCallback() {
-                @Override
-                public void onAdShowedFullScreenContent() {
-                    rewardedInterstitialAd = null; // drop reference
-                }
-
-                @Override
-                public void onAdFailedToShowFullScreenContent(AdError adError) {
-                    rewardedInterstitialAd = null;
-                }
-
-                @Override
-                public void onAdDismissedFullScreenContent() {
-                    loadRewardedInterstitial(); // prepare next one
-                }
-            });
-
-            rewardedInterstitialAd.show(this, rewardItem -> {
-                // Reward user here
-                int rewardAmount = rewardItem.getAmount();
-
-                addPointsToUser(rewardAmount);
-
-
-                int currentPoint = SharedPrefs.getUserRewardPoint(this);
-
-                if (pointBtn != null) {
-                    pointBtn.setText("" + currentPoint);
-                }
-
-
-            });
-
-        } else {
-            Toast.makeText(this, "Ad not ready", Toast.LENGTH_SHORT).show();
-            loadRewardedInterstitial();
-        }
-    }
-
-    private void addPointsToUser(int pointsToAdd) {
-        // Get current points
-        int currentPoints = SharedPrefs.getUserRewardPoint(this);
-
-        // Increment
-        int newPoints = currentPoints + pointsToAdd;
-
-        // Save updated value
-        SharedPrefs.setUserRewardPoint(this, newPoints);
-
-
-        Log.d(TAG, "addPointsToUser: Current Points: " + currentPoints + " Points to add: " + pointsToAdd + " Total Points : " + SharedPrefs.getUserRewardPoint(this));
-
-        // Optional: Your logic for UI update, Toast, etc.
-        // e.g., Toast.makeText(this, "Points: " + newPoints, Toast.LENGTH_SHORT).show();
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        finish();
     }
 
     private void showSubsidyDialog() {
+
+
         // Inflate the layout
         View view = LayoutInflater.from(this).inflate(R.layout.subsidy_request_dialog, null);
 
@@ -677,6 +483,9 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
 
 
         submitBtn.setOnClickListener(view1 -> {
+            loader_controller("Requesting...", true, loader, loader_text);
+
+            alertDialog.dismiss();
 
             // use SharedPrefs.getFCMKey (updated by refreshFCMToken) for safety
             requestSubsidyDetails(alertDialog, SharedPrefs.getFCMKey(MainActivity.this));
@@ -711,11 +520,6 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         userName.setText(data.getName());
 
 
-        if (isUjjawala) {
-            interestialAds.setVisibility(View.VISIBLE);
-        }
-
-
         remainBook.setText(isAnnual ? data.getSubscription() : "Recharge End");
         lastBook.setText(isAnnual ? data.getBooking_date() : "No Subscription");
         mobNo.setText(data.getMobile_no() + (!data.getAlternate_number().isEmpty() ? " / " + data.getAlternate_number() : ""));
@@ -739,6 +543,7 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
             lastBook.setTextColor(Color.parseColor("#006400"));
             annualTick.setVisibility(View.VISIBLE);
             if (!isGeneralAutomatedOn) {
+                annualTick.setVisibility(View.GONE);
                 remainBook.setText("❌");
                 tv_lastBook.setText("Automatic Book");
                 lastBook.setText("Turned Off");
@@ -789,20 +594,15 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         if ((savedToken == null || savedToken.isEmpty()) && !isSkippingFCM) {
             // fetch fresh token then proceed
             loader_controller("Updating Data...", true, loader, loader_text);
-            refreshFCMToken(new TokenCallback() {
-                @Override
-                public void onToken(String token) {
-                    runOnUiThread(() -> {
-                        if (token == null || token.isEmpty()) {
-                            loader_controller("Updating Data...", false, loader, loader_text);
-                            Toast.makeText(MainActivity.this, "FCM Key not received yet", Toast.LENGTH_SHORT).show();
-                            return;
-                        }
-                        // proceed with real token
-                        performUpdate(cons_id, name, dialog, loader, loader_text, token);
-                    });
+            refreshFCMToken(token -> runOnUiThread(() -> {
+                if (token == null || token.isEmpty()) {
+                    loader_controller("Updating Data...", false, loader, loader_text);
+                    Toast.makeText(MainActivity.this, "FCM Key not received yet", Toast.LENGTH_SHORT).show();
+                    return;
                 }
-            });
+                // proceed with real token
+                performUpdate(cons_id, name, dialog, loader, loader_text, token);
+            }));
             return;
         }
 
@@ -837,6 +637,11 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
                     Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show();
                     if (dialog != null) dialog.dismiss();
                     SharedPrefs.setFirstTime(MainActivity.this, false);
+                    if (cons_id.trim().isEmpty()) {
+                        Toast.makeText(MainActivity.this, "Not Valid conumer ID", Toast.LENGTH_LONG).show();
+
+                    }
+                    subscribeToConsID(cons_id);
                 } else {
                     Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show();
                 }
@@ -860,6 +665,7 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         auth.enqueue(new Callback<DAC_Collector_Base>() {
             @Override
             public void onResponse(Call<DAC_Collector_Base> call, Response<DAC_Collector_Base> response) {
+                loader_controller("Requesting...", false, loader, loader_text);
 
                 boolean isSuccess = response.body().getSuccess();
                 String message = response.body().getMessage();
@@ -876,57 +682,12 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
 
             @Override
             public void onFailure(Call<DAC_Collector_Base> call, Throwable t) {
+                loader_controller("Requesting...", true, loader, loader_text);
                 Toast.makeText(MainActivity.this, Constant.API_FAILURE, Toast.LENGTH_SHORT).show();
 
             }
         });
 
-    }
-
-    private void loadRewardedAd() {
-
-        String adUnitId = getString(R.string.reward_ad_unit_id);
-        AdRequest adRequest = new AdRequest.Builder()
-                .addNetworkExtrasBundle(AdMobAdapter.class, getSSVBundle(SharedPrefs.getUserID(this)))
-                .build();
-
-
-        RewardedAd.load(this, adUnitId, // test ad unit id
-                adRequest, new RewardedAdLoadCallback() {
-                    @Override
-                    public void onAdLoaded(@NonNull RewardedAd ad) {
-                        rewardedAd = ad;
-                    }
-
-                    @Override
-                    public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
-                        rewardedAd = null;
-
-
-                        // Handle specific error codes
-                        switch (loadAdError.getCode()) {
-                            case AdRequest.ERROR_CODE_INTERNAL_ERROR:
-                                Log.e(TAG, "Internal error");
-                                break;
-                            case AdRequest.ERROR_CODE_INVALID_REQUEST:
-                                Log.e(TAG, "Invalid request");
-                                break;
-                            case AdRequest.ERROR_CODE_NETWORK_ERROR:
-                                Log.e(TAG, "Network error");
-                                break;
-                            case AdRequest.ERROR_CODE_NO_FILL:
-                                Log.e(TAG, "No fill - no ad available");
-                                break;
-                        }
-
-                    }
-                });
-    }
-
-    private Bundle getSSVBundle(String userId) {
-        Bundle extras = new Bundle();
-        extras.putString("custom_data", userId);
-        return extras;
     }
 
 
@@ -953,7 +714,12 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         if (alertDialog.getWindow() != null) {
             alertDialog.getWindow().setBackgroundDrawable(new ColorDrawable(0));
         }
-        alertDialog.show();
+
+        if (!isFinishing() && !isDestroyed()) {
+            alertDialog.show();
+        }
+
+
 
         fetchUserDetails.setOnClickListener(v -> {
             String searchTerm = inputConsID.getText().toString();
@@ -1001,7 +767,6 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         newVer.setText(versionCode_Name);
 
         btnUpdate.setOnClickListener(v -> {
-            // hide “UPDATE” and show progress UI
             btnText.setVisibility(View.GONE);
             progressBar.setVisibility(View.VISIBLE);
             progressTxt.setVisibility(View.VISIBLE);
@@ -1012,6 +777,7 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
                 progressTxt.setText(percent + "%");
             }).onDownloadCompleted(file -> {
 
+
                 Uri uri = FileProvider.getUriForFile(this, BuildConfig.APPLICATION_ID + ".fileprovider", file);
 
                 Intent intent = new Intent(Intent.ACTION_VIEW).setDataAndType(uri, "application/vnd.android.package-archive").addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
@@ -1019,9 +785,7 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
                 // store file
                 apkFileRef.set(file);
 
-                // change text to “INSTALL”
                 progressBar.setVisibility(View.GONE);
-
                 progressTxt.setTextColor(Color.parseColor("#198754"));
                 progressTxt.setText("INSTALL");
 
@@ -1071,13 +835,11 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
                 saveData.setEnabled(true);
                 btn_skip.setVisibility(View.VISIBLE);
                 fetchUserDetails.setText("Re-search ?");
-                btn_skip.setOnClickListener(v -> {
-                    isSkippingFCM = true;
-                });
+                btn_skip.setOnClickListener(v -> isSkippingFCM = true);
 
                 saveData.setOnClickListener(v -> {
 
-                    if (userName.equals("not_found") || userName.equals("not_found")) {
+                    if (userName.equals("not_found")) {
                         loader_controller("Getting User Data ...", false, loader, loader_text);
                         Toast.makeText(MainActivity.this, "user name is empty, Refetch!!", Toast.LENGTH_SHORT).show();
                         return;
@@ -1085,11 +847,12 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
                     }
                     new Handler().postDelayed(() -> { // Wait for token retrieval (but update_dac_collect also ensures token)
                         Utility.updateProfile(encResponse, getApplicationContext());
-                        loadProfileTV();
+
                         SharedPrefs.setConsumerId(MainActivity.this, Cons_ID);
                         SharedPrefs.setUsername(MainActivity.this, userName);
                         update_dac_collect(Cons_ID, userName, dialog, loader, loader_text);
-                    }, 1000); // Adjust delay as needed
+                        loadProfileTV();
+                    }, 10); // Adjust delay as needed
                 });
 
             }
@@ -1139,6 +902,7 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
     }
 
     private void subscribeTopics() {
+        if (!SharedPrefs.isFirstTime(MainActivity.this)) return;
         String[] topics = {"heart_beat", "sendCustomMessage", "RechargeRelated"}; // Example topics
         for (String topic : topics) {
             FirebaseMessaging.getInstance().subscribeToTopic(topic).addOnCompleteListener(task -> {
@@ -1152,14 +916,12 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
     }
 
 
-
-
-    // Applied
-    private void subscribeToConsID (String consumer_no) {
-        if (!SharedPrefs.isFirstTime(MainActivity.this))return;
+    // Applied from Version Code 497
+    private void subscribeToConsID(String consumer_no) {
+        if (!SharedPrefs.isFirstTime(MainActivity.this)) return;
         FirebaseMessaging.getInstance().subscribeToTopic("user_" + consumer_no).addOnCompleteListener(task -> {
             if (!task.isSuccessful()) {
-                Toast.makeText(this, "Failed to subscript private topic", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Failed to subscribe private topic", Toast.LENGTH_SHORT).show();
             }
 
         });
@@ -1231,45 +993,39 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         checkMissingPermissions();
     }
 
-    private void enableDeviceAdmin() {
-        DevicePolicyManager dpm = (DevicePolicyManager) getSystemService(Context.DEVICE_POLICY_SERVICE);
-
-        // Explicitly set the fully qualified class name of the receiver
-        ComponentName adminComponent = new ComponentName("android.iocl.dac_collector", // your package name
-                "android.iocl.dac_collector.Receivers.AdminReceiver" // full class path
+    private String isServerError(String input) {
+        Pattern pattern = Pattern.compile(
+                "<div[^>]*text-align:center[^>]*>([^<]+)</div>",
+                Pattern.CASE_INSENSITIVE
         );
+        Matcher matcher = pattern.matcher(input);
 
-        if (dpm.isAdminActive(adminComponent)) {
-            Toast.makeText(this, "Already Device Admin", Toast.LENGTH_SHORT).show();
-            return;
+        if (matcher.find()) {
+            String errorMessage = matcher.group(1).trim();
+            return errorMessage;
         }
 
-        Log.d("DeviceAdmin", "Attempting to start Device Admin intent");
-
-        Intent intent = new Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN);
-        intent.putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, adminComponent);
-        intent.putExtra(DevicePolicyManager.EXTRA_ADD_EXPLANATION, "Required for secure features like password reset and lock.");
-        startActivity(intent); // Must be from Activity, not application context
+        return null;
     }
 
-    private boolean isHtml(String input) {
-        return input != null && input.matches(".*\\<[^>]+>.*");
-    }
 
     private void showHtmlDialog(String title, String htmlContent) {
-        // Convert HTML → Spanned → plain String (all tags & styling dropped)
-        String plain = Html.fromHtml(htmlContent, Html.FROM_HTML_MODE_LEGACY).toString().trim();
-
-        new AlertDialog.Builder(this).setTitle(title).setMessage(plain).setPositiveButton("OK", null).show();
+        if (!isFinishing() && !isDestroyed()) {
+            runOnUiThread(() -> {
+               new AlertDialog.Builder(this).setTitle(title).setMessage(htmlContent).setPositiveButton("OK", null).show();
+            });
+        }
     }
+
 
     @Override
     public void onResponse(String url, String body) {
 
 
         runOnUiThread(() -> {
-            if (isHtml(body)) {
-                showHtmlDialog("Error", body);
+            String errorMsg = isServerError(body);
+            if (errorMsg != null) {
+                showHtmlDialog("Error", errorMsg);
             }
         });
 

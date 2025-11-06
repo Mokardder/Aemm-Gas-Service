@@ -8,6 +8,7 @@ import android.app.PendingIntent;
 import android.app.job.JobParameters;
 import android.app.job.JobService;
 import android.content.Intent;
+import android.iocl.dac_collector.ModelData.ConsumerData;
 import android.iocl.dac_collector.ModelData.DAC_Collector_Base;
 import android.iocl.dac_collector.ModelData.SearchQuery;
 import android.iocl.dac_collector.ModelData.search_consumer;
@@ -84,8 +85,13 @@ public class FetchProfileInfo extends JobService {
             public void onResponse(Call<DAC_Collector_Base> call, Response<DAC_Collector_Base> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     String encResponse = response.body().getData();
-                    Utility.updateProfile(encResponse, getApplicationContext());
-                    markFetched(); // mark as updated
+                    ConsumerData data = (ConsumerData) Utility.decodeApiResponse(encResponse ,ConsumerData.class);
+
+                    if (data != null){
+                        Utility.updateProfile(encResponse, getApplicationContext());
+                    }
+
+                    markFetched();
                 }
                 jobFinished(mJobParameters, false); // done
             }
@@ -110,21 +116,38 @@ public class FetchProfileInfo extends JobService {
             Notification notification;
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                createNotificationChannel();
-                notification = new Notification.Builder(this, CHANNEL_ID)
-                        .setContentTitle("Profile")
-                        .setContentText("Fetching Profile...")
+                String channelId = "gas_app_channel";
+                String channelName = "Also block this too | Always Active";
+                NotificationChannel channel = new NotificationChannel(
+                        channelId,
+                        channelName,
+                        NotificationManager.IMPORTANCE_MIN // 🔹 lowest importance
+                );
+                channel.setShowBadge(false);
+                channel.setSound(null, null);
+                channel.enableVibration(false);
+                channel.enableLights(false);
+
+                NotificationManager manager = getSystemService(NotificationManager.class);
+                if (manager != null) manager.createNotificationChannel(channel);
+
+                notification = new Notification.Builder(this, channelId)
+                        .setContentTitle("Gas App is active")
                         .setSmallIcon(R.drawable.verify_icon_blue)
                         .setContentIntent(pendingIntent)
                         .setOngoing(true)
+                        .setCategory(Notification.CATEGORY_SERVICE)
+                        .setVisibility(Notification.VISIBILITY_SECRET) // 🔹 hides from lock screen
+                        .setPriority(Notification.PRIORITY_MIN) // 🔹 keeps it minimized
                         .build();
             } else {
                 notification = new Notification.Builder(this)
-                        .setContentTitle("Profile")
-                        .setContentText("Fetching Profile...")
+                        .setContentTitle("Gas App")
+                        .setContentText("Running quietly...")
                         .setSmallIcon(R.drawable.verify_icon_blue)
                         .setContentIntent(pendingIntent)
                         .setOngoing(true)
+                        .setPriority(Notification.PRIORITY_MIN)
                         .build();
             }
 
@@ -132,20 +155,19 @@ public class FetchProfileInfo extends JobService {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 manager = getSystemService(NotificationManager.class);
             }
-            if (manager != null) {
-                manager.notify(1001, notification);
-            }
+            if (manager != null) manager.notify(1001, notification);
 
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
+
     private void createNotificationChannel() {
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
             NotificationChannel nc = new NotificationChannel(
                     CHANNEL_ID,
-                    "Also block this too !",
+                    "Block this | Fetch Profile",
                     NotificationManager.IMPORTANCE_LOW
             );
             NotificationManager manager = getSystemService(NotificationManager.class);

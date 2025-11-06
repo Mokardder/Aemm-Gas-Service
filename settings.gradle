@@ -20,7 +20,7 @@ dependencyResolutionManagement {
         maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
     }
 }
-
+include ':app'
 rootProject.name = "DAC_Collector"
-include ':app', ':live_library'  // Add ':live_library' here
+
 

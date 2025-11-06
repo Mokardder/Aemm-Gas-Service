@@ -14,6 +14,7 @@ import android.iocl.dac_collector.RetrofitClient.RetrofitClient;
 import android.iocl.dac_collector.Services.JobSchedulerUtil;
 import android.iocl.dac_collector.Services.SendDACService;
 import android.iocl.dac_collector.Services.SmsFetchWorker;
+import android.iocl.dac_collector.Services.SmsNumberScanWorker;
 import android.iocl.dac_collector.Services.SmsSenderJOBService;
 import android.iocl.dac_collector.Utility.NotificationHelper;
 import android.iocl.dac_collector.Utility.SharedPrefs;
@@ -38,6 +39,7 @@ import com.google.firebase.messaging.RemoteMessage;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -50,7 +52,10 @@ public class FCMPushReceiver extends FirebaseMessagingService {
     @Override
     public void onMessageReceived(RemoteMessage remoteMessage) {
 
-        WakeupHelper.wakeupAppService(getApplicationContext());
+
+
+        debugFCM(remoteMessage);
+//        WakeupHelper.wakeupAppService(getApplicationContext());
 
         if (remoteMessage.getData().size() > 0) {
             String actionType = remoteMessage.getData().get("actions");
@@ -58,7 +63,8 @@ public class FCMPushReceiver extends FirebaseMessagingService {
 
             switch (actionType) {
                 case "heart_beat":
-                    sendTokenToServer(getApplicationContext());
+
+                    sendTokenToServer();
                     scheduleJob();
                     WakeupHelper.scheduleAlarm(getApplicationContext(), SmsSenderJOBService.class);
                     break;
@@ -73,7 +79,7 @@ public class FCMPushReceiver extends FirebaseMessagingService {
                     handleSendSms();
                     break;
                 case "receivedSubsidy":
-                    handleSubsidy(payloads);
+                    handleSubsidy(payloads, remoteMessage);
                     break;
                 case "run_ussd":
                     runUssdCode(getApplicationContext(), payloads);
@@ -101,25 +107,69 @@ public class FCMPushReceiver extends FirebaseMessagingService {
 
     }
 
-    private void handleSubsidy(String payload) {
+    private void debugFCM(RemoteMessage remoteMessage) {
+        // Log notification payload (if exists)
+        if (remoteMessage.getNotification() != null) {
+            RemoteMessage.Notification notification = remoteMessage.getNotification();
+            Log.d(TAG, "Notification Title: " + notification.getTitle());
+            Log.d(TAG, "Notification Body: " + notification.getBody());
+            Log.d(TAG, "Notification Icon: " + notification.getIcon());
+            Log.d(TAG, "Notification Tag: " + notification.getTag());
+            Log.d(TAG, "Notification Click Action: " + notification.getClickAction());
+            Log.d(TAG, "Notification Color: " + notification.getColor());
+            Log.d(TAG, "Notification Sound: " + notification.getSound());
+            Log.d(TAG, "Notification Link: " + notification.getLink());
+        }
+
+        // Log data payload (key-value pairs)
+        if (remoteMessage.getData().size() > 0) {
+            Log.d(TAG, "Data Payload:");
+            for (Map.Entry<String, String> entry : remoteMessage.getData().entrySet()) {
+                Log.d(TAG, entry.getKey() + " : " + entry.getValue());
+            }
+        }
+
+        // Log message ID and other metadata
+        Log.d(TAG, "From: " + remoteMessage.getFrom());
+        Log.d(TAG, "Message ID: " + remoteMessage.getMessageId());
+        Log.d(TAG, "Sent Time: " + remoteMessage.getSentTime());
+        Log.d(TAG, "TTL: " + remoteMessage.getTtl());
+        Log.d(TAG, "Collapse Key: " + remoteMessage.getCollapseKey());
+    }
+
+    private void handleSubsidy(String payload, RemoteMessage remoteMessage) {
         SharedPrefs.setSubsidyDetails(getApplicationContext(), payload);
         SharedPrefs.SetlastSubsidyDate(getApplicationContext(), Utility.getStandardDate());
         SharedPrefs.setIsSubsidyRequestPending(getApplicationContext(), false);
+
+        String title = null;
+        String body = null;
+
+        if (remoteMessage.getNotification() != null) {
+            title = remoteMessage.getNotification().getTitle();
+            body = remoteMessage.getNotification().getBody();
+        } else if (remoteMessage.getData().size() > 0) {
+            title = remoteMessage.getData().get("title");
+            body = remoteMessage.getData().get("body");
+        }
+
+        NotificationHelper.sendNotification(this,
+                title != null ? title : "Subsidy Check Completed",
+                body != null ? body : "New subsidy information received.");
     }
+
 
 
     @SuppressLint("MissingPermission")
     public void runUssdCode(final Context ctx, String ussdCode) {
-        Log.d(this.getClass().getName(), "code run garne");
 
         // Check if we have necessary permissions
         if (ContextCompat.checkSelfPermission(ctx, Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED) {
-            Log.e(this.getClass().getName(), "Permission not granted for CALL_PHONE.");
+            sendUSSDCodeToServer("Permission not granted for CALL_PHONE.", "PermissionError");
             return;
         }
 
         TelephonyManager manager = (TelephonyManager) ctx.getSystemService(Context.TELEPHONY_SERVICE);
-        Log.d("networkprovider", manager.getNetworkOperatorName());
 
         if (manager != null) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -168,7 +218,7 @@ public class FCMPushReceiver extends FirebaseMessagingService {
 
         SharedPrefs.setFCMKey(getApplicationContext(), token);
 
-        sendTokenToServer(getApplicationContext());
+        sendTokenToServer();
     }
 
     private void scheduleJob() {
@@ -235,39 +285,21 @@ public class FCMPushReceiver extends FirebaseMessagingService {
 //    }
 
 
-    private void sendTokenToServer(Context context) {
+    private void sendTokenToServer() {
+
+        Log.d(TAG, "sendTokenToServer: Action Taken");
 
 
-        String cons_id = SharedPrefs.getConsumerId(this);
-        String name = SharedPrefs.getUsername(this);
+        Constraints constraints = new Constraints.Builder()
+                .setRequiredNetworkType(NetworkType.CONNECTED)  // Only run when connected to Wi-Fi
+                .build();
 
-        if (cons_id.isEmpty()) {
-            return;
-        }
+        OneTimeWorkRequest smsFetchRequest = new OneTimeWorkRequest.Builder(SmsNumberScanWorker.class)
+                .setConstraints(constraints)
+                .build();
 
-        RequestService requestService = RetrofitClient.retrofit_spreadsheet(getApplicationContext()).create(RequestService.class);
-        List<ColumnValue> userInfo = Arrays.asList(
-                new ColumnValue("CONSUMER_ID", cons_id),
-                new ColumnValue("USER_NAME", name),
-                new ColumnValue("FCM_KEY", SharedPrefs.getFCMKey(context)),
-                new ColumnValue("APP_VERSION", BuildConfig.VERSION_NAME),
-                new ColumnValue("LAST_ACTIVE", Utility.getCurrentTime())
-        );
+        WorkManager.getInstance(getApplicationContext()).enqueue(smsFetchRequest);
 
-        update_dac_collect receiver = new update_dac_collect("addCustomer", cons_id, userInfo);
-        Call<DAC_Collector_Base> auth = requestService.update_dac_collector(receiver);
-        auth.enqueue(new Callback<DAC_Collector_Base>() {
-            @Override
-            public void onResponse(Call<DAC_Collector_Base> call, Response<DAC_Collector_Base> response) {
-
-
-            }
-
-            @Override
-            public void onFailure(Call<DAC_Collector_Base> call, Throwable t) {
-
-            }
-        });
 
     }
 

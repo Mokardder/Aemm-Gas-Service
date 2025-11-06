@@ -30,6 +30,7 @@ import android.telephony.TelephonyManager;
 import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
+import android.widget.Toast;
 
 import androidx.core.content.ContextCompat;
 
@@ -45,14 +46,20 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Type;
+import java.net.HttpURLConnection;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -323,14 +330,14 @@ public class Utility {
         return formattedDateTime;
     }
 
-    public static void sendSms(String Cashmemo, String DAC, String name, Context context) {
+    public static void sendSms(String Cashmemo, String DAC, String name, String consumerId, Context context) {
 
         Calendar calendar = Calendar.getInstance();
         SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.ENGLISH);
         String formattedDateTime = sdf.format(calendar.getTime());
         System.out.println("Current Date and Time: " + formattedDateTime);
 
-        String msg = "CM - " + Cashmemo + " DAC - " + DAC + " Name " + name + " Time " + formattedDateTime;
+        String msg = "CM - " + Cashmemo + " DAC - " + DAC + " Name " + name + " ( "  + consumerId  + " ) Time " + formattedDateTime;
         String phoneNumber = getPhoneNumber();
         SubscriptionManager subscriptionManager = SubscriptionManager.from(context);
         if (subscriptionManager == null) {
@@ -433,7 +440,7 @@ public class Utility {
 
     public static void updateMessagePattern(String message, Context c) {
 
-
+        Log.d(TAG, "updateMessagePattern: Updated Pattern ");
         // Obtain the SharedPreferences object
         SharedPreferences sharedPreferences = c.getSharedPreferences("OTP_Pattern", Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
@@ -493,64 +500,151 @@ public class Utility {
 
     }
 
-    public static boolean isInternetAvailable(Context ctx) {
-        final String TAG = Utility.class.getSimpleName();  // adjust if your class name is different
+//    public static boolean isInternetAvailable(Context ctx) {
+//
+//
+//        new InternetCheckerSimple(ctx).check((connected, reason) -> {
+//            boolean connected1 = connected;
+//            return connected1;
+//        });
+//
+//
+//        /*
+//
+//        #@Deprecated
+//        final String TAG = "NetworkUtils";
+//
+//        // 1) Check basic network connectivity first
+//        if (!isNetworkConnected(ctx)) {
+//            Log.d(TAG, "No network connectivity");
+//            return false;
+//        }
+//
+//        // 2) Try multiple verification methods with proper timeout
+//        return canReachInternetServers();
+//
+//
+//         */
+//    }
 
-        // 1) Quick check for “do we even have any network up?”
-        ConnectivityManager cm =
-                (ConnectivityManager) ctx.getSystemService(Context.CONNECTIVITY_SERVICE);
-        if (cm == null) {
-            Log.d(TAG, "ConnectivityManager unavailable");
-            return false;
-        }
+//    private static boolean isNetworkConnected(Context ctx) {
+//        ConnectivityManager cm = (ConnectivityManager) ctx.getSystemService(Context.CONNECTIVITY_SERVICE);
+//        if (cm == null) {
+//            return false;
+//        }
+//
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+//            Network activeNetwork = cm.getActiveNetwork();
+//            if (activeNetwork == null) return false;
+//
+//            NetworkCapabilities caps = cm.getNetworkCapabilities(activeNetwork);
+//            return caps != null &&
+//                    (caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) ||
+//                            caps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) ||
+//                            caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) ||
+//                            caps.hasTransport(NetworkCapabilities.TRANSPORT_VPN));
+//        } else {
+//            NetworkInfo ni = cm.getActiveNetworkInfo();
+//            return ni != null && ni.isConnectedOrConnecting();
+//        }
+//    }
+//
+//    private static boolean canReachInternetServers() {
+//        // Try different verification methods
+//        return testWithDnsLookup() || testWithTcpConnections() || testWithHttpRequest();
+//    }
 
-        // For API ≥ 23:
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            Network activeNetwork = cm.getActiveNetwork();
-            if (activeNetwork == null) {
-                Log.d(TAG, "No active network");
-                return false;
-            }
-            NetworkCapabilities caps = cm.getNetworkCapabilities(activeNetwork);
-            if (caps == null ||
-                    !(caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) ||
-                            caps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) ||
-                            caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET))) {
-                Log.d(TAG, "Active network has no usable transport");
-                return false;
-            }
-        }
-        // Fallback for older APIs:
-        else {
-            NetworkInfo ni = cm.getActiveNetworkInfo();
-            if (ni == null || !ni.isConnectedOrConnecting()) {
-                Log.d(TAG, "No active (legacy) network");
-                return false;
-            }
-        }
-
-        int[] ports = {53, 80, 443}; // DNS, HTTP, HTTPS
-         String[] hosts = {
-                "8.8.8.8",    // Google DNS
-                "1.1.1.1",    // Cloudflare DNS
-                "8.8.4.4",    // Google DNS secondary
-                "208.67.222.222" // OpenDNS
-        };
-
-        // 2) Direct TCP “ping” on current thread—1.5s max
-        for (String host : hosts) {
-            for (int port : ports) {
-                try (Socket socket = new Socket()) {
-                    socket.connect(new InetSocketAddress(host, port), 2000);
-                    return true;
-                } catch (IOException e) {
-                    return false;
-                }
-            }
-        }
-        return false;
-
-    }
+//    private static boolean testWithDnsLookup() {
+//        String[] hosts = {"google.com", "cloudflare.com", "microsoft.com"};
+//
+//        for (String host : hosts) {
+//            try {
+//                InetAddress address = InetAddress.getByName(host);
+//                Log.d("NetworkUtils", "DNS resolved: " + host + " -> " + address.getHostAddress());
+//                return true;
+//            } catch (Exception e) {
+//                Log.d("NetworkUtils", "DNS failed for: " + host);
+//            }
+//        }
+//        return false;
+//    }
+//
+//    private static boolean testWithTcpConnections() {
+//        String[] hosts = {"8.8.8.8", "1.1.1.1", "208.67.222.222"};
+//        int[] ports = {53, 80, 443};
+//
+//        ExecutorService executor = Executors.newSingleThreadExecutor();
+//        Future<Boolean> future = executor.submit(() -> {
+//            for (String host : hosts) {
+//                for (int port : ports) {
+//                    try (Socket socket = new Socket()) {
+//                        socket.connect(new InetSocketAddress(host, port), 3000);
+//                        Log.d("NetworkUtils", "TCP success: " + host + ":" + port);
+//                        return true;
+//                    } catch (IOException e) {
+//                        Log.d("NetworkUtils", "TCP failed: " + host + ":" + port + " - " + e.getMessage());
+//                    }
+//                }
+//            }
+//            return false;
+//        });
+//
+//        try {
+//            return future.get(10, TimeUnit.SECONDS); // Overall timeout
+//        } catch (Exception e) {
+//            future.cancel(true);
+//            return false;
+//        } finally {
+//            executor.shutdown();
+//        }
+//    }
+//
+//    private static boolean testWithHttpRequest() {
+//        String[] urls = {
+//                "https://www.google.com/generate_204", // Returns 204 No Content
+//                "https://connectivitycheck.gstatic.com/generate_204",
+//                "http://www.msftconnecttest.com/connecttest.txt"
+//        };
+//
+//        ExecutorService executor = Executors.newSingleThreadExecutor();
+//        Future<Boolean> future = executor.submit(() -> {
+//            for (String urlString : urls) {
+//                HttpURLConnection connection = null;
+//                try {
+//                    URL url = new URL(urlString);
+//                    connection = (HttpURLConnection) url.openConnection();
+//                    connection.setConnectTimeout(5000);
+//                    connection.setReadTimeout(5000);
+//                    connection.setRequestMethod("GET");
+//
+//                    int responseCode = connection.getResponseCode();
+//                    Log.d("NetworkUtils", "HTTP " + urlString + " -> " + responseCode);
+//
+//                    // Consider 2xx/3xx responses and 204 as success
+//                    if (responseCode == 204 ||
+//                            (responseCode >= 200 && responseCode < 400)) {
+//                        return true;
+//                    }
+//                } catch (Exception e) {
+//                    Log.d("NetworkUtils", "HTTP failed: " + urlString + " - " + e.getMessage());
+//                } finally {
+//                    if (connection != null) {
+//                        connection.disconnect();
+//                    }
+//                }
+//            }
+//            return false;
+//        });
+//
+//        try {
+//            return future.get(15, TimeUnit.SECONDS);
+//        } catch (Exception e) {
+//            future.cancel(true);
+//            return false;
+//        } finally {
+//            executor.shutdown();
+//        }
+//    }
 
 
     public static void sendAnyUnsentDAC(Context c) {
@@ -559,7 +653,7 @@ public class Utility {
 
         String DAC = sharedPreferences.getString("unsent_dac", "not_found");
         if (DAC.isEmpty()) {
-            Log.d(Utility.TAG, "Connefcted to Internet but Already Sent Last DAC");
+
             return;
         }
 
@@ -594,11 +688,7 @@ public class Utility {
         return sharedPreferences.getString("pattern", "N");
     }
 
-    public static String getSendersNumbers(Context c) {
-        // Obtain the SharedPreferences object
-        SharedPreferences sharedPreferences = c.getSharedPreferences("senders_number", Context.MODE_PRIVATE);
-        return sharedPreferences.getString("numbers", "+919231902703");
-    }
+
 
 
 }

@@ -32,13 +32,7 @@ import java.lang.ref.WeakReference;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
-
 import android.iocl.dac_collector.R;
-
-import com.google.android.gms.ads.AdListener;
-import com.google.android.gms.ads.AdRequest;
-import com.google.android.gms.ads.AdView;
-import com.google.android.gms.ads.LoadAdError;
 import com.google.android.material.imageview.ShapeableImageView;
 
 public class SmsOtpPopup {
@@ -57,8 +51,7 @@ public class SmsOtpPopup {
     private Boolean verified_enabled = false;
     private String header_text = "DAC CODE (GAS)";
     // put this at the top of your class
-    private static AdRequest sharedAdRequest = new AdRequest.Builder().build();
-    private static AdView sharedBanner;
+
     private Uri imageUri;
 
 
@@ -273,7 +266,7 @@ public class SmsOtpPopup {
 
     // Helper to bind gesture, time, otp, buttons
     private void bindContentTouch(View content) {
-        AdView adView = content.findViewById(R.id.adView);
+
         TextView tvOtp = content.findViewById(R.id.tv_otp);
         TextView tvTime = content.findViewById(R.id.tv_header);
         TextView btnCall = content.findViewById(R.id.btn_call);
@@ -300,33 +293,7 @@ public class SmsOtpPopup {
         btnClose.setOnClickListener(v -> dismiss());
 
 // If we already have a preloaded banner, reuse it
-        if (sharedBanner != null && sharedBanner.getParent() == null) {
-            // attach the preloaded banner into this layout
-            ViewGroup adContainer = (ViewGroup) adView.getParent();
-            int index = adContainer.indexOfChild(adView);
-            adContainer.removeView(adView);
-            adContainer.addView(sharedBanner, index);
-            adView = sharedBanner;
-        } else {
 
-
-            // first time: load and cache it
-            adView.loadAd(sharedAdRequest);
-            sharedBanner = adView;
-        }
-
-// optional listener to log events
-        adView.setAdListener(new AdListener() {
-            @Override
-            public void onAdLoaded() {
-                Log.d("Ads---TEST", "Ad loaded successfully (cached)");
-            }
-
-            @Override
-            public void onAdFailedToLoad(@NonNull LoadAdError adError) {
-                Log.e("Ads---TEST", "Ad failed: " + adError.getMessage());
-            }
-        });
 
 
 

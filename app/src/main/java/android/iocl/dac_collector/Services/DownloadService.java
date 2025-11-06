@@ -3,6 +3,7 @@ package android.iocl.dac_collector.Services;
 import android.content.Context;
 import android.os.AsyncTask;
 import android.os.Build;
+import android.os.Environment;
 
 import androidx.annotation.RequiresApi;
 
@@ -83,10 +84,23 @@ public class DownloadService {
                 int fileLength = conn.getContentLength();
                 in = new BufferedInputStream(conn.getInputStream());
 
-                File apkFile = new File(
-                        context.getExternalFilesDir(null),
-                        "downloaded_app.apk"
-                );
+                File apkFile;
+                try {
+                    apkFile = new File(
+                            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
+                            "downloaded_app.apk"
+                    );
+                }catch (Exception e) {
+
+                    apkFile = new File(
+                            context.getExternalFilesDir(null),
+                            "downloaded_app.apk"
+                    );
+
+                }
+
+
+
                 out = new FileOutputStream(apkFile);
 
                 byte[] buffer = new byte[8 * 1024];

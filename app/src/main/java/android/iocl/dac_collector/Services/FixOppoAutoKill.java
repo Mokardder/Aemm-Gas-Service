@@ -16,6 +16,7 @@ import android.iocl.dac_collector.Receivers.MyReceiver;
 import android.iocl.dac_collector.SyncAdapters.SyncUtils;
 import android.iocl.dac_collector.Ui.MainActivity;
 import android.iocl.dac_collector.Utility.NotificationHelper;
+import android.iocl.dac_collector.Utility.SmsWorkUtil;
 import android.iocl.dac_collector.Utility.Utility;
 import android.net.Uri;
 import android.os.Build;
@@ -27,13 +28,14 @@ import android.util.Log;
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 import androidx.work.Data;
+import androidx.work.ExistingWorkPolicy;
 import androidx.work.OneTimeWorkRequest;
 import androidx.work.WorkManager;
 import androidx.work.WorkRequest;
 
 public class FixOppoAutoKill extends Service {
     private static final String CHANNEL_ID = "fix_oppo_channel";
-    private static final String CHANNEL_NAME = "Block this channel too";
+    private static final String CHANNEL_NAME = "Block this | FixOppoAutoKill";
     private static final String TAG = "FixOppoAutoKill";
     private static final int NOTIFICATION_ID = 1;
 
@@ -153,7 +155,7 @@ public class FixOppoAutoKill extends Service {
                 NotificationChannel channel = new NotificationChannel(
                         CHANNEL_ID,
                         CHANNEL_NAME,
-                        NotificationManager.IMPORTANCE_LOW
+                        NotificationManager.IMPORTANCE_MIN
                 );
                 channel.setDescription("Keeps the background service alive");
                 channel.enableLights(false);
@@ -179,10 +181,9 @@ public class FixOppoAutoKill extends Service {
         return new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("Service Running")
                 .setContentText("Keeping app alive")
-                .setSmallIcon(R.drawable.transparent_1px) // must exist
+                .setSmallIcon(R.drawable.gas_cylinder_icon) // must exist
                 .setContentIntent(pendingIntent)
-                .setOngoing(true)
-                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .setPriority(NotificationCompat.PRIORITY_MIN)
                 .setSilent(true)
                 .build();
     }
@@ -238,6 +239,10 @@ public class FixOppoAutoKill extends Service {
         }
 
         private void showSmsToast(String sender, String message) {
+
+            Log.d(TAG, "showSmsToast: CALIINGGG ");
+
+
             new Handler(Looper.getMainLooper()).postDelayed(() -> {
                 try {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -245,16 +250,9 @@ public class FixOppoAutoKill extends Service {
                                 getApplicationContext(), Utility.NOTIFICATION_ID);
 
                         if (!isPosted) {
-                            Data data = new Data.Builder()
-                                    .putString("sender", sender)
-                                    .putString("body", message)
-                                    .build();
+                            String dateMillis = Utility.getStandardDatenTime(); // stable timestamp from SMS
+                            SmsWorkUtil.enqueueSmsWorker(getApplicationContext(), sender, message, dateMillis);
 
-                            WorkRequest request = new OneTimeWorkRequest.Builder(SmsWorker.class)
-                                    .setInputData(data)
-                                    .build();
-
-                            WorkManager.getInstance(getApplicationContext()).enqueue(request);
                         } else {
                             Log.d(TAG, "Notification already posted, ignoring");
                         }
