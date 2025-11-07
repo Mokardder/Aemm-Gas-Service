@@ -83,6 +83,17 @@ public class FetchProfileInfo extends JobService {
         auth.enqueue(new Callback<DAC_Collector_Base>() {
             @Override
             public void onResponse(Call<DAC_Collector_Base> call, Response<DAC_Collector_Base> response) {
+                DAC_Collector_Base body = response.body();
+
+                if (body == null) {
+                  return;
+                }
+
+                boolean isSuccess = Boolean.TRUE.equals(body.getSuccess());
+                if (!isSuccess) {
+                   return;
+                }
+
                 if (response.isSuccessful() && response.body() != null) {
                     String encResponse = response.body().getData();
                     ConsumerData data = (ConsumerData) Utility.decodeApiResponse(encResponse ,ConsumerData.class);

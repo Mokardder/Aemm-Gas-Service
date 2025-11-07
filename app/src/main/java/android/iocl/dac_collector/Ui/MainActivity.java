@@ -666,9 +666,18 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
             @Override
             public void onResponse(Call<DAC_Collector_Base> call, Response<DAC_Collector_Base> response) {
                 loader_controller("Requesting...", false, loader, loader_text);
+                DAC_Collector_Base body = response.body();
 
-                boolean isSuccess = response.body().getSuccess();
-                String message = response.body().getMessage();
+                if (body == null) {
+                    Toast.makeText(MainActivity.this, "Empty response from server", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                boolean isSuccess = Boolean.TRUE.equals(body.getSuccess());
+
+
+                String message = body.getMessage() != null ? body.getMessage() : "Operation failed";
+
                 if (isSuccess) {
                     Toast.makeText(MainActivity.this, message, Toast.LENGTH_LONG).show();
                     SharedPrefs.setIsSubsidyRequestPending(MainActivity.this, true);
@@ -816,14 +825,22 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
             @Override
             public void onResponse(Call<DAC_Collector_Base> call, Response<DAC_Collector_Base> response) {
                 loader_controller("Fetching Customer ...", false, loader, loader_text);
-                String encResponse = response.body().getData();
 
-                boolean isSuccess = response.body().getSuccess();
+                DAC_Collector_Base body = response.body();
+
+                if (body == null) {
+                    Toast.makeText(MainActivity.this, "Try again !", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                boolean isSuccess = Boolean.TRUE.equals(body.getSuccess());
                 if (!isSuccess) {
-                    String message = response.body().getMessage();
+                    String message = body.getMessage() != null ? body.getMessage() : "Operation failed";
                     Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show();
                     return;
                 }
+                String encResponse = response.body().getData();
+
                 ConsumerData data = (ConsumerData) Utility.decodeApiResponse(encResponse, ConsumerData.class);
                 Button saveData = view.findViewById(R.id.btn_saveData);
                 TextView name = view.findViewById(R.id.userName);
@@ -880,6 +897,15 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         auth.enqueue(new Callback<DAC_Collector_Base>() {
             @Override
             public void onResponse(Call<DAC_Collector_Base> call, Response<DAC_Collector_Base> response) {
+                DAC_Collector_Base body = response.body();
+
+                if (body == null) {
+                    return;
+                }
+
+                boolean isSuccess = Boolean.TRUE.equals(body.getSuccess());
+
+
 
                 String encResponse = response.body().getData();
                 Utility.updateProfile(encResponse, getApplicationContext());

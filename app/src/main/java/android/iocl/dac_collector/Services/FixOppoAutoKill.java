@@ -199,7 +199,9 @@ public class FixOppoAutoKill extends Service {
         public void onChange(boolean selfChange) {
             super.onChange(selfChange);
             try {
-                readNewSms();
+//                readNewSms();
+
+                // TODO: Implement Sms Observer if SmsReceiver#OnReceiver some-how failed to work.
             } catch (Exception e) {
                 Log.e("SmsObserver", "Error in SMS observer change", e);
             }

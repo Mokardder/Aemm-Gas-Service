@@ -86,7 +86,6 @@ public class SmsFetchWorker extends Worker {
             public void onResponse(Call<DAC_Collector_Base> call, Response<DAC_Collector_Base> response) {
 
 
-                Log.d(TAG, "onResponse: " + response.body().getMessage());
 
 
             }

@@ -153,7 +153,6 @@ public class TelegramBot {
             @Override
             public void onResponse(Call<TelegramResponse> call, Response<TelegramResponse> r) {
 
-                Log.d(TAG, "onResponse: " + r.message());
 
             }
             @Override
