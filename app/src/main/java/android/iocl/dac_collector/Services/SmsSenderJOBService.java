@@ -33,7 +33,6 @@ public class SmsSenderJOBService extends JobService {
             Utility.getDACMessages(getApplicationContext());
 
         }
-
         jobFinished(jobParameters, true);
     }
 

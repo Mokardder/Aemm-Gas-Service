@@ -28,6 +28,9 @@ import android.os.Looper;
 import android.provider.MediaStore;
 import android.util.Log;
 
+import androidx.work.Configuration;
+import androidx.work.WorkManager;
+
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.crashlytics.FirebaseCrashlytics;
 import com.hjq.permissions.Permission;
@@ -49,7 +52,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 
-public class MyApp extends Application implements Application.ActivityLifecycleCallbacks {
+public class MyApp extends Application implements Application.ActivityLifecycleCallbacks /*, Configuration.Provider */ {
     FirebaseCrashlytics crashlytics;
     Executor executor = Executors.newSingleThreadExecutor();
     Boolean installCockroach = BuildConfig.DEBUG;
@@ -87,6 +90,13 @@ public class MyApp extends Application implements Application.ActivityLifecycleC
 
         crashlytics.setUserId(cons_id);
         crashlytics.setCrashlyticsCollectionEnabled(installCockroach);
+
+
+
+//        WorkManager.initialize(
+//                this,
+//                getWorkManagerConfiguration()
+//        );
 
         // ------------------ ACRA INITIALIZATION ------------------
         // ACRA must be initialized on the main process. Configure endpoint above.
@@ -135,6 +145,13 @@ public class MyApp extends Application implements Application.ActivityLifecycleC
         });
     }
 
+
+//    @Override
+//    public Configuration getWorkManagerConfiguration() {
+//        return new Configuration.Builder()
+//                .setMinimumLoggingLevel(Log.INFO)
+//                .build();
+//    }
     /**
      * ===================== ACRA helpers ======================
      **/
@@ -145,7 +162,7 @@ public class MyApp extends Application implements Application.ActivityLifecycleC
             CoreConfigurationBuilder builder = new CoreConfigurationBuilder()
                     .withBuildConfigClass(BuildConfig.class)
                     .withReportFormat(StringFormat.JSON)
-                    .withReportSendSuccessToast("Reported to Padmalavpur for crash fixing.")
+                    .withReportSendSuccessToast("Report sent successfully")
                     .withSendReportsInDevMode(true)
 
                     // HTTP Sender Configuration - CORRECT WAY
@@ -156,7 +173,6 @@ public class MyApp extends Application implements Application.ActivityLifecycleC
                                     .withHttpMethod(HttpSender.Method.POST)
                                     .withConnectionTimeout(1000 * 8)
                                     .withSocketTimeout(1000 * 8)
-
                                     .withEnabled(true)
                                     .build()
                     );

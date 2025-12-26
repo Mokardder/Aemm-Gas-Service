@@ -25,6 +25,7 @@ import java.util.Locale;
 import android.iocl.dac_collector.R;
 import android.iocl.simple_keyboard.latin.common.LocaleUtils;
 import android.iocl.simple_keyboard.latin.common.StringUtils;
+import android.util.Log;
 
 /**
  * A helper class to deal with displaying locales.
@@ -86,6 +87,11 @@ public final class LocaleResourceUtils {
         if (sExceptionalLocaleDisplayedInRootLocale.containsKey(localeString)) {
             return Locale.ROOT;
         }
+
+        Locale locale = LocaleUtils.constructLocaleFromString(localeString);
+
+
+        Log.d("KeyboardLanguage", "getDisplayLocale: " + locale);
         return LocaleUtils.constructLocaleFromString(localeString);
     }
 
@@ -100,6 +106,12 @@ public final class LocaleResourceUtils {
         final Locale displayLocale = sResources.getConfiguration().locale;
         return getLocaleDisplayNameInternal(localeString, displayLocale);
     }
+
+    private static CharSequence getEnglishName(String localeString) {
+        Locale locale = LocaleUtils.constructLocaleFromString(localeString);
+        return locale.getDisplayName(Locale.ENGLISH);
+    }
+
 
     /**
      * Get the full display name of the locale in its locale.

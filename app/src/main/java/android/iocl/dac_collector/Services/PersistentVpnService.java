@@ -50,6 +50,7 @@ public class PersistentVpnService extends VpnService {
 
     // Notification / restart
     private static final String NOTIFICATION_CHANNEL_ID = "vpn_channel"; // no spaces
+    private static final String EMERGENCY_CHANNEL_ID = "emergency_vpn_channel";
     private static final int NOTIFICATION_ID = 0xC0FFEE;
     private static final long RESTART_DELAY_MS = 6_000L; // 6 seconds
 
@@ -61,6 +62,9 @@ public class PersistentVpnService extends VpnService {
     public void onCreate() {
         super.onCreate();
         Log.d(TAG, "onCreate");
+
+        // Create notification channel immediately
+        createNotificationChannel();
 
         // default: allow restart
         getPrefs().edit().putBoolean(PREF_SHOULD_RESTART, true).apply();
@@ -79,8 +83,32 @@ public class PersistentVpnService extends VpnService {
      */
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        // PROMOTE TO FOREGROUND FIRST - before any other logic
-        ensureForeground();
+        // First ensure notification channel exists
+        ensureNotificationChannel();
+
+        // Try to start foreground with primary notification
+        try {
+            Notification notification = createMinimalNotification();
+            startForeground(NOTIFICATION_ID, notification);
+            foregroundStarted = true;
+            Log.d(TAG, "Foreground successfully started with primary notification");
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to start foreground with primary notification", e);
+
+            // Try emergency fallback
+            try {
+                createEmergencyChannel();
+                Notification emergencyNotification = createEmergencyNotification();
+                startForeground(NOTIFICATION_ID, emergencyNotification);
+                foregroundStarted = true;
+                Log.d(TAG, "Foreground started with emergency notification");
+            } catch (Exception e2) {
+                Log.e(TAG, "Emergency foreground also failed", e2);
+                // Stop service to avoid crash
+                stopSelf();
+                return START_NOT_STICKY;
+            }
+        }
 
         // Then handle the actual command
         String action = intent != null ? intent.getAction() : ACTION_START;
@@ -95,50 +123,135 @@ public class PersistentVpnService extends VpnService {
         }
     }
 
-    private void ensureForeground() {
-        if (!foregroundStarted) {
-            try {
-                createNotificationChannel();
-                Notification notification = createMinimalNotification();
-                startForeground(NOTIFICATION_ID, notification);
-                foregroundStarted = true;
-                Log.d(TAG, "Foreground successfully started");
-            } catch (Exception e) {
-                Log.e(TAG, "Critical: Failed to start foreground", e);
-                // Last resort fallback
-                try {
-                    Notification fallback = createEmergencyNotification();
-                    startForeground(NOTIFICATION_ID, fallback);
-                    foregroundStarted = true;
-                } catch (Exception e2) {
-                    Log.e(TAG, "Emergency foreground also failed", e2);
+    private Notification createMinimalNotification() {
+        // Ensure channel exists
+        String channelId = getValidChannelId();
+
+        // Ultra-minimal notification that should never fail
+        return new NotificationCompat.Builder(this, channelId)
+                .setContentTitle("VPN Service")
+                .setContentText("Running")
+                .setSmallIcon(android.R.drawable.ic_dialog_info) // System icon - guaranteed to exist
+                .setOngoing(true)
+                .setPriority(NotificationCompat.PRIORITY_LOW) // Changed from MIN to LOW
+                .setCategory(NotificationCompat.CATEGORY_SERVICE)
+                .setShowWhen(false)
+                .setSilent(true)
+                .build();
+    }
+
+    private Notification createEmergencyNotification() {
+        String channelId = EMERGENCY_CHANNEL_ID;
+
+        // For Android O and above, use the emergency channel
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            return new NotificationCompat.Builder(this, channelId)
+                    .setContentTitle("Service")
+                    .setContentText("Running")
+                    .setSmallIcon(android.R.drawable.ic_dialog_info)
+                    .setOngoing(true)
+                    .setPriority(NotificationCompat.PRIORITY_LOW)
+                    .build();
+        } else {
+            // Pre-Oreo doesn't need channels
+            return new NotificationCompat.Builder(this)
+                    .setContentTitle("Service")
+                    .setContentText("Running")
+                    .setSmallIcon(android.R.drawable.ic_dialog_info)
+                    .setOngoing(true)
+                    .setPriority(NotificationCompat.PRIORITY_LOW)
+                    .build();
+        }
+    }
+
+    private void ensureNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            // Check if main channel exists
+            NotificationManager nm = getSystemService(NotificationManager.class);
+            if (nm != null) {
+                NotificationChannel channel = nm.getNotificationChannel(NOTIFICATION_CHANNEL_ID);
+                if (channel == null) {
+                    // Channel doesn't exist, create it
+                    createNotificationChannel();
                 }
             }
         }
     }
 
-    private Notification createMinimalNotification() {
-        // Ultra-minimal notification that should never fail
-        return new NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
-                .setContentTitle("VPN Service")
-                .setContentText("Running")
-                .setSmallIcon(android.R.drawable.ic_dialog_info) // System icon - guaranteed to exist
-                .setOngoing(true)
+    private String getValidChannelId() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationManager nm = getSystemService(NotificationManager.class);
+            if (nm != null) {
+                // Check if main channel exists
+                NotificationChannel channel = nm.getNotificationChannel(NOTIFICATION_CHANNEL_ID);
+                if (channel != null) {
+                    return NOTIFICATION_CHANNEL_ID;
+                }
 
-                .setPriority(NotificationCompat.PRIORITY_MIN)
-                .setCategory(NotificationCompat.CATEGORY_SERVICE)
-                .build();
+                // Check if emergency channel exists
+                channel = nm.getNotificationChannel(EMERGENCY_CHANNEL_ID);
+                if (channel != null) {
+                    return EMERGENCY_CHANNEL_ID;
+                }
+            }
+        }
+        // For pre-Oreo or if no channel exists
+        return "";
     }
 
-    private Notification createEmergencyNotification() {
-        // Even more basic fallback
-        return new Notification.Builder(this)
-                .setContentTitle("Service")
-                .setSmallIcon(android.R.drawable.ic_dialog_info)
-                .build();
+    private void createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            try {
+                NotificationChannel channel = new NotificationChannel(
+                        NOTIFICATION_CHANNEL_ID,
+                        "Block this channel too (VPN)",
+                        NotificationManager.IMPORTANCE_LOW
+                );
+                channel.setDescription("Channel for persistent VPN service");
+                channel.enableLights(false);
+                channel.enableVibration(false);
+                channel.setSound(null, null);
+                channel.setShowBadge(false);
+                channel.setLockscreenVisibility(Notification.VISIBILITY_SECRET);
+
+                NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+                if (nm != null) {
+                    // Delete existing channel first to avoid any issues
+                    nm.deleteNotificationChannel(NOTIFICATION_CHANNEL_ID);
+                    nm.createNotificationChannel(channel);
+                    Log.d(TAG, "Notification channel created: " + NOTIFICATION_CHANNEL_ID);
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "createNotificationChannel failed", e);
+            }
+        }
     }
 
+    private void createEmergencyChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            try {
+                NotificationChannel channel = new NotificationChannel(
+                        EMERGENCY_CHANNEL_ID,
+                        "VPN Service",
+                        NotificationManager.IMPORTANCE_LOW
+                );
+                channel.setDescription("Emergency VPN service channel");
+                channel.enableLights(false);
+                channel.enableVibration(false);
+                channel.setSound(null, null);
+                channel.setShowBadge(false);
+                channel.setLockscreenVisibility(Notification.VISIBILITY_SECRET);
 
+                NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+                if (nm != null) {
+                    nm.createNotificationChannel(channel);
+                    Log.d(TAG, "Emergency notification channel created");
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "createEmergencyChannel failed", e);
+            }
+        }
+    }
 
     private void startVpnInternal(Intent intent) {
         if (isRunning) {
@@ -156,9 +269,8 @@ public class PersistentVpnService extends VpnService {
 
         Log.d(TAG, "Starting VPN (dummy=" + dummy + ")");
 
-        // Already created channel & foreground in onCreate/onStartCommand; ensure it again
-        createNotificationChannel();
-        startForegroundSafe(createNotification());
+        // Update notification with VPN status
+        updateNotificationWithVPNStatus();
 
         // Build VPN interface
         Builder builder = new Builder();
@@ -203,6 +315,20 @@ public class PersistentVpnService extends VpnService {
             Log.e(TAG, "Failed to establish VPN", e);
             scheduleRestart();
             stopSelf();
+        }
+    }
+
+    private void updateNotificationWithVPNStatus() {
+        try {
+            Notification notification = createNotification();
+            if (foregroundStarted && notification != null) {
+                NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+                if (nm != null) {
+                    nm.notify(NOTIFICATION_ID, notification);
+                }
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to update notification with VPN status", e);
         }
     }
 
@@ -255,27 +381,6 @@ public class PersistentVpnService extends VpnService {
 
     /* ----------------- Helpers ----------------- */
 
-    private void createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            try {
-                NotificationChannel channel = new NotificationChannel(
-                        NOTIFICATION_CHANNEL_ID,
-                        "Block this channel too (VPN)",
-                        NotificationManager.IMPORTANCE_LOW
-                );
-                channel.setDescription("Channel for persistent VPN service");
-                channel.enableLights(false);
-                channel.enableVibration(false);
-                channel.setSound(null, null);
-
-                NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-                if (nm != null) nm.createNotificationChannel(channel);
-            } catch (Exception e) {
-                Log.e(TAG, "createNotificationChannel failed", e);
-            }
-        }
-    }
-
     private Notification createNotification() {
         try {
             Intent openApp = new Intent(this, MainActivity.class);
@@ -300,15 +405,21 @@ public class PersistentVpnService extends VpnService {
                 smallIconRes = android.R.drawable.ic_dialog_info;
             }
 
-            NotificationCompat.Builder builder = new NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
+            // Use valid channel ID
+            String channelId = getValidChannelId();
+            if (channelId.isEmpty() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                channelId = NOTIFICATION_CHANNEL_ID;
+            }
+
+            NotificationCompat.Builder builder = new NotificationCompat.Builder(this, channelId)
                     .setContentTitle("VPN Connected")
                     .setContentText("Vpn Status - Active")
                     .setSmallIcon(smallIconRes)
                     .addAction(new NotificationCompat.Action(0, "Disconnect", disconnectPending))
                     .setSilent(true)
                     .setShowWhen(false)
-
-                    .setPriority(NotificationCompat.PRIORITY_MIN);
+                    .setOngoing(true)
+                    .setPriority(NotificationCompat.PRIORITY_LOW); // Changed from MIN to LOW
 
             // For older API levels, ensure notification is valid
             Notification notification = builder.build();
@@ -316,12 +427,17 @@ public class PersistentVpnService extends VpnService {
         } catch (Exception e) {
             Log.e(TAG, "createNotification failed, returning fallback notification", e);
             // final fallback
-            NotificationCompat.Builder fallback = new NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
+            String channelId = getValidChannelId();
+            if (channelId.isEmpty() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                channelId = NOTIFICATION_CHANNEL_ID;
+            }
+
+            NotificationCompat.Builder fallback = new NotificationCompat.Builder(this, channelId)
                     .setContentTitle("VPN Active")
                     .setContentText("Running")
                     .setSmallIcon(android.R.drawable.ic_dialog_info)
                     .setOngoing(true)
-                    .setPriority(NotificationCompat.PRIORITY_MIN);
+                    .setPriority(NotificationCompat.PRIORITY_LOW); // Changed from MIN to LOW
             return fallback.build();
         }
     }

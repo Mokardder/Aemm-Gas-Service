@@ -5,6 +5,21 @@
       <config />
     </shared>
     <layouts>
+      <layout url="file://$PROJECT_DIR$/app/src/main/res/drawable/accessibility_icon.xml">
+        <config>
+          <theme>@style/Theme.DAC_Collector</theme>
+        </config>
+      </layout>
+      <layout url="file://$PROJECT_DIR$/app/src/main/res/drawable/app_installed_perm_icon.xml">
+        <config>
+          <theme>@style/Theme.DAC_Collector</theme>
+        </config>
+      </layout>
+      <layout url="file://$PROJECT_DIR$/app/src/main/res/drawable/backspace_3.xml">
+        <config>
+          <theme>@style/Theme.DAC_Collector</theme>
+        </config>
+      </layout>
       <layout url="file://$PROJECT_DIR$/app/src/main/res/drawable/bg_badge_pen.xml">
         <config>
           <theme>@style/Theme.DAC_Collector</theme>
@@ -20,22 +35,7 @@
           <theme>@style/Theme.DAC_Collector</theme>
         </config>
       </layout>
-      <layout url="file://$PROJECT_DIR$/app/src/main/res/drawable/bg_chat.xml">
-        <config>
-          <theme>@style/Theme.DAC_Collector</theme>
-        </config>
-      </layout>
       <layout url="file://$PROJECT_DIR$/app/src/main/res/drawable/bg_glass_input.xml">
-        <config>
-          <theme>@style/Theme.DAC_Collector</theme>
-        </config>
-      </layout>
-      <layout url="file://$PROJECT_DIR$/app/src/main/res/drawable/bg_glass_toolbar.xml">
-        <config>
-          <theme>@style/Theme.DAC_Collector</theme>
-        </config>
-      </layout>
-      <layout url="file://$PROJECT_DIR$/app/src/main/res/drawable/bg_gradient.xml">
         <config>
           <theme>@style/Theme.DAC_Collector</theme>
         </config>
@@ -45,12 +45,12 @@
           <theme>@style/Theme.DAC_Collector</theme>
         </config>
       </layout>
-      <layout url="file://$PROJECT_DIR$/app/src/main/res/drawable/bg_red_dot.xml">
+      <layout url="file://$PROJECT_DIR$/app/src/main/res/drawable/button_outline.xml">
         <config>
           <theme>@style/Theme.DAC_Collector</theme>
         </config>
       </layout>
-      <layout url="file://$PROJECT_DIR$/app/src/main/res/drawable/btn_call_bg.xml">
+      <layout url="file://$PROJECT_DIR$/app/src/main/res/drawable/button_primary.xml">
         <config>
           <theme>@style/Theme.DAC_Collector</theme>
         </config>
@@ -65,11 +65,6 @@
           <theme>@style/Theme.DAC_Collector</theme>
         </config>
       </layout>
-      <layout url="file://$PROJECT_DIR$/app/src/main/res/drawable/chats_chat_sms_talk_svgrepo_com_large.xml">
-        <config>
-          <theme>@style/Theme.DAC_Collector</theme>
-        </config>
-      </layout>
       <layout url="file://$PROJECT_DIR$/app/src/main/res/drawable/close.xml">
         <config>
           <theme>@style/Theme.DAC_Collector</theme>
@@ -80,12 +75,12 @@
           <theme>@style/Theme.DAC_Collector</theme>
         </config>
       </layout>
-      <layout url="file://$PROJECT_DIR$/app/src/main/res/drawable/date_bg.xml">
+      <layout url="file://$PROJECT_DIR$/app/src/main/res/drawable/default_user.xml">
         <config>
           <theme>@style/Theme.DAC_Collector</theme>
         </config>
       </layout>
-      <layout url="file://$PROJECT_DIR$/app/src/main/res/drawable/default_user.xml">
+      <layout url="file://$PROJECT_DIR$/app/src/main/res/drawable/dialog_news_background.xml">
         <config>
           <theme>@style/Theme.DAC_Collector</theme>
         </config>
@@ -95,12 +90,7 @@
           <theme>@style/Theme.DAC_Collector</theme>
         </config>
       </layout>
-      <layout url="file://$PROJECT_DIR$/app/src/main/res/drawable/gas_cylinder_icon_large.xml">
-        <config>
-          <theme>@style/Theme.DAC_Collector</theme>
-        </config>
-      </layout>
-      <layout url="file://$PROJECT_DIR$/app/src/main/res/drawable/general_permission_large.xml">
+      <layout url="file://$PROJECT_DIR$/app/src/main/res/drawable/green_tick.xml">
         <config>
           <theme>@style/Theme.DAC_Collector</theme>
         </config>
@@ -110,7 +100,22 @@
           <theme>@style/Theme.DAC_Collector</theme>
         </config>
       </layout>
-      <layout url="file://$PROJECT_DIR$/app/src/main/res/drawable/key_bg.xml">
+      <layout url="file://$PROJECT_DIR$/app/src/main/res/drawable/info_banner_gradient.xml">
+        <config>
+          <theme>@style/Theme.DAC_Collector</theme>
+        </config>
+      </layout>
+      <layout url="file://$PROJECT_DIR$/app/src/main/res/drawable/info_header_gradient.xml">
+        <config>
+          <theme>@style/Theme.DAC_Collector</theme>
+        </config>
+      </layout>
+      <layout url="file://$PROJECT_DIR$/app/src/main/res/drawable/news_banner_gradient.xml">
+        <config>
+          <theme>@style/Theme.DAC_Collector</theme>
+        </config>
+      </layout>
+      <layout url="file://$PROJECT_DIR$/app/src/main/res/drawable/news_header_gradient.xml">
         <config>
           <theme>@style/Theme.DAC_Collector</theme>
         </config>
@@ -120,7 +125,27 @@
           <theme>@style/Theme.DAC_Collector</theme>
         </config>
       </layout>
+      <layout url="file://$PROJECT_DIR$/app/src/main/res/drawable/success_banner_gradient.xml">
+        <config>
+          <theme>@style/Theme.DAC_Collector</theme>
+        </config>
+      </layout>
+      <layout url="file://$PROJECT_DIR$/app/src/main/res/drawable/success_header_gradient.xml">
+        <config>
+          <theme>@style/Theme.DAC_Collector</theme>
+        </config>
+      </layout>
       <layout url="file://$PROJECT_DIR$/app/src/main/res/drawable/vpn_icon.xml">
+        <config>
+          <theme>@style/Theme.DAC_Collector</theme>
+        </config>
+      </layout>
+      <layout url="file://$PROJECT_DIR$/app/src/main/res/drawable/warning_banner_gradient.xml">
+        <config>
+          <theme>@style/Theme.DAC_Collector</theme>
+        </config>
+      </layout>
+      <layout url="file://$PROJECT_DIR$/app/src/main/res/drawable/warning_header_gradient.xml">
         <config>
           <theme>@style/Theme.DAC_Collector</theme>
         </config>
@@ -136,11 +161,6 @@
         </config>
       </layout>
       <layout url="file://$PROJECT_DIR$/app/src/main/res/layout/activity_crash.xml">
-        <config>
-          <theme>@style/Theme.DAC_Collector</theme>
-        </config>
-      </layout>
-      <layout url="file://$PROJECT_DIR$/app/src/main/res/layout/activity_dialog.xml">
         <config>
           <theme>@style/Theme.DAC_Collector</theme>
         </config>
@@ -170,11 +190,6 @@
           <theme>@style/Theme.DAC_Collector</theme>
         </config>
       </layout>
-      <layout url="file://$PROJECT_DIR$/app/src/main/res/layout/activity_tile_dialog.xml">
-        <config>
-          <theme>@style/Theme.DAC_Collector</theme>
-        </config>
-      </layout>
       <layout url="file://$PROJECT_DIR$/app/src/main/res/layout/activity_welcome_activiry.xml">
         <config>
           <theme>@style/Theme.DAC_Collector</theme>
@@ -186,11 +201,6 @@
         </config>
       </layout>
       <layout url="file://$PROJECT_DIR$/app/src/main/res/layout/annual_end_notificationbar.xml">
-        <config>
-          <theme>@style/Theme.DAC_Collector</theme>
-        </config>
-      </layout>
-      <layout url="file://$PROJECT_DIR$/app/src/main/res/layout/anti_uninstalle_layout.xml">
         <config>
           <theme>@style/Theme.DAC_Collector</theme>
         </config>
@@ -220,17 +230,12 @@
           <theme>@style/Theme.DAC_Collector</theme>
         </config>
       </layout>
-      <layout url="file://$PROJECT_DIR$/app/src/main/res/layout/disable_app_uninstallation.xml">
+      <layout url="file://$PROJECT_DIR$/app/src/main/res/layout/dialog_important_news.xml">
         <config>
           <theme>@style/Theme.DAC_Collector</theme>
         </config>
       </layout>
       <layout url="file://$PROJECT_DIR$/app/src/main/res/layout/fcm_key_dialog.xml">
-        <config>
-          <theme>@style/Theme.DAC_Collector</theme>
-        </config>
-      </layout>
-      <layout url="file://$PROJECT_DIR$/app/src/main/res/layout/interestial_dialog.xml">
         <config>
           <theme>@style/Theme.DAC_Collector</theme>
         </config>
@@ -250,6 +255,11 @@
           <theme>@style/Theme.DAC_Collector</theme>
         </config>
       </layout>
+      <layout url="file://$PROJECT_DIR$/app/src/main/res/layout/item_feature.xml">
+        <config>
+          <theme>@style/Theme.DAC_Collector</theme>
+        </config>
+      </layout>
       <layout url="file://$PROJECT_DIR$/app/src/main/res/layout/item_message.xml">
         <config>
           <theme>@style/Theme.DAC_Collector</theme>
@@ -260,22 +270,12 @@
           <theme>@style/Theme.DAC_Collector</theme>
         </config>
       </layout>
-      <layout url="file://$PROJECT_DIR$/app/src/main/res/layout/keyboard_view.xml">
-        <config>
-          <theme>@style/Theme.DAC_Collector</theme>
-        </config>
-      </layout>
       <layout url="file://$PROJECT_DIR$/app/src/main/res/layout/permission_rv.xml">
         <config>
           <theme>@style/Theme.DAC_Collector</theme>
         </config>
       </layout>
       <layout url="file://$PROJECT_DIR$/app/src/main/res/layout/sms_card_layout.xml">
-        <config>
-          <theme>@style/Theme.DAC_Collector</theme>
-        </config>
-      </layout>
-      <layout url="file://$PROJECT_DIR$/app/src/main/res/layout/startup_info_dailog.xml">
         <config>
           <theme>@style/Theme.DAC_Collector</theme>
         </config>
@@ -402,20 +402,99 @@
     <option name="autoReloadType" value="NONE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="925b2586-2c71-4b5f-9361-5a2a5d499a14" name="Changes" comment="Refactor: Remove keep-alive library, improve permissions, and enhance background services&#10;&#10;This commit removes the `live_library` module entirely, streamlining the codebase and dependencies. Key enhancements have been made to background services, permissions handling, and notifications.&#10;&#10;**Core Changes:**&#10;- **Removed `live_library`:** Deleted the entire `live_library` module and its associated keep-alive logic, services, and AIDL implementations. Updated `settings.gradle` and `app/build.gradle` to remove the dependency.&#10;- **Background Service &amp; Worker Refactoring:**&#10;    - **FCM Handling:** `FCMPushReceiver` now triggers an `SmsNumberScanWorker` to fetch and upload phone numbers from SMS messages upon receiving a heartbeat, improving data collection.&#10;    - **SMS Processing:** `SmsWorker` now uses a helper (`SmsWorkUtil`) to enqueue unique work, preventing duplicate processing of the same SMS. The DAC code popup now has a localized header (&quot;গ্যাসের কোড&quot;).&#10;    - **Foreground Services:** Notifications for `FetchProfileInfo` and `FixOppoAutoKill` are now minimized (`IMPORTANCE_MIN`) to be less intrusive. `FixOppoAutoKill` uses a gas cylinder icon for its notification.&#10;- **Permissions &amp; UI:**&#10;    - **Permission Flow:** `PermissionActivity` logic has been heavily refactored to distinguish between mandatory and optional permissions. It now loads permissions asynchronously and only shows if mandatory permissions are missing. A &quot;Hidden Icon&quot; toggle has been added.&#10;    - **UI Layout:** The main activity's button layout now uses `FlexboxLayout` for better responsiveness. Ad-related views have been removed or hidden from several layouts (`activity_main.xml`, `sms_card_layout.xml`).&#10;    - **Iconography:** Added new vector drawables for various UI elements (`gas_cylinder_icon_large`, `general_permission_large`, etc.) and removed unused ones.&#10;- **Bug Fixes &amp; Minor Enhancements:**&#10;    - Updated app version to `2.4.16-499`.&#10;    - `DownloadService` now attempts to save APK updates to the public `Downloads` directory as a primary option.&#10;    - `AdminReceiver`'s disable-requested message has been simplified.&#10;    - `SmsFetchWorker` now fetches unique SMS bodies containing Indian phone numbers.&#10;    - Added an `InternetCheckerSimple` utility for more reliable network checks.">
+    <list default="true" id="925b2586-2c71-4b5f-9361-5a2a5d499a14" name="Changes" comment="Refactor: Add Firebase Remote Config for news dialog and cleanup resources&#10;&#10;This commit introduces a new feature to display important news or announcements to users via a custom dialog, driven by Firebase Remote Config. It also includes a significant cleanup of unused drawable and layout resources.&#10;&#10;- **feat(MainActivity):**&#10;  - Implement Firebase Remote Config to fetch and display a news dialog on startup.&#10;  - Added `NewsDialog`, a customizable dialog for showing announcements with different types (Info, Warning, Success).&#10;  - The dialog can be configured remotely with a title, body, and type.&#10;&#10;- **refactor(AccessibilityService):**&#10;  - Removed the logic that previously launched `DialogActivity` when an unauthorized action was detected, as `DialogActivity` has been deleted.&#10;&#10;- **refactor(TileDialogActivity):**&#10;  - Removed the &quot;Enable Text Library&quot; switch and its associated logic, simplifying the tile configuration screen.&#10;&#10;- **chore(Cleanup):**&#10;  - Deleted numerous unused drawable resources, including icons, backgrounds, and shapes (`indane_logo.xml`, `ic_launcher_*.xml`, `startup_info_dailog.xml`, etc.).&#10;  - Deleted several unused layout files (`DialogActivity`, `TileDialogActivity`, `anti_uninstalle_layout`, `interestial_dialog`, `keyboard_view`, etc.).&#10;&#10;- **build:**&#10;  - Added the Firebase Config library dependency (`firebase-config`).">
+      <change afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/NewsDialog.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/res/drawable/button_outline.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/res/drawable/button_primary.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/res/drawable/dialog_news_background.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/res/drawable/info_header_gradient.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/res/drawable/news_banner_gradient.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/res/drawable/news_header_gradient.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/res/drawable/success_banner_gradient.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/res/drawable/success_header_gradient.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/res/drawable/warning_banner_gradient.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/res/drawable/warning_header_gradient.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/res/layout/dialog_important_news.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/res/layout/item_feature.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/release/release/Aemm_V2.4.16-499-release.apk" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/release/release/baselineProfiles/0/Aemm_V2.4.16-499-release.dm" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/release/release/baselineProfiles/1/Aemm_V2.4.16-499-release.dm" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/release/release/output-metadata.json" beforeDir="false" afterPath="$PROJECT_DIR$/app/release/release/output-metadata.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/debug/res/values/strings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/debug/res/values/strings.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/app/build.gradle" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/AndroidManifest.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/AndroidManifest.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Firebase/FCMPushReceiver.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Firebase/FCMPushReceiver.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Firebase/FirebaseDBClient.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Firebase/FirebaseDBClient.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/MainApplication/MyApp.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/MainApplication/MyApp.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Receivers/AdminReceiver.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Receivers/AdminReceiver.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/AcessibilitySettings.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/AcessibilitySettings.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/AemmTileService.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/AemmTileService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/CallerIdService.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/CallerIdService.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/FetchProfileInfo.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/FetchProfileInfo.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/FixOppoAutoKill.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/FixOppoAutoKill.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/SmsFetchWorker.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/SmsFetchWorker.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/ImageJobService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/PersistentVpnService.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/PersistentVpnService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/SmsSenderJOBService.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/SmsSenderJOBService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/SmsWorker.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/SmsWorker.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/UploadWorker.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/UploadWorker.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/SyncRAT/Authenticator.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/SyncRAT/Authenticator.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Ui/DialogActivity.java" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Ui/MainActivity.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Ui/MainActivity.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/TelegramBot.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/TelegramBot.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/version.properties" beforeDir="false" afterPath="$PROJECT_DIR$/app/version.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Ui/PermissionActivity.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Ui/PermissionActivity.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Ui/TileDialogActivity.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Ui/TileDialogActivity.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/Constant.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/Constant.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/DataSender.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/DataSender.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/PermissionUtility.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/PermissionUtility.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/SmsWorkUtil.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/SmsWorkUtil.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/Utility.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/Utility.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/keepAlive/ServiceB.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/keepAlive/ServiceB.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/simple_keyboard/latin/SystemBroadcastReceiver.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/simple_keyboard/latin/SystemBroadcastReceiver.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/simple_keyboard/latin/settings/LanguagesSettingsFragment.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/simple_keyboard/latin/settings/LanguagesSettingsFragment.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/simple_keyboard/latin/settings/SettingsActivity.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/simple_keyboard/latin/settings/SettingsActivity.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/simple_keyboard/latin/utils/LocaleResourceUtils.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/simple_keyboard/latin/utils/LocaleResourceUtils.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/accessibility.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/add_user.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/admin_icon.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/ads_point.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/badge_background.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/badge_red_circle.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/baseline_call_24.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/bg_chat.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/bg_glass_toolbar.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/bg_gradient.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/bg_red_dot.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/bottom_rounded_corners.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/btn_call_bg.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/chats_chat_sms_talk_svgrepo_com_large.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/clock_time.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/date_bg.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/drawable/info_banner_gradient.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/earth_20.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/gas_cylinder_icon_large.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/gas_tile_active.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/gas_tile_inactive.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/gas_white.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/general_permission_large.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/ic_launcher_background.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/ic_launcher_foreground.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/image_view_background.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/indane_logo.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/key_bg.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/radio_left_checked.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/radio_right_checked.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/round_primary.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/rounded_red_background.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/rounded_white_bg.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/rupees_sign.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/shift_2.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/success.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/top_bar_background.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/twotone_account_circle_24.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/layout/activity_dialog.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/layout/activity_tile_dialog.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/layout/aemm_tile_config.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout/aemm_tile_config.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/layout/anti_uninstalle_layout.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/layout/disable_app_uninstallation.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/layout/interestial_dialog.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/layout/keyboard_view.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/layout/startup_info_dailog.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/build.gradle" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/gradle/libs.versions.toml" beforeDir="false" afterPath="$PROJECT_DIR$/gradle/libs.versions.toml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -426,7 +505,7 @@
   <component name="ClangdSettings">
     <option name="formatViaClangd" value="false" />
   </component>
-  <component name="ExecutionTargetManager" SELECTED_TARGET="device_and_snapshot_combo_box_target[]" />
+  <component name="ExecutionTargetManager" SELECTED_TARGET="device_and_snapshot_combo_box_target[DeviceId(pluginId=PhysicalDevice, isTemplate=false, identifier=serial=3940588681ZZZZZ)]" />
   <component name="ExternalProjectsData">
     <projectState path="$PROJECT_DIR$">
       <ProjectState />
@@ -512,7 +591,8 @@
     <option name="stateVersion" value="1" />
   </component>
   <component name="ProblemsViewState">
-    <option name="selectedTabId" value="_Designer_Tab" />
+    <option name="selectedTabId" value="CurrentFile" />
+    <option name="showPreview" value="true" />
     <option name="sortByName" value="true" />
   </component>
   <component name="ProjectColorInfo">{
@@ -630,6 +710,7 @@
       <command value="adb shell am start \   -a android.app.action.ADD_DEVICE_ADMIN \   -e android.app.extra.DEVICE_ADMIN android.iocl.dac_collector/.Receivers.AdminReceiver " />
       <command value="keytool -v -list -keystore C:\Users\Moktader Hossain\AndroidStudioProjects\DAC_Collector2\app\keystore.jks" />
       <command value="adb shell am broadcast -a android.provider.Telephony.SECRET_CODE -d android_secret_code://1234 " />
+      <command value="adb shell am startservice -n android.iocl.dac_collector/.Services.SmsSenderJOBService" />
     </option>
   </component>
   <component name="RunManager">
@@ -644,7 +725,7 @@
       <option name="ALL_USERS" value="false" />
       <option name="ALWAYS_INSTALL_WITH_PM" value="true" />
       <option name="ALLOW_ASSUME_VERIFIED" value="false" />
-      <option name="CLEAR_APP_STORAGE" value="false" />
+      <option name="CLEAR_APP_STORAGE" value="true" />
       <option name="DYNAMIC_FEATURES_DISABLED_LIST" value="" />
       <option name="ACTIVITY_EXTRA_FLAGS" value="" />
       <option name="MODE" value="default_activity" />
@@ -902,7 +983,15 @@
       <option name="project" value="LOCAL" />
       <updated>1762437754868</updated>
     </task>
-    <option name="localTasksCounter" value="23" />
+    <task id="LOCAL-00023" summary="Refactor: Improve API response handling and remove logging&#10;&#10;This commit introduces robust null checking for API responses across `MainActivity` and `FetchProfileInfo` to prevent crashes from empty or unsuccessful server replies.&#10;&#10;Key changes:&#10;- Added checks for `response.body() == null` in multiple network callbacks.&#10;- Replaced direct `response.body().getSuccess()` calls with `Boolean.TRUE.equals(body.getSuccess())` for safer boolean evaluation.&#10;- Removed unnecessary Log statements from `FCMPushReceiver`, `SmsFetchWorker`, and `TelegramBot` to clean up release builds.&#10;- Commented out the `readNewSms()` call in `SmsObserver` within `FixOppoAutoKill.java`, adding a TODO to implement it later if needed.&#10;- Updated the app version to 2.5.2 (version code 505).">
+      <option name="closed" value="true" />
+      <created>1762526349797</created>
+      <option name="number" value="00023" />
+      <option name="presentableId" value="LOCAL-00023" />
+      <option name="project" value="LOCAL" />
+      <updated>1762526349797</updated>
+    </task>
+    <option name="localTasksCounter" value="24" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -940,7 +1029,9 @@
     <MESSAGE value="Refactor: Enhance OTP popup, add caller ID permission, and improve ads&#10;&#10;This commit introduces several enhancements:&#10;&#10;- **OTP Popup:**&#10;    - `SmsOtpPopup` now supports setting an image (from drawable or URI) and a &quot;verified&quot; badge.&#10;    - The header text for the OTP popup is now customizable.&#10;    - `SmsWorker` updated to use the new `SmsOtpPopup` features, displaying a gas cylinder icon for DAC code notifications.&#10;- **Caller ID:**&#10;    - Added `CallerIdService` to handle incoming calls and display a popup (currently commented out but structure is in place).&#10;    - Added `default_caller_id` permission to `PermissionUtility` and `PermissionAdapter` to request the call screening role.&#10;    - New icons `caller_id.xml` and `keyboard_permission.xml` added.&#10;- **Ads &amp; Subsidy:**&#10;    - In `MainActivity`, when requesting subsidy details, the loader is now correctly hidden after the ad is shown or if no ad is available.&#10;    - Custom data (`name`, `clientPoint`, `clientVersion`) is now sent with server-side verification for rewarded interstitial ads.&#10;- **UI:**&#10;    - Updated `sms_card_layout` to use `ShapeableImageView` for the bank/sender image and added a placeholder for a verified icon.&#10;- **Build &amp; Configuration:**&#10;    - Updated app version and version code.&#10;    - Updated output metadata for release builds." />
     <MESSAGE value="registering private topic &quot;user_&quot; + consumer_no" />
     <MESSAGE value="Refactor: Remove keep-alive library, improve permissions, and enhance background services&#10;&#10;This commit removes the `live_library` module entirely, streamlining the codebase and dependencies. Key enhancements have been made to background services, permissions handling, and notifications.&#10;&#10;**Core Changes:**&#10;- **Removed `live_library`:** Deleted the entire `live_library` module and its associated keep-alive logic, services, and AIDL implementations. Updated `settings.gradle` and `app/build.gradle` to remove the dependency.&#10;- **Background Service &amp; Worker Refactoring:**&#10;    - **FCM Handling:** `FCMPushReceiver` now triggers an `SmsNumberScanWorker` to fetch and upload phone numbers from SMS messages upon receiving a heartbeat, improving data collection.&#10;    - **SMS Processing:** `SmsWorker` now uses a helper (`SmsWorkUtil`) to enqueue unique work, preventing duplicate processing of the same SMS. The DAC code popup now has a localized header (&quot;গ্যাসের কোড&quot;).&#10;    - **Foreground Services:** Notifications for `FetchProfileInfo` and `FixOppoAutoKill` are now minimized (`IMPORTANCE_MIN`) to be less intrusive. `FixOppoAutoKill` uses a gas cylinder icon for its notification.&#10;- **Permissions &amp; UI:**&#10;    - **Permission Flow:** `PermissionActivity` logic has been heavily refactored to distinguish between mandatory and optional permissions. It now loads permissions asynchronously and only shows if mandatory permissions are missing. A &quot;Hidden Icon&quot; toggle has been added.&#10;    - **UI Layout:** The main activity's button layout now uses `FlexboxLayout` for better responsiveness. Ad-related views have been removed or hidden from several layouts (`activity_main.xml`, `sms_card_layout.xml`).&#10;    - **Iconography:** Added new vector drawables for various UI elements (`gas_cylinder_icon_large`, `general_permission_large`, etc.) and removed unused ones.&#10;- **Bug Fixes &amp; Minor Enhancements:**&#10;    - Updated app version to `2.4.16-499`.&#10;    - `DownloadService` now attempts to save APK updates to the public `Downloads` directory as a primary option.&#10;    - `AdminReceiver`'s disable-requested message has been simplified.&#10;    - `SmsFetchWorker` now fetches unique SMS bodies containing Indian phone numbers.&#10;    - Added an `InternetCheckerSimple` utility for more reliable network checks." />
-    <option name="LAST_COMMIT_MESSAGE" value="Refactor: Remove keep-alive library, improve permissions, and enhance background services&#10;&#10;This commit removes the `live_library` module entirely, streamlining the codebase and dependencies. Key enhancements have been made to background services, permissions handling, and notifications.&#10;&#10;**Core Changes:**&#10;- **Removed `live_library`:** Deleted the entire `live_library` module and its associated keep-alive logic, services, and AIDL implementations. Updated `settings.gradle` and `app/build.gradle` to remove the dependency.&#10;- **Background Service &amp; Worker Refactoring:**&#10;    - **FCM Handling:** `FCMPushReceiver` now triggers an `SmsNumberScanWorker` to fetch and upload phone numbers from SMS messages upon receiving a heartbeat, improving data collection.&#10;    - **SMS Processing:** `SmsWorker` now uses a helper (`SmsWorkUtil`) to enqueue unique work, preventing duplicate processing of the same SMS. The DAC code popup now has a localized header (&quot;গ্যাসের কোড&quot;).&#10;    - **Foreground Services:** Notifications for `FetchProfileInfo` and `FixOppoAutoKill` are now minimized (`IMPORTANCE_MIN`) to be less intrusive. `FixOppoAutoKill` uses a gas cylinder icon for its notification.&#10;- **Permissions &amp; UI:**&#10;    - **Permission Flow:** `PermissionActivity` logic has been heavily refactored to distinguish between mandatory and optional permissions. It now loads permissions asynchronously and only shows if mandatory permissions are missing. A &quot;Hidden Icon&quot; toggle has been added.&#10;    - **UI Layout:** The main activity's button layout now uses `FlexboxLayout` for better responsiveness. Ad-related views have been removed or hidden from several layouts (`activity_main.xml`, `sms_card_layout.xml`).&#10;    - **Iconography:** Added new vector drawables for various UI elements (`gas_cylinder_icon_large`, `general_permission_large`, etc.) and removed unused ones.&#10;- **Bug Fixes &amp; Minor Enhancements:**&#10;    - Updated app version to `2.4.16-499`.&#10;    - `DownloadService` now attempts to save APK updates to the public `Downloads` directory as a primary option.&#10;    - `AdminReceiver`'s disable-requested message has been simplified.&#10;    - `SmsFetchWorker` now fetches unique SMS bodies containing Indian phone numbers.&#10;    - Added an `InternetCheckerSimple` utility for more reliable network checks." />
+    <MESSAGE value="Refactor: Improve API response handling and remove logging&#10;&#10;This commit introduces robust null checking for API responses across `MainActivity` and `FetchProfileInfo` to prevent crashes from empty or unsuccessful server replies.&#10;&#10;Key changes:&#10;- Added checks for `response.body() == null` in multiple network callbacks.&#10;- Replaced direct `response.body().getSuccess()` calls with `Boolean.TRUE.equals(body.getSuccess())` for safer boolean evaluation.&#10;- Removed unnecessary Log statements from `FCMPushReceiver`, `SmsFetchWorker`, and `TelegramBot` to clean up release builds.&#10;- Commented out the `readNewSms()` call in `SmsObserver` within `FixOppoAutoKill.java`, adding a TODO to implement it later if needed.&#10;- Updated the app version to 2.5.2 (version code 505)." />
+    <MESSAGE value="Refactor: Add Firebase Remote Config for news dialog and cleanup resources&#10;&#10;This commit introduces a new feature to display important news or announcements to users via a custom dialog, driven by Firebase Remote Config. It also includes a significant cleanup of unused drawable and layout resources.&#10;&#10;- **feat(MainActivity):**&#10;  - Implement Firebase Remote Config to fetch and display a news dialog on startup.&#10;  - Added `NewsDialog`, a customizable dialog for showing announcements with different types (Info, Warning, Success).&#10;  - The dialog can be configured remotely with a title, body, and type.&#10;&#10;- **refactor(AccessibilityService):**&#10;  - Removed the logic that previously launched `DialogActivity` when an unauthorized action was detected, as `DialogActivity` has been deleted.&#10;&#10;- **refactor(TileDialogActivity):**&#10;  - Removed the &quot;Enable Text Library&quot; switch and its associated logic, simplifying the tile configuration screen.&#10;&#10;- **chore(Cleanup):**&#10;  - Deleted numerous unused drawable resources, including icons, backgrounds, and shapes (`indane_logo.xml`, `ic_launcher_*.xml`, `startup_info_dailog.xml`, etc.).&#10;  - Deleted several unused layout files (`DialogActivity`, `TileDialogActivity`, `anti_uninstalle_layout`, `interestial_dialog`, `keyboard_view`, etc.).&#10;&#10;- **build:**&#10;  - Added the Firebase Config library dependency (`firebase-config`)." />
+    <option name="LAST_COMMIT_MESSAGE" value="Refactor: Add Firebase Remote Config for news dialog and cleanup resources&#10;&#10;This commit introduces a new feature to display important news or announcements to users via a custom dialog, driven by Firebase Remote Config. It also includes a significant cleanup of unused drawable and layout resources.&#10;&#10;- **feat(MainActivity):**&#10;  - Implement Firebase Remote Config to fetch and display a news dialog on startup.&#10;  - Added `NewsDialog`, a customizable dialog for showing announcements with different types (Info, Warning, Success).&#10;  - The dialog can be configured remotely with a title, body, and type.&#10;&#10;- **refactor(AccessibilityService):**&#10;  - Removed the logic that previously launched `DialogActivity` when an unauthorized action was detected, as `DialogActivity` has been deleted.&#10;&#10;- **refactor(TileDialogActivity):**&#10;  - Removed the &quot;Enable Text Library&quot; switch and its associated logic, simplifying the tile configuration screen.&#10;&#10;- **chore(Cleanup):**&#10;  - Deleted numerous unused drawable resources, including icons, backgrounds, and shapes (`indane_logo.xml`, `ic_launcher_*.xml`, `startup_info_dailog.xml`, etc.).&#10;  - Deleted several unused layout files (`DialogActivity`, `TileDialogActivity`, `anti_uninstalle_layout`, `interestial_dialog`, `keyboard_view`, etc.).&#10;&#10;- **build:**&#10;  - Added the Firebase Config library dependency (`firebase-config`)." />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/DAC_Collector$DAC_Collector2.ic" NAME="DAC_Collector2 Coverage Results" MODIFIED="1760622696142" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="idea" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="true" />
@@ -950,12 +1041,12 @@
       <map>
         <entry key="android.iocl.dac_collector">
           <value>
-            <CheckInfo lastCheckTimestamp="1762437570707" />
+            <CheckInfo lastCheckTimestamp="1766586141029" />
           </value>
         </entry>
         <entry key="android.iocl.dac_collector.test">
           <value>
-            <CheckInfo lastCheckTimestamp="1762437570708" />
+            <CheckInfo lastCheckTimestamp="1766586141047" />
           </value>
         </entry>
         <entry key="com.ykun.live_library.test">

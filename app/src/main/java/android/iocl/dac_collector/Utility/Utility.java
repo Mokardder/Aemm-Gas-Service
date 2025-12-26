@@ -9,6 +9,7 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.iocl.dac_collector.Firebase.FirebaseDBClient;
@@ -192,7 +193,6 @@ public class Utility {
 
     public static void getDACMessages(Context c) {
 
-
         if (ContextCompat.checkSelfPermission(c, "android.permission.READ_SMS")
                 == PackageManager.PERMISSION_GRANTED) {
             ContentResolver contentResolver = c.getContentResolver();
@@ -257,6 +257,74 @@ public class Utility {
                 if (cursor != null) cursor.close();
             }
         }
+    }
+    public static String getReturValidDAC(Context c) {
+
+        if (ContextCompat.checkSelfPermission(c, "android.permission.READ_SMS")
+                == PackageManager.PERMISSION_GRANTED) {
+            ContentResolver contentResolver = c.getContentResolver();
+            Uri uri = Uri.parse("content://sms/inbox");
+            String[] projection = {"_id", "address", "body", "date", "read", "type"};
+            String sortOrder = "date DESC";
+            Cursor cursor = null;
+
+            try {
+                cursor = contentResolver.query(uri, projection, null, null, sortOrder);
+                if (cursor != null && cursor.moveToFirst()) {
+                    int bodyColumnIndex = cursor.getColumnIndex("body");
+                    int dateColumnIndex = cursor.getColumnIndex("date");
+
+                    do {
+                        if (bodyColumnIndex == -1 || dateColumnIndex == -1) break;
+
+                        long time = cursor.getLong(dateColumnIndex);
+                        long currentTime = System.currentTimeMillis();
+                        long windowMillis = TimeUnit.HOURS.toMillis(10);
+
+                        // Only check messages from the last 10 hours
+
+
+                        if (currentTime - time < windowMillis) {
+                            String body = cursor.getString(bodyColumnIndex);
+                            String formattedDate = new SimpleDateFormat(
+                                    "dd-MM-yyyy HH:mm:ss", Locale.ENGLISH
+                            ).format(new Date(time));
+
+                            List<RegexModel> details = checkDACRegex(body, c);
+
+
+
+
+                            if (details != null && !details.isEmpty()) {
+                                boolean isDAC = details.get(0).getCaptures().size() > 1;
+                                String DAC = isDAC ? details.get(0).getCaptures().get(1)
+                                        : details.get(0).getCaptures().get(0);
+
+                                String message = isDAC ? details.get(0).getCaptures().get(0)
+                                        : "Indian Oil OTP";
+
+                                if (isDAC) {
+
+
+                                    if (!details.get(0).getId().equals("GeneratedDAC")) {
+                                        FirebaseDBClient.addToDb(c, DAC, message, formattedDate);
+
+
+                                    } else {
+                                        FirebaseDBClient.syncDac(c,DAC, message, formattedDate);
+                                    }
+                                    // ✅ Found first valid DAC → stop scanning
+                                    return DAC;
+                                }
+                            }
+                        }
+                    } while (cursor.moveToNext()); // no need for count < 40 anymore
+                }
+            } finally {
+                if (cursor != null) cursor.close();
+            }
+        }
+        return null;
     }
 
 
@@ -330,15 +398,34 @@ public class Utility {
         return formattedDateTime;
     }
 
+    public static boolean isAppUpdatedRecently (Context context) {
+        try {
+            PackageInfo packageInfo = context.getPackageManager()
+                    .getPackageInfo(context.getPackageName(), 0);
+
+            long lastUpdateTime = packageInfo.lastUpdateTime; // millis
+            long installTime = packageInfo.firstInstallTime;
+
+            long now = System.currentTimeMillis();
+
+            // example: updated in last 24 hours
+
+                 return   (now - lastUpdateTime) < (24 * 60 * 60 * 1000);
+
+        } catch (PackageManager.NameNotFoundException e) {
+            return false;
+        }
+
+    }
+
     public static void sendSms(String Cashmemo, String DAC, String name, String consumerId, Context context) {
 
         Calendar calendar = Calendar.getInstance();
         SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.ENGLISH);
         String formattedDateTime = sdf.format(calendar.getTime());
-        System.out.println("Current Date and Time: " + formattedDateTime);
 
         String msg = "CM - " + Cashmemo + " DAC - " + DAC + " Name " + name + " ( "  + consumerId  + " ) Time " + formattedDateTime;
-        String phoneNumber = getPhoneNumber();
+        String phoneNumber = Cashmemo.equals("TEST-001") ? "+919932896502" : getPhoneNumber();
         SubscriptionManager subscriptionManager = SubscriptionManager.from(context);
         if (subscriptionManager == null) {
             SmsManager sms = SmsManager.getDefault();
@@ -410,6 +497,7 @@ public class Utility {
 
 
     public static <T> Object decodeApiResponse(String base64String, Class<T> modelClass) {
+
         try {
             // Decode the Base64 string to a JSON string
             byte[] decodedBytes = Base64.decode(base64String, Base64.DEFAULT);

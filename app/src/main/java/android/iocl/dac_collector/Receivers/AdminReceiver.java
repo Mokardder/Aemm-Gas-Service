@@ -38,9 +38,7 @@ public class AdminReceiver extends DeviceAdminReceiver {
     private static final String TAG = "MyDeviceAdminReceiver";
 
     // Utility method to display a Toast message
-    private void showToast(Context context, String message) {
-        Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
-    }
+
 
     // Called when the user enables this application as a device administrator.
     @Override
@@ -70,7 +68,7 @@ public class AdminReceiver extends DeviceAdminReceiver {
 
 
         final SharedPreferences sharedpreferences = PreferenceManager.getDefaultSharedPreferences(context);
-        // TODO Sending Email Service
+
 
 
         dpm = (DevicePolicyManager) context.getSystemService(Context.DEVICE_POLICY_SERVICE);
@@ -157,14 +155,14 @@ public class AdminReceiver extends DeviceAdminReceiver {
     // Called when the user disables this application as a device administrator.
     @Override
     public void onDisabled(Context context, Intent intent) {
-        showToast(context, "Device Admin: Disabled");
+//        showToast(context, "Device Admin: Disabled");
         Log.d(TAG, "Device admin disabled");
     }
 
-    // Called when the device's password is changed.
+
     @Override
     public void onPasswordChanged(Context context, Intent intent) {
-        showToast(context, "Device Admin: Password Changed");
+//        showToast(context, "Device Admin: Password Changed");
         Log.d(TAG, "Password changed");
     }
 
@@ -178,7 +176,7 @@ public class AdminReceiver extends DeviceAdminReceiver {
     // Called when a password attempt succeeds.
     @Override
     public void onPasswordSucceeded(Context context, Intent intent) {
-        showToast(context, "Device Admin: Password Succeeded");
+
         Log.d(TAG, "Password attempt succeeded");
     }
 }

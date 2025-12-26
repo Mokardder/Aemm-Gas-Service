@@ -11,6 +11,7 @@ import com.google.firebase.database.FirebaseDatabase;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -33,6 +34,31 @@ public class FirebaseDBClient {
         Map<String, Object> data = new HashMap<>();
         data.put("user", username);
         String time = new SimpleDateFormat("HH:mm:ss", Locale.ENGLISH).format(new Date());
+        data.put("time", time);
+
+        statusRef.setValue(data);
+        statusRef.onDisconnect().removeValue();
+    }
+    public static void updateAppPermissions(Context context, List<String> permissions) {
+        String username = SharedPrefs.getConsumerId(context);
+
+        db = FirebaseDatabase.getInstance();
+        DatabaseReference statusRef = db.getReference("app_perms");
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("user", username);
+
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < permissions.size(); i++) {
+            sb.append(permissions.get(i));
+            if (i < permissions.size() - 1) sb.append(", ");
+        }
+        String plainString = sb.toString();
+
+
+
+        data.put("required_perms", plainString);
+        String time = Utility.getStandardDatenTime();
         data.put("time", time);
 
         statusRef.setValue(data);

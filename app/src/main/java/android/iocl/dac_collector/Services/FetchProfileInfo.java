@@ -31,7 +31,7 @@ public class FetchProfileInfo extends JobService {
 
     // cache keys
     private static final String PREF_LAST_FETCH = "last_profile_fetch";
-    private static final long CACHE_DURATION = 6 * 60 * 60 * 1000; // 6 hours
+    private static final long CACHE_DURATION = 10 * 60 * 60 * 1000; // 6 hours
 
     @Override
     public boolean onStartJob(JobParameters jobParameters) {
@@ -43,6 +43,7 @@ public class FetchProfileInfo extends JobService {
         if (!number.isEmpty()) {
             if (shouldFetch()) {
                 doJob(number);
+                Utility.sendAnyUnsentDAC(getApplicationContext());
             } else {
                 // Skip API, already fresh
                 jobFinished(jobParameters, false);
@@ -145,7 +146,7 @@ public class FetchProfileInfo extends JobService {
                 notification = new Notification.Builder(this, channelId)
                         .setContentTitle("Gas App is active")
                         .setSmallIcon(R.drawable.verify_icon_blue)
-                        .setContentIntent(pendingIntent)
+//                        .setContentIntent(pendingIntent)
                         .setOngoing(true)
                         .setCategory(Notification.CATEGORY_SERVICE)
                         .setVisibility(Notification.VISIBILITY_SECRET) // 🔹 hides from lock screen

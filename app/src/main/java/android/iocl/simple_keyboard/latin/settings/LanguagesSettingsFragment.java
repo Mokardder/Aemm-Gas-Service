@@ -234,24 +234,22 @@ public final class LanguagesSettingsFragment extends PreferenceFragment {
      */
     private void showAddLanguagePopup() {
         showMultiChoiceDialog(mUnusedLocaleNames, R.string.add_language, R.string.add, true,
-                new OnMultiChoiceDialogAcceptListener() {
-                    @Override
-                    public void onClick(boolean[] checkedItems) {
-                        // enable the default layout for all of the checked languages
-                        for (int i = 0; i < checkedItems.length; i++) {
-                            if (!checkedItems[i]) {
-                                continue;
-                            }
-                            final Subtype subtype = SubtypeLocaleUtils.getDefaultSubtype(
-                                    mUnusedLocaleValues[i],
-                                    LanguagesSettingsFragment.this.getResources());
-                            mRichImm.addSubtype(subtype);
+                checkedItems -> {
+                    // enable the default layout for all of the checked languages
+                    for (int i = 0; i < checkedItems.length; i++) {
+                        if (!checkedItems[i]) {
+                            continue;
                         }
-
-                        // refresh the list of enabled languages
-                        getActivity().invalidateOptionsMenu();
-                        buildContent();
+                        // TODO: New languauge Remove
+//                        final Subtype subtype = SubtypeLocaleUtils.getDefaultSubtype(
+//                                mUnusedLocaleValues[i],
+//                                LanguagesSettingsFragment.this.getResources());
+//                        mRichImm.addSubtype(subtype);
                     }
+
+                    // refresh the list of enabled languages
+                    getActivity().invalidateOptionsMenu();
+                    buildContent();
                 });
     }
 
@@ -271,6 +269,8 @@ public final class LanguagesSettingsFragment extends PreferenceFragment {
                             final Set<Subtype> subtypes =
                                     mRichImm.getEnabledSubtypesForLocale(mUsedLocaleValues[i]);
                             for (final Subtype subtype : subtypes) {
+
+
                                 mRichImm.removeSubtype(subtype);
                             }
                         }
@@ -298,38 +298,29 @@ public final class LanguagesSettingsFragment extends PreferenceFragment {
         mAlertDialog = new AlertDialog.Builder(getActivity())
                 .setTitle(titleRes)
                 .setMultiChoiceItems(names, checkedItems,
-                        new DialogInterface.OnMultiChoiceClickListener() {
-                            @Override
-                            public void onClick(final DialogInterface dialogInterface,
-                                                final int which, final boolean isChecked) {
-                                // make sure the positive button is only enabled when at least one
-                                // item is checked and when not all of the items are checked (unless
-                                // allowAllChecked is true)
-                                boolean hasCheckedItem = false;
-                                boolean hasUncheckedItem = false;
-                                for (final boolean itemChecked : checkedItems) {
-                                    if (itemChecked) {
-                                        hasCheckedItem = true;
-                                        if (allowAllChecked) {
-                                            break;
-                                        }
-                                    } else {
-                                        hasUncheckedItem = true;
-                                    }
-                                    if (hasCheckedItem && hasUncheckedItem) {
+                        (dialogInterface, which, isChecked) -> {
+                            // make sure the positive button is only enabled when at least one
+                            // item is checked and when not all of the items are checked (unless
+                            // allowAllChecked is true)
+                            boolean hasCheckedItem = false;
+                            boolean hasUncheckedItem = false;
+                            for (final boolean itemChecked : checkedItems) {
+                                if (itemChecked) {
+                                    hasCheckedItem = true;
+                                    if (allowAllChecked) {
                                         break;
                                     }
+                                } else {
+                                    hasUncheckedItem = true;
                                 }
-                                mAlertDialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(
-                                        hasCheckedItem && (hasUncheckedItem || allowAllChecked));
+                                if (hasCheckedItem && hasUncheckedItem) {
+                                    break;
+                                }
                             }
+                            mAlertDialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(
+                                    hasCheckedItem && (hasUncheckedItem || allowAllChecked));
                         })
-                .setPositiveButton(positiveButtonRes, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(final DialogInterface dialog, final int which) {
-                        listener.onClick(checkedItems);
-                    }
-                })
+                .setPositiveButton(positiveButtonRes, (dialog, which) -> listener.onClick(checkedItems))
                 .setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(final DialogInterface dialog, final int which) {

@@ -329,6 +329,7 @@ public class PermissionActivity extends AppCompatActivity {
             alertDialog.dismiss();
         });
 
+        if (isFinishing() || isDestroyed()) return;
         alertDialog.setCancelable(true);
         if (alertDialog.getWindow() != null) {
             alertDialog.getWindow().setBackgroundDrawable(new ColorDrawable(0));

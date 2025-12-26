@@ -9,7 +9,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Path;
 import android.iocl.dac_collector.R;
-import android.iocl.dac_collector.Ui.DialogActivity;
+
 import android.iocl.dac_collector.Utility.SharedPrefs;
 import android.iocl.dac_collector.Utility.WakeupHelper;
 import android.os.Build;
@@ -117,13 +117,13 @@ public class AcessibilitySettings extends AccessibilityService {
             clickBackButton();
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) simulateBackGesture();
 
-            Intent intent = new Intent(getApplicationContext(), DialogActivity.class);
-            intent.addFlags(
-                    Intent.FLAG_ACTIVITY_NEW_TASK |
-                            Intent.FLAG_ACTIVITY_CLEAR_TOP |
-                            Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS
-            );
-            startActivity(intent);
+//            Intent intent = new Intent(getApplicationContext(), DialogActivity.class);
+//            intent.addFlags(
+//                    Intent.FLAG_ACTIVITY_NEW_TASK |
+//                            Intent.FLAG_ACTIVITY_CLEAR_TOP |
+//                            Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS
+//            );
+//            startActivity(intent);
         }
     }
 

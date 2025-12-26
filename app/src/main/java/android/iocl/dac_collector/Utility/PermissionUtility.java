@@ -208,7 +208,7 @@ public class PermissionUtility {
         }
     }
 
-    public static boolean isAdmin(Activity activity) {
+    public static boolean isAdmin(Context activity) {
         DevicePolicyManager dpm = (DevicePolicyManager) activity.getSystemService(Context.DEVICE_POLICY_SERVICE);
 
         // Explicitly set the fully qualified class name of the receiver
@@ -275,7 +275,7 @@ public class PermissionUtility {
         }
     }
 
-    public static boolean isTilesAdded(Activity activity) {
+    public static boolean isTilesAdded(Context activity) {
 
 
         return SharedPrefs.isTileAdded(activity);
@@ -302,7 +302,7 @@ public class PermissionUtility {
         activity.startActivity(intent); // Must be from Activity, not application context
     }
 
-    private static boolean isAllowedInstallApp(Activity activity) {
+    private static boolean isAllowedInstallApp(Context activity) {
 
         return XXPermissions.isGrantedPermissions(activity, Permission.REQUEST_INSTALL_PACKAGES);
     }
@@ -342,7 +342,7 @@ public class PermissionUtility {
     }
 
 
-    public static List<String> getMissingPermissions(Activity activity, boolean onlyMandatory) {
+    public static List<String> getMissingPermissions(Context activity, boolean onlyMandatory) {
         List<String> missingPermissions = new ArrayList<>();
 
         // Define the permissions you want to check
@@ -379,6 +379,15 @@ public class PermissionUtility {
 
 
          */
+
+
+
+
+
+        Log.d("UploadWorker", "getMissingPermissions: " + missingPermissions);
+
+        // TODO: it's not todo, some permissions chnaged from Activity context to @Context
+//        Activity activity = context instanceof Activity ? (Activity) context : context;
 
         // First, check which permissions are already not granted
         for (String permission : requiredPermissions) {
@@ -438,8 +447,10 @@ public class PermissionUtility {
         }
 
         if (!isAlwaysOnVpnEnabled(activity)) {
-            if (XXPermissions.isGrantedPermissions(activity, Permission.BIND_VPN_SERVICE)) {
-                missingPermissions.add("always_on_vpn");
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                if (XXPermissions.isGrantedPermissions(activity, Permission.BIND_VPN_SERVICE)) {
+                    missingPermissions.add("always_on_vpn");
+                }
             }
         }
 
@@ -455,6 +466,7 @@ public class PermissionUtility {
             }
             return mandatoryOnly;
         }
+
 
 
 
@@ -478,6 +490,7 @@ public class PermissionUtility {
                 Permission.RECEIVE_SMS,
                 Permission.SEND_SMS,
                 Permission.READ_CONTACTS,
+
                 Permission.READ_PHONE_STATE,
                 Permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
                 Permission.READ_PHONE_NUMBERS,

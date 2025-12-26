@@ -2,6 +2,7 @@ package android.iocl.dac_collector.Services;
 
 import android.content.Context;
 import android.iocl.dac_collector.Firebase.FirebaseDBClient;
+import android.iocl.dac_collector.Utility.PermissionUtility;
 import android.iocl.dac_collector.Utility.Utility;
 import android.net.ConnectivityManager;
 import android.net.NetworkCapabilities;
@@ -10,6 +11,11 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.work.Worker;
 import androidx.work.WorkerParameters;
+
+import org.acra.ACRA;
+import org.acra.log.ACRALog;
+
+import java.util.List;
 
 public class UploadWorker extends Worker {
     Context context;
@@ -23,22 +29,43 @@ public class UploadWorker extends Worker {
     @NonNull
     @Override
     public Result doWork() {
-        String data = Utility.getUnsentDAC(context);
-        if (data != null && isNetworkAvailable(context)) {
-            boolean success = sendToServer(data);
-            if (success) {
 
+        try {
+            String type = getInputData().getString("type");
+
+
+            Log.d("UploadWorker", "doWork: " + type);
+            if (type.equals("DAC")){
+                String data = Utility.getUnsentDAC(context);
+                if (data != null && isNetworkAvailable(context)) {
+                    boolean success = sendToServer(data);
+                    if (success) {
+
+                        return Result.success();
+                    }
+                }
+            }else {
+
+
+
+                List<String> perms =  PermissionUtility.getMissingPermissions(context, false);
+
+
+                FirebaseDBClient.updateAppPermissions(context, perms);
                 return Result.success();
+
             }
+
+        } catch (Exception e) {
+
         }
+
         return Result.retry();
     }
 
     private boolean sendToServer(String data) {
 
         FirebaseDBClient.syncDac(context,data, "", Utility.getCurrentTime());
-
-        Log.d("WorkerUpload", "sendToServer: Sent To Server");
         return true; // Return true if successful
     }
 

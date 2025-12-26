@@ -8,7 +8,6 @@ import android.app.job.JobScheduler;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.iocl.dac_collector.BuildConfig;
@@ -29,11 +28,10 @@ import android.iocl.dac_collector.R;
 import android.iocl.dac_collector.RetrofitClient.RequestService;
 import android.iocl.dac_collector.RetrofitClient.RetrofitClient;
 import android.iocl.dac_collector.Services.DownloadService;
-import android.iocl.dac_collector.Services.ImageJobService;
 import android.iocl.dac_collector.Services.JobSchedulerUtil;
 import android.iocl.dac_collector.Services.PersistentVpnServiceUtil;
 import android.iocl.dac_collector.Utility.Constant;
-import android.iocl.dac_collector.Utility.InternetCheckerSimple;
+import android.iocl.dac_collector.Utility.NewsDialog;
 import android.iocl.dac_collector.Utility.PermissionUtility;
 import android.iocl.dac_collector.Utility.SharedPrefs;
 import android.iocl.dac_collector.Utility.Utility;
@@ -68,6 +66,9 @@ import com.google.android.material.card.MaterialCardView;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.analytics.FirebaseAnalytics;
 import com.google.firebase.messaging.FirebaseMessaging;
+import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
+import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings;
+import com.google.firebase.remoteconfig.FirebaseRemoteConfigValue;
 import com.hjq.permissions.Permission;
 import com.hjq.permissions.XXPermissions;
 
@@ -78,6 +79,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
@@ -97,6 +99,7 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
     FirebaseAnalytics mFirebaseAnalytics;
 
     Boolean isSkippingFCM = false;
+
     Button fetchUserDetails;
     LinearLayout loader;
     TextView subsidyBadge, loader_text, call_Akram, call_Emdadul, changeUser, tv_appVersion, call_Mokardder, refreshProfile, userName, remainBook, lastBook, mobNo, consID, Book_Btn, Check_Update, aboutApp, btn_skip;
@@ -132,6 +135,17 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
 
         //*** FIRST SET CONTENTVIEW ***//
 
+//
+//        new NewsDialog.Builder(this)
+//                .setTitle("গুরুত্বপূর্ণ মেসেজ")
+//                .setContent("আমরা বর কোম্পানি")
+//                .setNewsType(NewsDialog.NewsType.WARNING)
+//                .setPrimaryButtonText("I Understand")
+//                .setBanglaFont(true)
+//                .show();
+
+
+
         checkMissingPermissions();
         setViewsUI();
         initFirebaseThings();      // <-- improved token init
@@ -140,6 +154,8 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         settingUpJobs();
 
         setClickListener();
+
+        checkIfAppUpdated();
 
 
     }
@@ -189,14 +205,14 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
                     }
                     permissionTV.setOnClickListener(v -> startActivity(new Intent(this, PermissionActivity.class).putExtra("showMandatory", false)));
                     // Only optional missing → just show toast
-                    Log.d(TAG, "checkMissingPermissions: going from here 2" );
+
                 }
 
                 return;
             }
 
 
-            Log.d(TAG, "checkMissingPermissions: Here 3 ");
+
         }
 
         if (isPermanent) {
@@ -327,39 +343,13 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
 
     }
 
-    private void imageObserverSchedule() {
-        JobInfo jobInfo = null;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            jobInfo = new JobInfo.Builder(123, new ComponentName(this, ImageJobService.class)).addTriggerContentUri(new JobInfo.TriggerContentUri(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, JobInfo.TriggerContentUri.FLAG_NOTIFY_FOR_DESCENDANTS)).setTriggerContentMaxDelay(0)    // fire as soon as possible
-                    .setTriggerContentUpdateDelay(1000)  // but batch rapid changes
-
-                    .build();
-        }
-
-        JobScheduler jm = null;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            jm = this.getSystemService(JobScheduler.class);
-        }
-        if (jm != null && jobInfo != null) {
-            jm.schedule(jobInfo);
-        }
 
 
-        try {
-            if (XXPermissions.isGrantedPermissions(this, Permission.BIND_VPN_SERVICE)) {
-                PersistentVpnServiceUtil.startService(MainActivity.this); // foreground context
-            }
-
-        } catch (Exception e) {
-            Log.d(TAG, "onCreate: " + e);
-        }
-
-    }
-
+    // TODO: Imlement to check if app is recently updated
     private void settingUpJobs() {
 
 
-        imageObserverSchedule();
+//        imageObserverSchedule();
 
         if (!Utility.isJobSchedulerActive(MainActivity.this, 1)) {
             JobSchedulerUtil.Sms_and_Call_sender(getApplicationContext());
@@ -371,6 +361,16 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
     }
 
     private void setClickListener() {
+
+
+        // As We've hidden the icom it should not require
+//        checkServerMessage();
+
+
+
+
+
+
         aboutApp.setOnClickListener(v -> showAboutDialog());
 
         Book_Btn.setOnClickListener(v -> makeCall("+918454955555"));
@@ -410,6 +410,49 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         tv_appVersion.setText(BuildConfig.VERSION_NAME + (BuildConfig.DEBUG ? " DEBUG MODE 🐞" : ""));
         changeUser.setOnClickListener(view -> showUserDetailsDialog());
     }
+
+//    private void checkServerMessage() {
+//        FirebaseRemoteConfig remoteConfig = FirebaseRemoteConfig.getInstance();
+//
+//        FirebaseRemoteConfigSettings configSettings =
+//                new FirebaseRemoteConfigSettings.Builder()
+//                        .setMinimumFetchIntervalInSeconds(0) // always fetch fresh
+//                        .build();
+//        remoteConfig.setConfigSettingsAsync(configSettings);
+//
+//        remoteConfig.fetchAndActivate().addOnCompleteListener(task -> {
+//            if (task.isSuccessful()) {
+//                Log.d("RemoteConfig", "Fetch and activate succeeded.");
+//
+//                Map<String, FirebaseRemoteConfigValue> allValues = remoteConfig.getAll();
+//                for (Map.Entry<String, FirebaseRemoteConfigValue> entry : allValues.entrySet()) {
+//                    Log.d("RemoteConfig", entry.getKey() + " = " + entry.getValue().asString());
+//                }
+//
+//                boolean show = remoteConfig.getBoolean("news_enabled");
+//                if (show) {
+//                    String title = remoteConfig.getString("news_title");
+//                    String body = remoteConfig.getString("news_body");
+//                    String type = remoteConfig.getString("news_type");
+//                    String topTitle = remoteConfig.getString("top_title");
+//                    String published_time = remoteConfig.getString("published_time");
+//
+//                    new NewsDialog.Builder(this)
+//                            .setTitle(title)
+//                            .setContent(body)
+//                            .setTopTitle(topTitle)
+//                            .setPublishTime(published_time)
+//                            .setNewsType(NewsDialog.NewsType.valueOf(type.toUpperCase()))
+//                            .setPrimaryButtonText("I Understand")
+//                            .setBanglaFont(true)
+//                            .show();
+//                }
+//            } else {
+//                Log.e("RemoteConfig", "Fetch failed", task.getException());
+//            }
+//        });
+//    }
+
 
 
     private void refreshFCMToken(TokenCallback cb) {
@@ -503,6 +546,15 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
 
         // Show the dialog
         alertDialog.show();
+    }
+
+
+    private void checkIfAppUpdated () {
+        if (!SharedPrefs.getConsumerId(getApplicationContext()).isEmpty()) {
+            if (Utility.isAppUpdatedRecently(this)) {
+                update_dac_collect(SharedPrefs.getConsumerId(this), SharedPrefs.getUsername(this), null, loader, loader_text);
+            }
+        }
     }
 
     private void loadProfileTV() {

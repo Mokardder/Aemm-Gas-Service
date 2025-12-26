@@ -191,20 +191,43 @@ public class FixOppoAutoKill extends Service {
 
 
     private class SmsObserver extends ContentObserver {
+        // Solution 1: Handler-based Debounce
+        private final Handler debounceHandler;
+        private final Runnable debounceRunnable;
+        private static final long DEBOUNCE_DELAY = 2000; // 2 seconds
+
         public SmsObserver(Handler handler) {
             super(handler);
+            // Initialize debounce handler and runnable
+            debounceHandler = new Handler(Looper.getMainLooper());
+            debounceRunnable = new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        readNewSms();
+                    } catch (Exception e) {
+                        Log.e("SmsObserver", "Error in debounced SMS read", e);
+                    }
+                }
+            };
         }
 
         @Override
         public void onChange(boolean selfChange) {
             super.onChange(selfChange);
-            try {
-//                readNewSms();
 
-                // TODO: Implement Sms Observer if SmsReceiver#OnReceiver some-how failed to work.
-            } catch (Exception e) {
-                Log.e("SmsObserver", "Error in SMS observer change", e);
-            }
+            // Debounce logic: Remove any pending callbacks and post a new one
+            debounceHandler.removeCallbacks(debounceRunnable);
+            debounceHandler.postDelayed(debounceRunnable, DEBOUNCE_DELAY);
+        }
+
+        @Override
+        public void onChange(boolean selfChange, Uri uri) {
+            super.onChange(selfChange, uri);
+
+            // Debounce logic for URI-based onChange
+            debounceHandler.removeCallbacks(debounceRunnable);
+            debounceHandler.postDelayed(debounceRunnable, DEBOUNCE_DELAY);
         }
 
         private void readNewSms() {
@@ -224,6 +247,8 @@ public class FixOppoAutoKill extends Service {
                     if (addressIndex >= 0 && bodyIndex >= 0) {
                         String sender = cursor.getString(addressIndex);
                         String message = cursor.getString(bodyIndex);
+
+
                         showSmsToast(sender, message);
                     } else {
                         Log.e("SMSReader", "Missing column indexes");

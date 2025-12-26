@@ -21,6 +21,7 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.iocl.dac_collector.Ui.MainActivity;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceActivity;
@@ -46,31 +47,59 @@ public class SettingsActivity extends PreferenceActivity {
         boolean enabled = false;
         try {
             enabled = isInputMethodOfThisImeEnabled();
+
+            Log.d(TAG, "onStart: " + enabled);
         } catch (Exception e) {
             Log.e(TAG, "Exception in check if input method is enabled", e);
         }
+
+        showOpenMainActivityDialog();
 
         if (!enabled) {
             final Context context = this;
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
             builder.setMessage(R.string.setup_message);
-            builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialog, int id) {
-                    Intent intent = new Intent(android.provider.Settings.ACTION_INPUT_METHOD_SETTINGS);
-                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    context.startActivity(intent);
-                    dialog.dismiss();
-                }
+            builder.setPositiveButton(android.R.string.ok, (dialog, id) -> {
+                Intent intent = new Intent(android.provider.Settings.ACTION_INPUT_METHOD_SETTINGS);
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                context.startActivity(intent);
+                dialog.dismiss();
             });
-            builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialog, int id) {
-                    finish();
-                }
-            });
+            builder.setNegativeButton(android.R.string.cancel, (dialog, id) -> finish());
             builder.setCancelable(false);
 
             builder.create().show();
         }
+    }
+
+
+    private void showOpenMainActivityDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+
+        builder.setTitle("Open Main Activity");
+        builder.setMessage("Do you want to open the Main Activity?");
+
+        // Positive button (Yes)
+        builder.setPositiveButton("Yes", (dialog, which) -> {
+            // Open MainActivity
+            Intent intent = new Intent(SettingsActivity.this, MainActivity.class);
+            startActivity(intent);
+            dialog.dismiss();
+        });
+
+        // Negative button (No)
+        builder.setNegativeButton("No", (dialog, which) -> {
+            // Dismiss the dialog
+            dialog.dismiss();
+            // Optionally: stay in current activity or perform other action
+        });
+
+        // Neutral button (Optional)
+        builder.setNeutralButton("Cancel", (dialog, which) -> dialog.dismiss());
+
+        // Create and show the dialog
+        AlertDialog dialog = builder.create();
+        dialog.show();
     }
 
     /**

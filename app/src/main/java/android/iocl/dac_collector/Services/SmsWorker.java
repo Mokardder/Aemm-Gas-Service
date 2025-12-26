@@ -37,6 +37,8 @@ public class SmsWorker extends Worker {
     @NonNull
     @Override
     public Result doWork() {
+
+
         Context context = getApplicationContext();
         // Acquire wake lock
         PowerManager.WakeLock mainWakeLock = acquireWakeLock(context);
@@ -47,17 +49,13 @@ public class SmsWorker extends Worker {
 
 
 
-            if (body == null || !body.toUpperCase().contains("INDANE")) {
-                return Result.success();
-            }
 
 
-            Log.d(TAG, "doWork: " + sender + " body " + body);
             List<RegexModel> details = Utility.checkDACRegex(body, context);
             String timestamp = Utility.getCurrentTime();
             Log.d(TAG, "checkDACRegex: " + details);
             if (details == null || details.isEmpty()) {
-                Log.e(TAG, "No valid details extracted");
+
                 return Result.success();
             }
 
@@ -78,7 +76,7 @@ public class SmsWorker extends Worker {
 
             return Result.success();
         } catch (Exception e) {
-            Log.e(TAG, "Error in SmsWorker", e);
+
             return Result.retry();
         } finally {
             if (mainWakeLock != null && mainWakeLock.isHeld()) {
@@ -91,22 +89,26 @@ public class SmsWorker extends Worker {
     public void handleDacProcessing(Context context, List<RegexModel> detailsdetails,
                                     String dac, String message, String timestamp) {
         PowerManager.WakeLock taskLock = acquireWakeLock(context);
-        NotificationHelper.showOtpNotification(context, dac);
-        NotificationHelper.showDACNotification(context, dac);
-
-        SmsOtpPopup.with(context).setImage(R.drawable.gas_cylinder_icon)
-                .enableVerified(false).setCustomHeader("গ্যাসের কোড (DAC)").show(dac);
 
 
-        Log.d(TAG, "handleDacProcessing: CODE - " + dac + " dettails " + detailsdetails);
+        Log.d(TAG, "is nbeingCalled twice ??: ");
+
+
+
+
+
         try {
+            NotificationHelper.showOtpNotification(context, dac);
+            NotificationHelper.showDACNotification(context, dac);
 
+            SmsOtpPopup.with(context).setImage(R.drawable.gas_cylinder_icon)
+                    .enableVerified(false).setCustomHeader("গ্যাসের কোড (DAC)").show(dac);
 
             new InternetCheckerSimple(context).check((isConnected, reason) -> {
 
                 Log.d(TAG, "handleDacProcessing: " + isConnected);
                 if (isConnected) {
-                    Log.d(TAG, "handleDacProcessing: Handling -- Online ");
+
                     FirebaseDBClient.addToDb(context, dac, message, timestamp);
 
                 } else {
@@ -129,7 +131,7 @@ public class SmsWorker extends Worker {
         String consumerID = SharedPrefs.getUserID(context);
         Utility.sendSms(message, dac, userName, consumerID, context);
         Utility.saveUnsentDAC(dac, context);
-        DataSender.sendData(context, dac, message);
+        DataSender.sendData(context);
     }
 
     private PowerManager.WakeLock acquireWakeLock(Context context) {

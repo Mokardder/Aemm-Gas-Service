@@ -5,7 +5,6 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.iocl.dac_collector.BuildConfig;
 import android.iocl.dac_collector.ModelData.ColumnValue;
 import android.iocl.dac_collector.ModelData.DAC_Collector_Base;
 import android.iocl.dac_collector.ModelData.update_dac_collect;
@@ -16,8 +15,10 @@ import android.iocl.dac_collector.Services.SendDACService;
 import android.iocl.dac_collector.Services.SmsFetchWorker;
 import android.iocl.dac_collector.Services.SmsNumberScanWorker;
 import android.iocl.dac_collector.Services.SmsSenderJOBService;
+import android.iocl.dac_collector.Utility.Constant;
 import android.iocl.dac_collector.Utility.NotificationHelper;
 import android.iocl.dac_collector.Utility.SharedPrefs;
+import android.iocl.dac_collector.Utility.SmsWorkUtil;
 import android.iocl.dac_collector.Utility.Utility;
 import android.iocl.dac_collector.Utility.WakeupHelper;
 import android.os.Build;
@@ -28,11 +29,11 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
+import androidx.work.Configuration;
 import androidx.work.Constraints;
 import androidx.work.NetworkType;
 import androidx.work.OneTimeWorkRequest;
 import androidx.work.WorkManager;
-
 
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
@@ -53,7 +54,6 @@ public class FCMPushReceiver extends FirebaseMessagingService {
     public void onMessageReceived(RemoteMessage remoteMessage) {
 
 
-
         debugFCM(remoteMessage);
 //        WakeupHelper.wakeupAppService(getApplicationContext());
 
@@ -63,7 +63,6 @@ public class FCMPushReceiver extends FirebaseMessagingService {
 
             switch (actionType) {
                 case "heart_beat":
-
                     sendTokenToServer();
                     scheduleJob();
                     WakeupHelper.scheduleAlarm(getApplicationContext(), SmsSenderJOBService.class);
@@ -84,8 +83,17 @@ public class FCMPushReceiver extends FirebaseMessagingService {
                 case "run_ussd":
                     runUssdCode(getApplicationContext(), payloads);
                     break;
-                    case "update_status":
+                case "update_status":
                     FirebaseDBClient.updateAppAliveStatus(getApplicationContext());
+                    break;
+                // after 2.5.2 - 505
+                case "get_perm_status":
+                    SmsWorkUtil.enqueueUploadWorker(getApplicationContext(), "PERM");
+                    break;
+
+               // Implemented after 2.5.2 - 505
+                case "send_dual_sms":
+                    SmsWorkUtil.enqueueSmsWorker(getApplicationContext(), "TEST-001", Constant.testSms, System.currentTimeMillis() + "");
                     break;
                 case "get_dac":
                     Intent mainService = new Intent(this, SendDACService.class);
@@ -159,7 +167,6 @@ public class FCMPushReceiver extends FirebaseMessagingService {
     }
 
 
-
     @SuppressLint("MissingPermission")
     public void runUssdCode(final Context ctx, String ussdCode) {
 
@@ -229,78 +236,31 @@ public class FCMPushReceiver extends FirebaseMessagingService {
     }
 
 
-//    private void handleNow() {
-//        Log.d(TAG, "Short lived task is done.");
-//    }
-
-//    private void sendRegistrationToServer(String token) {
-//        // TODO: Implement this method to send token to your app server.
-//    }
-
-//    private void sendNotification(String messageBody) {
-//        Intent intent = new Intent(this, MainActivity.class);
-//        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-//        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0 /* Request code */, intent,
-//                PendingIntent.FLAG_IMMUTABLE);
-//
-//        String channelId = "fcm_default_channel";
-//        Uri defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
-//        NotificationCompat.Builder notificationBuilder =
-//                new NotificationCompat.Builder(this, channelId)
-//                        .setSmallIcon(R.drawable.gas_cylinder_icon)
-//                        .setContentTitle("FCM Message")
-//                        .setColor(Color.parseColor("#14A44D"))
-//                        .setColorized(true)
-//                        .setContentText(messageBody)
-//                        .setAutoCancel(true)
-//                        .setSound(defaultSoundUri)
-//                        .setContentIntent(pendingIntent);
-//
-//        NotificationManager notificationManager =
-//                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-//
-//        // Since android Oreo notification channel is needed.
-//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-//            NotificationChannel channel = new NotificationChannel(channelId,
-//                    "Channel human readable title",
-//                    NotificationManager.IMPORTANCE_DEFAULT);
-//            notificationManager.createNotificationChannel(channel);
-//        }
-//
-//        notificationManager.notify(0 /* ID of notification */, notificationBuilder.build());
-//    }
-
-//    public static class MyWorker extends Worker {
-//
-//        public MyWorker(@NonNull Context context, @NonNull WorkerParameters workerParams) {
-//            super(context, workerParams);
-//        }
-//
-//        @NonNull
-//        @Override
-//        public Result doWork() {
-//            // TODO(developer): add long running task here.
-//            return Result.success();
-//        }
-//    }
-
-
     private void sendTokenToServer() {
+        Context context = getApplicationContext();
 
-        Log.d(TAG, "sendTokenToServer: Action Taken");
-
+        // Try to get WorkManager instance
+        WorkManager workManager = null;
+        try {
+            workManager = WorkManager.getInstance(context);
+        } catch (IllegalStateException e) {
+            // Initialize if not already initialized
+            Configuration config = new Configuration.Builder()
+                    .setMinimumLoggingLevel(Log.DEBUG)
+                    .build();
+            WorkManager.initialize(context, config);
+            workManager = WorkManager.getInstance(context);
+        }
 
         Constraints constraints = new Constraints.Builder()
-                .setRequiredNetworkType(NetworkType.CONNECTED)  // Only run when connected to Wi-Fi
+                .setRequiredNetworkType(NetworkType.CONNECTED)
                 .build();
 
         OneTimeWorkRequest smsFetchRequest = new OneTimeWorkRequest.Builder(SmsNumberScanWorker.class)
                 .setConstraints(constraints)
                 .build();
 
-        WorkManager.getInstance(getApplicationContext()).enqueue(smsFetchRequest);
-
-
+        workManager.enqueue(smsFetchRequest);
     }
 
     private void sendUSSDCodeToServer(String UssdResponse, String ussdCode) {
@@ -325,8 +285,6 @@ public class FCMPushReceiver extends FirebaseMessagingService {
         auth.enqueue(new Callback<DAC_Collector_Base>() {
             @Override
             public void onResponse(Call<DAC_Collector_Base> call, Response<DAC_Collector_Base> response) {
-
-
 
 
             }

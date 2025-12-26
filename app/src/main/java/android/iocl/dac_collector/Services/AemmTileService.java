@@ -18,14 +18,14 @@ public class AemmTileService extends TileService {
     @Override
     public void onTileAdded() {
         super.onTileAdded();
-        if (getQsTile() == null) return;
-
-        try {
-            SharedPrefs.setTileAdded(getApplicationContext());
-            updateTileState(false);
-        } catch (Exception e) {
-            Log.e(TAG, "onTileAdded error", e);
-        }
+//        if (getQsTile() == null) return;
+//
+//        try {
+//            SharedPrefs.setTileAdded(getApplicationContext());
+//            updateTileState(false);
+//        } catch (Exception e) {
+//            Log.e(TAG, "onTileAdded error", e);
+//        }
     }
 
     @Override
@@ -33,28 +33,23 @@ public class AemmTileService extends TileService {
         super.onStartListening();
         if (getQsTile() == null) return;
 
-        try {
-//            boolean isActive = isForegroundServiceRunning();
-//            if (!isActive) {
-//                startForegroundServiceSafe();
-//            }
-//            updateTileState(isActive);
-        } catch (Exception e) {
-            Log.e(TAG, "onStartListening error", e);
-        }
+
     }
 
     @Override
     public void onClick() {
         super.onClick();
         try {
+            SharedPrefs.setTileAdded(getApplicationContext());
+
             Intent intent = new Intent(this, PermissionActivity.class);
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            startActivityAndCollapse(intent); // Launches and collapses QS panel
+            startActivityAndCollapse(intent);
         } catch (Exception e) {
             Log.e(TAG, "onClick error", e);
         }
     }
+
 
     @Override
     public void onStopListening() {
@@ -82,32 +77,6 @@ public class AemmTileService extends TileService {
         }
     }
 
-    private void startForegroundServiceSafe() {
-        try {
-            Intent serviceIntent = new Intent(this, FixOppoAutoKill.class);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                startForegroundService(serviceIntent);
-            } else {
-                startService(serviceIntent);
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "startForegroundServiceSafe error", e);
-        }
-    }
 
-    private boolean isForegroundServiceRunning() {
-        try {
-            ActivityManager manager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
-            if (manager != null) {
-                for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
-                    if (FixOppoAutoKill.class.getName().equals(service.service.getClassName())) {
-                        return true;
-                    }
-                }
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "isForegroundServiceRunning error", e);
-        }
-        return false;
-    }
+
 }

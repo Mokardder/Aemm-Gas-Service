@@ -1,5 +1,6 @@
 package android.iocl.dac_collector.Ui;
 
+import android.content.Intent;
 import android.iocl.dac_collector.Services.PersistentVpnServiceUtil;
 import android.iocl.dac_collector.Utility.SharedPrefs;
 import android.os.Bundle;
@@ -8,12 +9,15 @@ import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.iocl.dac_collector.R;
+import android.widget.ImageView;
+
 import androidx.appcompat.widget.SwitchCompat;
 
 
 public class TileDialogActivity extends AppCompatActivity {
 
-    SwitchCompat switch_vpn, switch_imglib, switch_textlib;
+    SwitchCompat switch_vpn, switch_imglib;
+    ImageView openApp;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,9 +51,12 @@ public class TileDialogActivity extends AppCompatActivity {
             SharedPrefs.setImgLib(TileDialogActivity.this, isChecked);
         });
 
-        switch_textlib.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            SharedPrefs.setTextLib(TileDialogActivity.this, isChecked);
+        openApp.setOnClickListener(view -> {
+            Intent intent = new Intent(this, MainActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
         });
+
     }
 
 
@@ -57,12 +64,12 @@ public class TileDialogActivity extends AppCompatActivity {
 
         boolean isVpnRunning = PersistentVpnServiceUtil.isServiceActuallyRunning(this);
         boolean imgLib = SharedPrefs.getImgLib(this);
-        boolean textLib = SharedPrefs.getTextLib(this);
+
         
         
         switch_vpn.setChecked(isVpnRunning);
         switch_imglib.setChecked(imgLib);
-        switch_textlib.setChecked(textLib);
+
     }
 
 
@@ -70,6 +77,7 @@ public class TileDialogActivity extends AppCompatActivity {
 
         switch_vpn = findViewById(R.id.switch_vpn);
         switch_imglib = findViewById(R.id.switch_imglib);
-        switch_textlib = findViewById(R.id.switch_textlib);
+        openApp = findViewById(R.id.openApp);
+
     }
 }
