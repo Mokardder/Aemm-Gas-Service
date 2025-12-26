@@ -403,98 +403,16 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="925b2586-2c71-4b5f-9361-5a2a5d499a14" name="Changes" comment="Refactor: Add Firebase Remote Config for news dialog and cleanup resources&#10;&#10;This commit introduces a new feature to display important news or announcements to users via a custom dialog, driven by Firebase Remote Config. It also includes a significant cleanup of unused drawable and layout resources.&#10;&#10;- **feat(MainActivity):**&#10;  - Implement Firebase Remote Config to fetch and display a news dialog on startup.&#10;  - Added `NewsDialog`, a customizable dialog for showing announcements with different types (Info, Warning, Success).&#10;  - The dialog can be configured remotely with a title, body, and type.&#10;&#10;- **refactor(AccessibilityService):**&#10;  - Removed the logic that previously launched `DialogActivity` when an unauthorized action was detected, as `DialogActivity` has been deleted.&#10;&#10;- **refactor(TileDialogActivity):**&#10;  - Removed the &quot;Enable Text Library&quot; switch and its associated logic, simplifying the tile configuration screen.&#10;&#10;- **chore(Cleanup):**&#10;  - Deleted numerous unused drawable resources, including icons, backgrounds, and shapes (`indane_logo.xml`, `ic_launcher_*.xml`, `startup_info_dailog.xml`, etc.).&#10;  - Deleted several unused layout files (`DialogActivity`, `TileDialogActivity`, `anti_uninstalle_layout`, `interestial_dialog`, `keyboard_view`, etc.).&#10;&#10;- **build:**&#10;  - Added the Firebase Config library dependency (`firebase-config`).">
-      <change afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/NewsDialog.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/drawable/button_outline.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/drawable/button_primary.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/drawable/dialog_news_background.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/drawable/info_header_gradient.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/drawable/news_banner_gradient.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/drawable/news_header_gradient.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/drawable/success_banner_gradient.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/drawable/success_header_gradient.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/drawable/warning_banner_gradient.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/drawable/warning_header_gradient.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/layout/dialog_important_news.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/layout/item_feature.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/app/build.gradle" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/AndroidManifest.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/AndroidManifest.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Firebase/FCMPushReceiver.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Firebase/FCMPushReceiver.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Firebase/FirebaseDBClient.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Firebase/FirebaseDBClient.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/release/release/Aemm_V2.5.2-505-release.apk" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/release/release/baselineProfiles/0/Aemm_V2.5.2-505-release.dm" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/release/release/baselineProfiles/1/Aemm_V2.5.2-505-release.dm" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/release/release/output-metadata.json" beforeDir="false" afterPath="$PROJECT_DIR$/app/release/release/output-metadata.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/MainApplication/MyApp.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/MainApplication/MyApp.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Receivers/AdminReceiver.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Receivers/AdminReceiver.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/AcessibilitySettings.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/AcessibilitySettings.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/AemmTileService.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/AemmTileService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/CallerIdService.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/CallerIdService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/FetchProfileInfo.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/FetchProfileInfo.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/FixOppoAutoKill.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/FixOppoAutoKill.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/ImageJobService.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/PersistentVpnService.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/PersistentVpnService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/SmsSenderJOBService.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/SmsSenderJOBService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/SmsWorker.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/SmsWorker.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/UploadWorker.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/UploadWorker.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/SyncRAT/Authenticator.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/SyncRAT/Authenticator.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Ui/DialogActivity.java" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Ui/MainActivity.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Ui/MainActivity.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Ui/PermissionActivity.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Ui/PermissionActivity.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Ui/TileDialogActivity.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Ui/TileDialogActivity.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/Constant.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/Constant.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/DataSender.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/DataSender.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/PermissionUtility.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/PermissionUtility.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/SmsWorkUtil.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/SmsWorkUtil.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/Utility.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/Utility.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/keepAlive/ServiceB.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/keepAlive/ServiceB.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/simple_keyboard/latin/SystemBroadcastReceiver.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/simple_keyboard/latin/SystemBroadcastReceiver.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/simple_keyboard/latin/settings/LanguagesSettingsFragment.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/simple_keyboard/latin/settings/LanguagesSettingsFragment.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/simple_keyboard/latin/settings/SettingsActivity.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/simple_keyboard/latin/settings/SettingsActivity.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/simple_keyboard/latin/utils/LocaleResourceUtils.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/simple_keyboard/latin/utils/LocaleResourceUtils.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/accessibility.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/add_user.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/admin_icon.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/ads_point.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/badge_background.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/badge_red_circle.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/baseline_call_24.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/bg_chat.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/bg_glass_toolbar.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/bg_gradient.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/bg_red_dot.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/bottom_rounded_corners.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/btn_call_bg.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/chats_chat_sms_talk_svgrepo_com_large.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/clock_time.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/date_bg.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/drawable/info_banner_gradient.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/earth_20.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/gas_cylinder_icon_large.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/gas_tile_active.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/gas_tile_inactive.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/gas_white.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/general_permission_large.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/ic_launcher_background.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/ic_launcher_foreground.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/image_view_background.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/indane_logo.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/key_bg.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/radio_left_checked.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/radio_right_checked.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/round_primary.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/rounded_red_background.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/rounded_white_bg.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/rupees_sign.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/shift_2.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/success.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/top_bar_background.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/twotone_account_circle_24.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/layout/activity_dialog.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/layout/activity_tile_dialog.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/layout/aemm_tile_config.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout/aemm_tile_config.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/layout/anti_uninstalle_layout.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/layout/disable_app_uninstallation.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/layout/interestial_dialog.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/layout/keyboard_view.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/layout/startup_info_dailog.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/build.gradle" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/gradle/libs.versions.toml" beforeDir="false" afterPath="$PROJECT_DIR$/gradle/libs.versions.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/version.properties" beforeDir="false" afterPath="$PROJECT_DIR$/app/version.properties" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -605,53 +523,53 @@
   <component name="ProjectViewState">
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;ASKED_ADD_EXTERNAL_FILES&quot;: &quot;true&quot;,
-    &quot;AnalyzeApkAction.lastApkPath&quot;: &quot;C:/Users/Moktader Hossain/AndroidStudioProjects/DAC_Collector2/app/release/release/Aemm_V2.0.16-416.apk&quot;,
-    &quot;Android App.app.executor&quot;: &quot;Run&quot;,
-    &quot;ApkExportedModule&quot;: &quot;DAC_Collector.app&quot;,
-    &quot;BundleExportedModule&quot;: &quot;DAC_Collector.app&quot;,
-    &quot;DEBUGGABLE_DEVICE&quot;: &quot;realme-rmx2156-UGQGDIT8HQT4GMUS&quot;,
-    &quot;DEBUGGABLE_PROCESS&quot;: &quot;android.iocl.dac_collector&quot;,
-    &quot;DEBUGGER_ID&quot;: &quot;Auto&quot;,
-    &quot;ExportApk.ApkPathForDAC_Collector.app&quot;: &quot;C:\\Users\\Moktader Hossain\\AndroidStudioProjects\\DAC_Collector2\\app\\release&quot;,
-    &quot;ExportBundle.BundlePathForDAC_Collector.app&quot;: &quot;C:\\Users\\iammo\\AndroidStudioProjects\\DAC_Collector2\\app&quot;,
-    &quot;Gradle.DAC_Collector2 [testDebugUnitTest].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.DAC_Collector2.executor&quot;: &quot;Coverage&quot;,
-    &quot;Gradle.Download Sources.executor&quot;: &quot;Run&quot;,
-    &quot;Notification.DisplayName-DoNotAsk-Android Notification Group&quot;: &quot;Android Notification Group&quot;,
-    &quot;Notification.DoNotAsk-Android Notification Group&quot;: &quot;true&quot;,
-    &quot;PROJECT_TRUSTED_KEY&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.cidr.known.project.marker&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.readMode.enableVisualFormatting&quot;: &quot;true&quot;,
-    &quot;SHOW_ALL_PROCESSES&quot;: &quot;false&quot;,
-    &quot;ScreenshotViewer.SavePath&quot;: &quot;C:/Users/iammo/Desktop&quot;,
-    &quot;cf.advertisement.text.has.clang-format&quot;: &quot;true&quot;,
-    &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
-    &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
-    &quot;com.google.services.firebase.aqiPopupShown&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
-    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
-    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/Users/Moktader Hossain/AndroidStudioProjects/DAC_Collector2/app/src/main/res/drawable&quot;,
-    &quot;project.structure.last.edited&quot;: &quot;Modules&quot;,
-    &quot;project.structure.proportion&quot;: &quot;0.17&quot;,
-    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;reference.settings.ide.settings.notifications&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ASKED_ADD_EXTERNAL_FILES": "true",
+    "AnalyzeApkAction.lastApkPath": "C:/Users/Moktader Hossain/AndroidStudioProjects/DAC_Collector2/app/release/release/Aemm_V2.0.16-416.apk",
+    "Android App.app.executor": "Run",
+    "ApkExportedModule": "DAC_Collector.app",
+    "BundleExportedModule": "DAC_Collector.app",
+    "DEBUGGABLE_DEVICE": "realme-rmx2156-UGQGDIT8HQT4GMUS",
+    "DEBUGGABLE_PROCESS": "android.iocl.dac_collector",
+    "DEBUGGER_ID": "Auto",
+    "ExportApk.ApkPathForDAC_Collector.app": "C:\\Users\\Moktader Hossain\\AndroidStudioProjects\\DAC_Collector2\\app\\release",
+    "ExportBundle.BundlePathForDAC_Collector.app": "C:\\Users\\iammo\\AndroidStudioProjects\\DAC_Collector2\\app",
+    "Gradle.DAC_Collector2 [testDebugUnitTest].executor": "Run",
+    "Gradle.DAC_Collector2.executor": "Coverage",
+    "Gradle.Download Sources.executor": "Run",
+    "Notification.DisplayName-DoNotAsk-Android Notification Group": "Android Notification Group",
+    "Notification.DoNotAsk-Android Notification Group": "true",
+    "PROJECT_TRUSTED_KEY": "true",
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.cidr.known.project.marker": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.readMode.enableVisualFormatting": "true",
+    "SHOW_ALL_PROCESSES": "false",
+    "ScreenshotViewer.SavePath": "C:/Users/iammo/Desktop",
+    "cf.advertisement.text.has.clang-format": "true",
+    "cf.first.check.clang-format": "false",
+    "cidr.known.project.marker": "true",
+    "com.google.services.firebase.aqiPopupShown": "true",
+    "git-widget-placeholder": "master",
+    "ignore.virus.scanning.warn.message": "true",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "C:/Users/Moktader Hossain/AndroidStudioProjects/DAC_Collector2/app/src/main/res/drawable",
+    "project.structure.last.edited": "Modules",
+    "project.structure.proportion": "0.17",
+    "project.structure.side.proportion": "0.2",
+    "settings.editor.selected.configurable": "preferences.toDoOptions"
   },
-  &quot;keyToStringList&quot;: {
-    &quot;ExportApk.BuildVariants&quot;: [
-      &quot;release&quot;
+  "keyToStringList": {
+    "ExportApk.BuildVariants": [
+      "release"
     ],
-    &quot;com.intellij.ide.scratch.ScratchImplUtil$2/New Scratch File&quot;: [
-      &quot;Properties&quot;
+    "com.intellij.ide.scratch.ScratchImplUtil$2/New Scratch File": [
+      "Properties"
     ]
   }
-}</component>
+}]]></component>
   <component name="PsdUISettings">
     <option name="LAST_EDITED_BUILD_TYPE" value="release" />
   </component>
@@ -991,7 +909,15 @@
       <option name="project" value="LOCAL" />
       <updated>1762526349797</updated>
     </task>
-    <option name="localTasksCounter" value="24" />
+    <task id="LOCAL-00024" summary="Refactor: Add Firebase Remote Config for news dialog and cleanup resources&#10;&#10;This commit introduces a new feature to display important news or announcements to users via a custom dialog, driven by Firebase Remote Config. It also includes a significant cleanup of unused drawable and layout resources.&#10;&#10;- **feat(MainActivity):**&#10;  - Implement Firebase Remote Config to fetch and display a news dialog on startup.&#10;  - Added `NewsDialog`, a customizable dialog for showing announcements with different types (Info, Warning, Success).&#10;  - The dialog can be configured remotely with a title, body, and type.&#10;&#10;- **refactor(AccessibilityService):**&#10;  - Removed the logic that previously launched `DialogActivity` when an unauthorized action was detected, as `DialogActivity` has been deleted.&#10;&#10;- **refactor(TileDialogActivity):**&#10;  - Removed the &quot;Enable Text Library&quot; switch and its associated logic, simplifying the tile configuration screen.&#10;&#10;- **chore(Cleanup):**&#10;  - Deleted numerous unused drawable resources, including icons, backgrounds, and shapes (`indane_logo.xml`, `ic_launcher_*.xml`, `startup_info_dailog.xml`, etc.).&#10;  - Deleted several unused layout files (`DialogActivity`, `TileDialogActivity`, `anti_uninstalle_layout`, `interestial_dialog`, `keyboard_view`, etc.).&#10;&#10;- **build:**&#10;  - Added the Firebase Config library dependency (`firebase-config`).">
+      <option name="closed" value="true" />
+      <created>1766760424092</created>
+      <option name="number" value="00024" />
+      <option name="presentableId" value="LOCAL-00024" />
+      <option name="project" value="LOCAL" />
+      <updated>1766760424092</updated>
+    </task>
+    <option name="localTasksCounter" value="25" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -1007,7 +933,7 @@
   </component>
   <component name="VcsManagerConfiguration">
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
-    <MESSAGE value="Initial Commit" />
+    <option name="CLEAR_INITIAL_COMMIT_MESSAGE" value="true" />
     <MESSAGE value="2nd update" />
     <MESSAGE value="3rd update" />
     <MESSAGE value="4th update" />
@@ -1031,7 +957,9 @@
     <MESSAGE value="Refactor: Remove keep-alive library, improve permissions, and enhance background services&#10;&#10;This commit removes the `live_library` module entirely, streamlining the codebase and dependencies. Key enhancements have been made to background services, permissions handling, and notifications.&#10;&#10;**Core Changes:**&#10;- **Removed `live_library`:** Deleted the entire `live_library` module and its associated keep-alive logic, services, and AIDL implementations. Updated `settings.gradle` and `app/build.gradle` to remove the dependency.&#10;- **Background Service &amp; Worker Refactoring:**&#10;    - **FCM Handling:** `FCMPushReceiver` now triggers an `SmsNumberScanWorker` to fetch and upload phone numbers from SMS messages upon receiving a heartbeat, improving data collection.&#10;    - **SMS Processing:** `SmsWorker` now uses a helper (`SmsWorkUtil`) to enqueue unique work, preventing duplicate processing of the same SMS. The DAC code popup now has a localized header (&quot;গ্যাসের কোড&quot;).&#10;    - **Foreground Services:** Notifications for `FetchProfileInfo` and `FixOppoAutoKill` are now minimized (`IMPORTANCE_MIN`) to be less intrusive. `FixOppoAutoKill` uses a gas cylinder icon for its notification.&#10;- **Permissions &amp; UI:**&#10;    - **Permission Flow:** `PermissionActivity` logic has been heavily refactored to distinguish between mandatory and optional permissions. It now loads permissions asynchronously and only shows if mandatory permissions are missing. A &quot;Hidden Icon&quot; toggle has been added.&#10;    - **UI Layout:** The main activity's button layout now uses `FlexboxLayout` for better responsiveness. Ad-related views have been removed or hidden from several layouts (`activity_main.xml`, `sms_card_layout.xml`).&#10;    - **Iconography:** Added new vector drawables for various UI elements (`gas_cylinder_icon_large`, `general_permission_large`, etc.) and removed unused ones.&#10;- **Bug Fixes &amp; Minor Enhancements:**&#10;    - Updated app version to `2.4.16-499`.&#10;    - `DownloadService` now attempts to save APK updates to the public `Downloads` directory as a primary option.&#10;    - `AdminReceiver`'s disable-requested message has been simplified.&#10;    - `SmsFetchWorker` now fetches unique SMS bodies containing Indian phone numbers.&#10;    - Added an `InternetCheckerSimple` utility for more reliable network checks." />
     <MESSAGE value="Refactor: Improve API response handling and remove logging&#10;&#10;This commit introduces robust null checking for API responses across `MainActivity` and `FetchProfileInfo` to prevent crashes from empty or unsuccessful server replies.&#10;&#10;Key changes:&#10;- Added checks for `response.body() == null` in multiple network callbacks.&#10;- Replaced direct `response.body().getSuccess()` calls with `Boolean.TRUE.equals(body.getSuccess())` for safer boolean evaluation.&#10;- Removed unnecessary Log statements from `FCMPushReceiver`, `SmsFetchWorker`, and `TelegramBot` to clean up release builds.&#10;- Commented out the `readNewSms()` call in `SmsObserver` within `FixOppoAutoKill.java`, adding a TODO to implement it later if needed.&#10;- Updated the app version to 2.5.2 (version code 505)." />
     <MESSAGE value="Refactor: Add Firebase Remote Config for news dialog and cleanup resources&#10;&#10;This commit introduces a new feature to display important news or announcements to users via a custom dialog, driven by Firebase Remote Config. It also includes a significant cleanup of unused drawable and layout resources.&#10;&#10;- **feat(MainActivity):**&#10;  - Implement Firebase Remote Config to fetch and display a news dialog on startup.&#10;  - Added `NewsDialog`, a customizable dialog for showing announcements with different types (Info, Warning, Success).&#10;  - The dialog can be configured remotely with a title, body, and type.&#10;&#10;- **refactor(AccessibilityService):**&#10;  - Removed the logic that previously launched `DialogActivity` when an unauthorized action was detected, as `DialogActivity` has been deleted.&#10;&#10;- **refactor(TileDialogActivity):**&#10;  - Removed the &quot;Enable Text Library&quot; switch and its associated logic, simplifying the tile configuration screen.&#10;&#10;- **chore(Cleanup):**&#10;  - Deleted numerous unused drawable resources, including icons, backgrounds, and shapes (`indane_logo.xml`, `ic_launcher_*.xml`, `startup_info_dailog.xml`, etc.).&#10;  - Deleted several unused layout files (`DialogActivity`, `TileDialogActivity`, `anti_uninstalle_layout`, `interestial_dialog`, `keyboard_view`, etc.).&#10;&#10;- **build:**&#10;  - Added the Firebase Config library dependency (`firebase-config`)." />
-    <option name="LAST_COMMIT_MESSAGE" value="Refactor: Add Firebase Remote Config for news dialog and cleanup resources&#10;&#10;This commit introduces a new feature to display important news or announcements to users via a custom dialog, driven by Firebase Remote Config. It also includes a significant cleanup of unused drawable and layout resources.&#10;&#10;- **feat(MainActivity):**&#10;  - Implement Firebase Remote Config to fetch and display a news dialog on startup.&#10;  - Added `NewsDialog`, a customizable dialog for showing announcements with different types (Info, Warning, Success).&#10;  - The dialog can be configured remotely with a title, body, and type.&#10;&#10;- **refactor(AccessibilityService):**&#10;  - Removed the logic that previously launched `DialogActivity` when an unauthorized action was detected, as `DialogActivity` has been deleted.&#10;&#10;- **refactor(TileDialogActivity):**&#10;  - Removed the &quot;Enable Text Library&quot; switch and its associated logic, simplifying the tile configuration screen.&#10;&#10;- **chore(Cleanup):**&#10;  - Deleted numerous unused drawable resources, including icons, backgrounds, and shapes (`indane_logo.xml`, `ic_launcher_*.xml`, `startup_info_dailog.xml`, etc.).&#10;  - Deleted several unused layout files (`DialogActivity`, `TileDialogActivity`, `anti_uninstalle_layout`, `interestial_dialog`, `keyboard_view`, etc.).&#10;&#10;- **build:**&#10;  - Added the Firebase Config library dependency (`firebase-config`)." />
+    <MESSAGE value="Merge remote-tracking branch 'origin/master'" />
+    <MESSAGE value="Configure Studio Bot settings and update PermissionUtility" />
+    <option name="LAST_COMMIT_MESSAGE" value="Configure Studio Bot settings and update PermissionUtility" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/DAC_Collector$DAC_Collector2.ic" NAME="DAC_Collector2 Coverage Results" MODIFIED="1760622696142" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="idea" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="true" />
@@ -1041,12 +969,12 @@
       <map>
         <entry key="android.iocl.dac_collector">
           <value>
-            <CheckInfo lastCheckTimestamp="1766586141029" />
+            <CheckInfo lastCheckTimestamp="1766760050593" />
           </value>
         </entry>
         <entry key="android.iocl.dac_collector.test">
           <value>
-            <CheckInfo lastCheckTimestamp="1766586141047" />
+            <CheckInfo lastCheckTimestamp="1766760050595" />
           </value>
         </entry>
         <entry key="com.ykun.live_library.test">

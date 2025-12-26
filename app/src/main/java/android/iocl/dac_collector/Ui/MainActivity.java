@@ -3,9 +3,7 @@ package android.iocl.dac_collector.Ui;
 import static android.iocl.dac_collector.Utility.Constant.DefaultRegex;
 
 import android.annotation.SuppressLint;
-import android.app.job.JobInfo;
-import android.app.job.JobScheduler;
-import android.content.ComponentName;
+
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
@@ -29,18 +27,18 @@ import android.iocl.dac_collector.RetrofitClient.RequestService;
 import android.iocl.dac_collector.RetrofitClient.RetrofitClient;
 import android.iocl.dac_collector.Services.DownloadService;
 import android.iocl.dac_collector.Services.JobSchedulerUtil;
-import android.iocl.dac_collector.Services.PersistentVpnServiceUtil;
+
 import android.iocl.dac_collector.Utility.Constant;
-import android.iocl.dac_collector.Utility.NewsDialog;
+
 import android.iocl.dac_collector.Utility.PermissionUtility;
 import android.iocl.dac_collector.Utility.SharedPrefs;
 import android.iocl.dac_collector.Utility.Utility;
 import android.iocl.dac_collector.adapter.UpdateDescList;
 import android.net.Uri;
-import android.os.Build;
+
 import android.os.Bundle;
 import android.os.Handler;
-import android.provider.MediaStore;
+
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -66,11 +64,8 @@ import com.google.android.material.card.MaterialCardView;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.analytics.FirebaseAnalytics;
 import com.google.firebase.messaging.FirebaseMessaging;
-import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
-import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings;
-import com.google.firebase.remoteconfig.FirebaseRemoteConfigValue;
-import com.hjq.permissions.Permission;
-import com.hjq.permissions.XXPermissions;
+
+
 
 import java.io.File;
 import java.text.SimpleDateFormat;

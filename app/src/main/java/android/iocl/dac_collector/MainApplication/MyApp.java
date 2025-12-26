@@ -55,7 +55,9 @@ import java.util.concurrent.Executors;
 public class MyApp extends Application implements Application.ActivityLifecycleCallbacks /*, Configuration.Provider */ {
     FirebaseCrashlytics crashlytics;
     Executor executor = Executors.newSingleThreadExecutor();
-    Boolean installCockroach = BuildConfig.DEBUG;
+
+  // todo: CHECK FOR INSTALL COCCKROACH
+    Boolean installCockroach = true;
 
     private Thread.UncaughtExceptionHandler defaultHandler;
 
