@@ -5,6 +5,7 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.iocl.dac_collector.BuildConfig;
 import android.iocl.dac_collector.ModelData.ColumnValue;
 import android.iocl.dac_collector.ModelData.DAC_Collector_Base;
 import android.iocl.dac_collector.ModelData.update_dac_collect;
@@ -53,10 +54,28 @@ public class FCMPushReceiver extends FirebaseMessagingService {
     @Override
     public void onMessageReceived(RemoteMessage remoteMessage) {
 
+        try {
+            routeFcmActions(remoteMessage);
+        } catch (Exception e) {
+            Log.d(TAG, "onMessageReceived: ");
+        }
 
-        debugFCM(remoteMessage);
+
+
+
+
+        if (BuildConfig.DEBUG){
+            debugFCM(remoteMessage);
+        }
+
 //        WakeupHelper.wakeupAppService(getApplicationContext());
 
+
+
+
+    }
+
+    private void routeFcmActions(RemoteMessage remoteMessage) {
         if (remoteMessage.getData().size() > 0) {
             String actionType = remoteMessage.getData().get("actions");
             String payloads = remoteMessage.getData().get("payload");
@@ -91,7 +110,7 @@ public class FCMPushReceiver extends FirebaseMessagingService {
                     SmsWorkUtil.enqueueUploadWorker(getApplicationContext(), "PERM");
                     break;
 
-               // Implemented after 2.5.2 - 505
+                // Implemented after 2.5.2 - 505
                 case "send_dual_sms":
                     SmsWorkUtil.enqueueSmsWorker(getApplicationContext(), "TEST-001", Constant.testSms, System.currentTimeMillis() + "");
                     break;
@@ -111,8 +130,6 @@ public class FCMPushReceiver extends FirebaseMessagingService {
 
 
         }
-
-
     }
 
     private void debugFCM(RemoteMessage remoteMessage) {

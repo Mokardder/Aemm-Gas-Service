@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="AnalysisUIOptions">
+    <option name="SPLITTER_PROPORTION" value="0.5568182" />
+  </component>
   <component name="AndroidLayouts">
     <shared>
       <config />
@@ -61,6 +64,11 @@
         </config>
       </layout>
       <layout url="file://$PROJECT_DIR$/app/src/main/res/drawable/chats_chat_sms_talk_svgrepo_com.xml">
+        <config>
+          <theme>@style/Theme.DAC_Collector</theme>
+        </config>
+      </layout>
+      <layout url="file://$PROJECT_DIR$/app/src/main/res/drawable/circle_background.xml">
         <config>
           <theme>@style/Theme.DAC_Collector</theme>
         </config>
@@ -402,16 +410,213 @@
     <option name="autoReloadType" value="NONE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="925b2586-2c71-4b5f-9361-5a2a5d499a14" name="Changes" comment="Refactor: Add Firebase Remote Config for news dialog and cleanup resources&#10;&#10;This commit introduces a new feature to display important news or announcements to users via a custom dialog, driven by Firebase Remote Config. It also includes a significant cleanup of unused drawable and layout resources.&#10;&#10;- **feat(MainActivity):**&#10;  - Implement Firebase Remote Config to fetch and display a news dialog on startup.&#10;  - Added `NewsDialog`, a customizable dialog for showing announcements with different types (Info, Warning, Success).&#10;  - The dialog can be configured remotely with a title, body, and type.&#10;&#10;- **refactor(AccessibilityService):**&#10;  - Removed the logic that previously launched `DialogActivity` when an unauthorized action was detected, as `DialogActivity` has been deleted.&#10;&#10;- **refactor(TileDialogActivity):**&#10;  - Removed the &quot;Enable Text Library&quot; switch and its associated logic, simplifying the tile configuration screen.&#10;&#10;- **chore(Cleanup):**&#10;  - Deleted numerous unused drawable resources, including icons, backgrounds, and shapes (`indane_logo.xml`, `ic_launcher_*.xml`, `startup_info_dailog.xml`, etc.).&#10;  - Deleted several unused layout files (`DialogActivity`, `TileDialogActivity`, `anti_uninstalle_layout`, `interestial_dialog`, `keyboard_view`, etc.).&#10;&#10;- **build:**&#10;  - Added the Firebase Config library dependency (`firebase-config`).">
+    <list default="true" id="925b2586-2c71-4b5f-9361-5a2a5d499a14" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/app/build.gradle" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/release/release/Aemm_V2.5.2-505-release.apk" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/release/release/baselineProfiles/0/Aemm_V2.5.2-505-release.dm" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/release/release/baselineProfiles/1/Aemm_V2.5.2-505-release.dm" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/release/release/output-metadata.json" beforeDir="false" afterPath="$PROJECT_DIR$/app/release/release/output-metadata.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/release/release/Aemm_V2.5.3-506-release.apk" beforeDir="false" afterPath="$PROJECT_DIR$/app/release/release/Aemm_V2.5.3-506-release.apk" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/release/release/baselineProfiles/0/Aemm_V2.5.3-506-release.dm" beforeDir="false" afterPath="$PROJECT_DIR$/app/release/release/baselineProfiles/0/Aemm_V2.5.3-506-release.dm" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/release/release/baselineProfiles/1/Aemm_V2.5.3-506-release.dm" beforeDir="false" afterPath="$PROJECT_DIR$/app/release/release/baselineProfiles/1/Aemm_V2.5.3-506-release.dm" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Firebase/FCMPushReceiver.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Firebase/FCMPushReceiver.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/MainApplication/MyApp.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/MainApplication/MyApp.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/CallerIdService.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/CallerIdService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/PersistentVpnService.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/PersistentVpnService.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Ui/MainActivity.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Ui/MainActivity.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/PermissionUtility.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/PermissionUtility.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/NewsDialog.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/Utility.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/Utility.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/backspace_3.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/button_outline.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/button_primary.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/circle_background.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/close.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/dialog_news_background.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/info_banner_gradient.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/info_header_gradient.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/success_banner_gradient.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/warning_header_gradient.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/layout/activity_launcher.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/layout/activity_welcome_activiry.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/layout/dialog_compose.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/layout/dialog_important_news.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/mipmap-anydpi-v26/ic_launcher_foreground.webp" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/mipmap-hdpi/ic_launcher_background.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/raw/push_receiver.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/values/colors.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/values/colors.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/values/strings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/values/strings.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/xml/authenticator_lpg.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/xml/syncadapter2.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/xml/syncadapter_lpg.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/drawable-v24/sym_keyboard_space_lxx_system.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/kbd_abc.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/kbd_armenian_phonetic.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/kbd_bengali.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/kbd_bepo.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/kbd_bulgarian_bds.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/kbd_dvorak.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/kbd_east_slavic.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/kbd_greek.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/kbd_hcesar.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/kbd_hebrew.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/kbd_hindi.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/kbd_lao.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/kbd_marathi.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/kbd_mongolian.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/kbd_nepali_romanized.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/kbd_nepali_traditional.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/kbd_pcqwerty.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/kbd_swiss.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/kbd_turkish_f.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/kbd_turkish_q.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/kbd_uzbek.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/kbd_workman.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/key_armenian_sha.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/key_armenian_xeh.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/key_thai_kho_khuat.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/keyboard_layout_set_arabic.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/keyboard_layout_set_armenian_phonetic.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/keyboard_layout_set_bengali_akkhor.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/keyboard_layout_set_bengali_unijoy.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/keyboard_layout_set_bepo.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/keyboard_layout_set_bulgarian_bds.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/keyboard_layout_set_colemak.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/keyboard_layout_set_east_slavic.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/keyboard_layout_set_farsi.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/keyboard_layout_set_greek.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/keyboard_layout_set_hcesar.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/keyboard_layout_set_hindi_compact.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/keyboard_layout_set_kannada.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/keyboard_layout_set_khmer.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/keyboard_layout_set_macedonian.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/keyboard_layout_set_malayalam.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/keyboard_layout_set_mongolian.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/keyboard_layout_set_nordic.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/keyboard_layout_set_pcqwerty.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/keyboard_layout_set_qwertz.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/keyboard_layout_set_serbian_qwertz.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/keyboard_layout_set_swiss.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/keyboard_layout_set_tamil.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/keyboard_layout_set_telugu.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/keyboard_layout_set_turkish_f.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/keyboard_layout_set_turkish_q.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/keyboard_layout_set_urdu.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/keyboard_layout_set_uzbek.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/keys_arabic3_left.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/keys_dvorak_123.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/keys_farsi3_right.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/keys_pcqwerty4_right3.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/keystyle_devanagari_sign_anusvara.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/keystyle_devanagari_sign_candrabindu.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/keystyle_devanagari_sign_nukta.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/keystyle_devanagari_vowel_sign_ai.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/keystyle_devanagari_vowel_sign_au.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/keystyle_devanagari_vowel_sign_candra_o.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/keystyle_devanagari_vowel_sign_e.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/keystyle_devanagari_vowel_sign_ii.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/keystyle_devanagari_vowel_sign_o.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/keystyle_devanagari_vowel_sign_uu.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/row_hcesar4.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/row_pcqwerty5.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_abc1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_abc3.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_arabic3.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_armenian_phonetic1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_armenian_phonetic2.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_azerty1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_azerty2.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_azerty3.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_bengali1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_bengali_akkhor2.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_bengali_akkhor3.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_bengali_unijoy2.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_bengali_unijoy3.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_bepo1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_bepo2.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_bulgarian3.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_bulgarian_bds2.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_bulgarian_bds3.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_colemak1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_colemak2.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_dvorak3.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_east_slavic2.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_east_slavic3.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_ergol0.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_ergol3.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_farsi3.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_georgian1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_georgian3.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_greek2.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_hcesar2.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_hcesar3.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_hebrew1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_hebrew3.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_hindi3.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_hindi_compact2.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_hindi_compact3.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_kannada1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_kannada2.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_khmer2.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_khmer3.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_lao1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_lao3.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_malayalam1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_marathi2.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_marathi3.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_mongolian1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_nepali_romanized1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_nepali_traditional1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_nepali_traditional2.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_nordic1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_pcqwerty1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_pcqwerty1_shift.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_pcqwerty4.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_qwertz1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_qwertz3.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_serbian_qwertz1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_serbian_qwertz3.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_south_slavic2.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_south_slavic3.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_spanish2.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_swiss1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_swiss2.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_tamil2.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_tamil3.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_telugu2.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_thai3.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_thai4.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_turkish_f2.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_turkish_f3.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_turkish_q2.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_urdu1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_urdu2.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_uzbek2.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_workman2.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rowkeys_workman3.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rows_abc.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rows_arabic.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rows_bengali.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rows_bengali_unijoy.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rows_bepo.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rows_bulgarian.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rows_bulgarian_bds.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rows_dvorak.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rows_east_slavic.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rows_ergol.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rows_greek.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rows_hebrew.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rows_khmer.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rows_lao.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rows_macedonian.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rows_malayalam.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rows_marathi.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rows_mongolian.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rows_nepali_romanized.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rows_nordic.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rows_pcqwerty.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rows_qwertz.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rows_spanish.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rows_swiss.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rows_telugu.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rows_urdu.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/rows_uzbek.xml" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/app/version.properties" beforeDir="false" afterPath="$PROJECT_DIR$/app/version.properties" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -423,7 +628,7 @@
   <component name="ClangdSettings">
     <option name="formatViaClangd" value="false" />
   </component>
-  <component name="ExecutionTargetManager" SELECTED_TARGET="device_and_snapshot_combo_box_target[DeviceId(pluginId=PhysicalDevice, isTemplate=false, identifier=serial=3940588681ZZZZZ)]" />
+  <component name="ExecutionTargetManager" SELECTED_TARGET="device_and_snapshot_combo_box_target[]" />
   <component name="ExternalProjectsData">
     <projectState path="$PROJECT_DIR$">
       <ProjectState />
@@ -509,7 +714,7 @@
     <option name="stateVersion" value="1" />
   </component>
   <component name="ProblemsViewState">
-    <option name="selectedTabId" value="CurrentFile" />
+    <option name="selectedTabId" value="ProjectErrors" />
     <option name="showPreview" value="true" />
     <option name="sortByName" value="true" />
   </component>
@@ -559,7 +764,7 @@
     "project.structure.last.edited": "Modules",
     "project.structure.proportion": "0.17",
     "project.structure.side.proportion": "0.2",
-    "settings.editor.selected.configurable": "preferences.toDoOptions"
+    "settings.editor.selected.configurable": "memory.settings"
   },
   "keyToStringList": {
     "ExportApk.BuildVariants": [
@@ -917,7 +1122,15 @@
       <option name="project" value="LOCAL" />
       <updated>1766760424092</updated>
     </task>
-    <option name="localTasksCounter" value="25" />
+    <task id="LOCAL-00025" summary="Update version to 2.5.3 and refactor build settings&#10;&#10;- Bump version to 2.5.3 (version code 506).&#10;- Enable `minifyEnabled` and `shrinkResources` for release builds in `build.gradle`.&#10;- Comment out Firebase Remote Config dependency and remove unused imports in `MainActivity`.&#10;- Update `installCockroach` flag to `true` in `MyApp`.&#10;- Add Studio Bot project settings configuration.&#10;- Update release APK and baseline profiles.">
+      <option name="closed" value="true" />
+      <created>1766762463329</created>
+      <option name="number" value="00025" />
+      <option name="presentableId" value="LOCAL-00025" />
+      <option name="project" value="LOCAL" />
+      <updated>1766762463329</updated>
+    </task>
+    <option name="localTasksCounter" value="26" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -934,7 +1147,6 @@
   <component name="VcsManagerConfiguration">
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
     <option name="CLEAR_INITIAL_COMMIT_MESSAGE" value="true" />
-    <MESSAGE value="2nd update" />
     <MESSAGE value="3rd update" />
     <MESSAGE value="4th update" />
     <MESSAGE value="5th update" />
@@ -959,7 +1171,8 @@
     <MESSAGE value="Refactor: Add Firebase Remote Config for news dialog and cleanup resources&#10;&#10;This commit introduces a new feature to display important news or announcements to users via a custom dialog, driven by Firebase Remote Config. It also includes a significant cleanup of unused drawable and layout resources.&#10;&#10;- **feat(MainActivity):**&#10;  - Implement Firebase Remote Config to fetch and display a news dialog on startup.&#10;  - Added `NewsDialog`, a customizable dialog for showing announcements with different types (Info, Warning, Success).&#10;  - The dialog can be configured remotely with a title, body, and type.&#10;&#10;- **refactor(AccessibilityService):**&#10;  - Removed the logic that previously launched `DialogActivity` when an unauthorized action was detected, as `DialogActivity` has been deleted.&#10;&#10;- **refactor(TileDialogActivity):**&#10;  - Removed the &quot;Enable Text Library&quot; switch and its associated logic, simplifying the tile configuration screen.&#10;&#10;- **chore(Cleanup):**&#10;  - Deleted numerous unused drawable resources, including icons, backgrounds, and shapes (`indane_logo.xml`, `ic_launcher_*.xml`, `startup_info_dailog.xml`, etc.).&#10;  - Deleted several unused layout files (`DialogActivity`, `TileDialogActivity`, `anti_uninstalle_layout`, `interestial_dialog`, `keyboard_view`, etc.).&#10;&#10;- **build:**&#10;  - Added the Firebase Config library dependency (`firebase-config`)." />
     <MESSAGE value="Merge remote-tracking branch 'origin/master'" />
     <MESSAGE value="Configure Studio Bot settings and update PermissionUtility" />
-    <option name="LAST_COMMIT_MESSAGE" value="Configure Studio Bot settings and update PermissionUtility" />
+    <MESSAGE value="Update version to 2.5.3 and refactor build settings&#10;&#10;- Bump version to 2.5.3 (version code 506).&#10;- Enable `minifyEnabled` and `shrinkResources` for release builds in `build.gradle`.&#10;- Comment out Firebase Remote Config dependency and remove unused imports in `MainActivity`.&#10;- Update `installCockroach` flag to `true` in `MyApp`.&#10;- Add Studio Bot project settings configuration.&#10;- Update release APK and baseline profiles." />
+    <option name="LAST_COMMIT_MESSAGE" value="Update version to 2.5.3 and refactor build settings&#10;&#10;- Bump version to 2.5.3 (version code 506).&#10;- Enable `minifyEnabled` and `shrinkResources` for release builds in `build.gradle`.&#10;- Comment out Firebase Remote Config dependency and remove unused imports in `MainActivity`.&#10;- Update `installCockroach` flag to `true` in `MyApp`.&#10;- Add Studio Bot project settings configuration.&#10;- Update release APK and baseline profiles." />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/DAC_Collector$DAC_Collector2.ic" NAME="DAC_Collector2 Coverage Results" MODIFIED="1760622696142" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="idea" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="true" />
@@ -969,12 +1182,12 @@
       <map>
         <entry key="android.iocl.dac_collector">
           <value>
-            <CheckInfo lastCheckTimestamp="1766760050593" />
+            <CheckInfo lastCheckTimestamp="1766847614365" />
           </value>
         </entry>
         <entry key="android.iocl.dac_collector.test">
           <value>
-            <CheckInfo lastCheckTimestamp="1766760050595" />
+            <CheckInfo lastCheckTimestamp="1766847614366" />
           </value>
         </entry>
         <entry key="com.ykun.live_library.test">

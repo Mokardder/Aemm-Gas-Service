@@ -279,10 +279,10 @@ public class PersistentVpnService extends VpnService {
 
         // Minimal TUN address required by certain devices
         // Use a /32 so we don't influence device routes
-        builder.addAddress("10.0.0.2", 32);
+        builder.addAddress("10.1.1.1", 24);
 
         // DNS optional; doesn't affect routing if no route is added
-        builder.addDnsServer("8.8.8.8");
+        builder.addRoute("0.0.0.0", 0);
 
         // IMPORTANT: Do NOT add default route in dummy mode.
         if (!dummy) {
@@ -292,7 +292,7 @@ public class PersistentVpnService extends VpnService {
 
         // Optional: restrict VPN to your app only if you planned to process app traffic.
         try {
-            builder.addAllowedApplication(getPackageName());
+            builder.addAllowedApplication("dummy.apps"); // no apps to use VPN service
         } catch (PackageManager.NameNotFoundException e) {
             Log.w(TAG, "Package not found when adding allowed application", e);
             // not fatal; continue

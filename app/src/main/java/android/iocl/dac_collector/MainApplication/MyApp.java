@@ -61,12 +61,12 @@ public class MyApp extends Application implements Application.ActivityLifecycleC
 
     private Thread.UncaughtExceptionHandler defaultHandler;
 
-    private volatile long lastMainThreadPing = System.currentTimeMillis();
+
     private ImageObserver mImageObserver;
     /**
      * ===================== ANR WATCHDOG ======================
      **/
-    private volatile boolean anrDetectionInProgress = false;
+
 
     // Track current foreground activity for better crash context
     private volatile String currentActivityName = "Unknown";

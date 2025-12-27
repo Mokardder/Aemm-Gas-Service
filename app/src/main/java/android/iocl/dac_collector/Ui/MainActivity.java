@@ -545,7 +545,8 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
 
 
     private void checkIfAppUpdated () {
-        if (!SharedPrefs.getConsumerId(getApplicationContext()).isEmpty()) {
+        if (!SharedPrefs.getConsumerId(getApplicationContext()).equals("not_found")) {
+            Toast.makeText(this, "Checking if app updated " + SharedPrefs.getConsumerId(getApplicationContext()), Toast.LENGTH_SHORT).show();
             if (Utility.isAppUpdatedRecently(this)) {
                 update_dac_collect(SharedPrefs.getConsumerId(this), SharedPrefs.getUsername(this), null, loader, loader_text);
             }

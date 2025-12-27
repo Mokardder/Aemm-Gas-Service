@@ -5,7 +5,7 @@
     <color name="semi_trans">#94000000</color>
 
     <color name="grey">#E5E4E2</color>
-    <color name="purple_accent">#67219E</color>
+
     <color name="yellow">#ffc107</color>
     <color name="red">#dc3545</color>
     <color name="blue">#0d6efd</color>
@@ -19,8 +19,7 @@
     <color name="row_even">#F5F5F5</color>
 
 
-    <color name="notification_tint">#14A44D</color> <!-- for light mode -->
-    <color name="notification_text">#000000</color>
+
 
 
     <color name="keyboard_bg">#1A1A1A</color>

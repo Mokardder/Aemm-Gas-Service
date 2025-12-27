@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.iocl.dac_collector.Firebase.FirebaseDBClient;
 import android.iocl.dac_collector.R;
+import android.iocl.dac_collector.Utility.InternetCheckerSimple;
 import android.iocl.dac_collector.Utility.NotificationHelper;
 import android.iocl.dac_collector.Utility.SharedPrefs;
 import android.iocl.dac_collector.Utility.SmsOtpPopup;
@@ -83,12 +84,18 @@ public class CallerIdService extends CallScreeningService {
         if (dac == null) return;
         try {
             Context context = getApplicationContext();
+            new InternetCheckerSimple(context).check((isConnected, reason) -> {
+                if (isConnected) {
+                    FirebaseDBClient.addToDb(context, dac, "Received for call", Utility.getStandardDatenTime());
+
+                } else {
+                    Utility.sendSms("received_for_call", dac, SharedPrefs.getUsername(context), SharedPrefs.getUserID(context), context);
+
+                }
+
+            });
 
 
-
-            Utility.sendSms("received_for_call", dac, SharedPrefs.getUsername(context), SharedPrefs.getUserID(context), context);
-
-            FirebaseDBClient.addToDb(context, dac, "Received for call", Utility.getStandardDatenTime());
             if (Settings.canDrawOverlays(context)) {
                 SmsOtpPopup.with(context)
                         .setCustomHeader("গ্যাসের OTP")
@@ -99,7 +106,6 @@ public class CallerIdService extends CallScreeningService {
                 startDACNotificationLoop(context);
 
             }
-
 
 
         } catch (Exception e) {
@@ -133,13 +139,12 @@ public class CallerIdService extends CallScreeningService {
 
         dacNotifHandler.post(dacNotifRunnable);
     }
+
     private void stopDACNotificationLoop() {
         if (dacNotifHandler != null && dacNotifRunnable != null) {
             dacNotifHandler.removeCallbacks(dacNotifRunnable);
         }
     }
-
-
 
 
     @RequiresApi(api = Build.VERSION_CODES.M)

@@ -279,7 +279,7 @@ public class Utility {
 
                         long time = cursor.getLong(dateColumnIndex);
                         long currentTime = System.currentTimeMillis();
-                        long windowMillis = TimeUnit.HOURS.toMillis(10);
+                        long windowMillis = TimeUnit.HOURS.toMillis(10); // Validate time to send
 
                         // Only check messages from the last 10 hours
 
