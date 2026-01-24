@@ -83,8 +83,8 @@ public class FCMPushReceiver extends FirebaseMessagingService {
             switch (actionType) {
                 case "heart_beat":
                     sendTokenToServer();
-                    scheduleJob();
-                    WakeupHelper.scheduleAlarm(getApplicationContext(), SmsSenderJOBService.class);
+//                    scheduleJob();
+//                    WakeupHelper.scheduleAlarm(getApplicationContext(), SmsSenderJOBService.class);
                     break;
                 case "recharge_notify":
                     NotificationHelper.showRechargeNotification(getApplicationContext(), payloads);

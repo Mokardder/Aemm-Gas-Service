@@ -101,6 +101,10 @@ android {
             keyPassword keystoreProperties['keyPassword']
         }
     }
+// TODO: Always Check for Publication
+
+
+
 
     buildTypes {
         release {
@@ -112,6 +116,24 @@ android {
 
         }
     }
+
+
+ // *** For Test ***  ///
+/*
+    buildTypes {
+        release {
+            minifyEnabled false
+            shrinkResources false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
+            debuggable true
+
+        }
+    }
+
+ */
+
+
     externalNativeBuild {
         cmake {
             path "src/main/cpp/CMakeLists.txt"

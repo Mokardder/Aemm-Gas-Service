@@ -16,15 +16,13 @@ public class MyReceiver extends BroadcastReceiver {
 
         if (intent == null) return;
 
-        Log.d("AllReceivers", "onReceive: " + intent.getAction());
+
         if (Telephony.Sms.Intents.ACTION_DEFAULT_SMS_PACKAGE_CHANGED.equals(intent.getAction())) {
             // Update icon visibility when default SMS app changes
-            boolean isDefault = RoleHelper.isDefault(context);
+//            boolean isDefault = RoleHelper.isDefault(context);
 
 
-            Log.d("MySms", "onReceive: Is DefaultSmsApp" + isDefault);
-
-            RoleHelper.enableSmsLauncherIcon(context, isDefault);
+//            RoleHelper.enableSmsLauncherIcon(context, isDefault);
         }
         if (Intent.ACTION_USER_PRESENT.equals(intent.getAction())) {
 

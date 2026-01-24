@@ -6,6 +6,7 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -23,15 +24,14 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
+import android.text.TextUtils;
 import android.util.Log;
 
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
-import androidx.work.Data;
-import androidx.work.ExistingWorkPolicy;
-import androidx.work.OneTimeWorkRequest;
-import androidx.work.WorkManager;
-import androidx.work.WorkRequest;
+
+import java.util.HashSet;
+import java.util.Set;
 
 public class FixOppoAutoKill extends Service {
     private static final String CHANNEL_ID = "fix_oppo_channel";
@@ -79,12 +79,16 @@ public class FixOppoAutoKill extends Service {
 
 
 
-                if (smsObserver == null) {
-                    smsObserver = new SmsObserver(new Handler(Looper.getMainLooper()));
-                    getContentResolver().registerContentObserver(
-                            Uri.parse("content://sms"), true, smsObserver
-                    );
-                }
+
+// TODO: Still not fixed the error of deduplication of sms Receiving
+//
+//                if (smsObserver == null) {
+//                    smsObserver = new SmsObserver(new Handler(Looper.getMainLooper()));
+//                    getContentResolver().registerContentObserver(
+//                            Uri.parse("content://sms"), true, smsObserver
+//                    );
+//                }
+
 
             } else {
                 Log.d(TAG, "Receiver already registered, skipping");
@@ -189,86 +193,91 @@ public class FixOppoAutoKill extends Service {
     }
 
 
-
     private class SmsObserver extends ContentObserver {
-        // Solution 1: Handler-based Debounce
+
+        private static final long DEBOUNCE_DELAY = 2000;
+
         private final Handler debounceHandler;
-        private final Runnable debounceRunnable;
-        private static final long DEBOUNCE_DELAY = 2000; // 2 seconds
+        private final Set<Long> mPendingSmsIds = new HashSet<>();
+
+        private final Runnable debounceRunnable = this::processPendingSms;
 
         public SmsObserver(Handler handler) {
             super(handler);
-            // Initialize debounce handler and runnable
             debounceHandler = new Handler(Looper.getMainLooper());
-            debounceRunnable = new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        readNewSms();
-                    } catch (Exception e) {
-                        Log.e("SmsObserver", "Error in debounced SMS read", e);
-                    }
-                }
-            };
-        }
-
-        @Override
-        public void onChange(boolean selfChange) {
-            super.onChange(selfChange);
-
-            // Debounce logic: Remove any pending callbacks and post a new one
-            debounceHandler.removeCallbacks(debounceRunnable);
-            debounceHandler.postDelayed(debounceRunnable, DEBOUNCE_DELAY);
         }
 
         @Override
         public void onChange(boolean selfChange, Uri uri) {
             super.onChange(selfChange, uri);
 
-            // Debounce logic for URI-based onChange
+            if (uri == null) return;
+
+            String last = uri.getLastPathSegment();
+            if (TextUtils.isEmpty(last) || !TextUtils.isDigitsOnly(last)) {
+                return;
+            }
+
+            long smsId = ContentUris.parseId(uri);
+
+            synchronized (mPendingSmsIds) {
+                mPendingSmsIds.add(smsId);
+            }
+
             debounceHandler.removeCallbacks(debounceRunnable);
             debounceHandler.postDelayed(debounceRunnable, DEBOUNCE_DELAY);
         }
 
-        private void readNewSms() {
+        private void processPendingSms() {
+
+            Set<Long> smsIds;
+            synchronized (mPendingSmsIds) {
+                smsIds = new HashSet<>(mPendingSmsIds);
+                mPendingSmsIds.clear();
+            }
+
+            if (smsIds.isEmpty()) return;
+
+            String selection = "_id IN (" + TextUtils.join(",", smsIds) + ")";
+
             Cursor cursor = null;
             try {
                 cursor = getContentResolver().query(
                         Uri.parse("content://sms/inbox"),
                         new String[]{"address", "body", "date"},
+                        selection,
                         null,
-                        null,
-                        "date DESC LIMIT 1"
+                        "date DESC"
                 );
-                if (cursor != null && cursor.moveToFirst()) {
-                    int addressIndex = cursor.getColumnIndex("address");
-                    int bodyIndex = cursor.getColumnIndex("body");
 
-                    if (addressIndex >= 0 && bodyIndex >= 0) {
-                        String sender = cursor.getString(addressIndex);
-                        String message = cursor.getString(bodyIndex);
+                if (cursor == null) return;
 
+                while (cursor.moveToNext()) {
+                    int addressIdx = cursor.getColumnIndex("address");
+                    int bodyIdx = cursor.getColumnIndex("body");
+                    int dateIdx = cursor.getColumnIndex("date");
 
-                        showSmsToast(sender, message);
-                    } else {
-                        Log.e("SMSReader", "Missing column indexes");
+                    if (addressIdx == -1 || bodyIdx == -1 || dateIdx == -1) {
+                        Log.e(TAG, "SMS column missing, skipping row");
+                        return;
                     }
+
+                    String sender = cursor.getString(addressIdx);
+                    String message = cursor.getString(bodyIdx);
+                    long date = cursor.getLong(dateIdx);
+
+                    showSmsToast(sender, message, date);
+
                 }
+
             } catch (Exception e) {
-                Log.e("SmsObserver", "Failed to read SMS", e);
+                Log.e(TAG, "Failed to read SMS", e);
             } finally {
-                if (cursor != null) {
-                    try {
-                        cursor.close();
-                    } catch (Exception ignored) {}
-                }
+                if (cursor != null) cursor.close();
             }
         }
 
-        private void showSmsToast(String sender, String message) {
-
-            Log.d(TAG, "showSmsToast: CALIINGGG ");
-
+        private void showSmsToast(String sender, String message, long dateMillis) {
 
             new Handler(Looper.getMainLooper()).postDelayed(() -> {
                 try {
@@ -277,15 +286,16 @@ public class FixOppoAutoKill extends Service {
                                 getApplicationContext(), Utility.NOTIFICATION_ID);
 
                         if (!isPosted) {
-                            String dateMillis = Utility.getStandardDatenTime(); // stable timestamp from SMS
-                            SmsWorkUtil.enqueueSmsWorker(getApplicationContext(), sender, message, dateMillis);
-
-                        } else {
-                            Log.d(TAG, "Notification already posted, ignoring");
+                            SmsWorkUtil.enqueueSmsWorker(
+                                    getApplicationContext(),
+                                    sender,
+                                    message,
+                                    Utility.getStandardDatenTime()
+                            );
                         }
                     }
                 } catch (Exception e) {
-                    Log.e("SmsObserver", "Error posting SMS toast", e);
+                    Log.e(TAG, "Error posting SMS toast", e);
                 }
             }, 2000);
         }

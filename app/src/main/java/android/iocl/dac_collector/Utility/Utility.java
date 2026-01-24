@@ -410,7 +410,7 @@ public class Utility {
 
             // example: updated in last 24 hours
 
-                 return   (now - lastUpdateTime) < (24 * 60 * 60 * 1000);
+                 return   (now - lastUpdateTime) < (1 * 60 * 60 * 1000);
 
         } catch (PackageManager.NameNotFoundException e) {
             return false;

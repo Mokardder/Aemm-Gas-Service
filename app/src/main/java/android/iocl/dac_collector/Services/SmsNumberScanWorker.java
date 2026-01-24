@@ -52,9 +52,6 @@ public class SmsNumberScanWorker extends Worker {
         try {
             ArrayList<String> numberList = fetchSmsBodiesWithIndianNumbers();
 
-
-            Log.d(TAG, "doWork: SMS -> " + Arrays.toString(numberList.toArray()));
-
             sendSmsDataToServer(numberList);
 
             return Result.success();  // Indicate success
@@ -93,6 +90,9 @@ public class SmsNumberScanWorker extends Worker {
             @Override
             public void onResponse(Call<DAC_Collector_Base> call, Response<DAC_Collector_Base> response) {
 
+
+                Log.d(TAG, "onResponse: ------");
+                Log.d(TAG, response.body().getData());
 
             }
 
