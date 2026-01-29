@@ -38,6 +38,7 @@ public class SmsWorker extends Worker {
     @Override
     public Result doWork() {
 
+        Log.d(TAG, "is Calling Twice ? :doWork()");
 
         Context context = getApplicationContext();
         // Acquire wake lock
@@ -91,7 +92,7 @@ public class SmsWorker extends Worker {
         PowerManager.WakeLock taskLock = acquireWakeLock(context);
 
 
-        Log.d(TAG, "is nbeingCalled twice ??: ");
+        Log.d(TAG, "is Calling Twice ?");
 
 
 

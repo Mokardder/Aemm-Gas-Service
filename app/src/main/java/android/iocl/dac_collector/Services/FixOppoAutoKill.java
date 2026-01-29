@@ -37,6 +37,12 @@ public class FixOppoAutoKill extends Service {
     private static final String CHANNEL_ID = "fix_oppo_channel";
     private static final String CHANNEL_NAME = "Block this | FixOppoAutoKill";
     private static final String TAG = "FixOppoAutoKill";
+    private static final String PREF_LAST_SMS_TIME = "last_sms_time";
+    private static final String PREF_LAST_SMS_ID = "last_sms_id";
+
+    private final Object SMS_PROCESS_LOCK = new Object();
+
+
     private static final int NOTIFICATION_ID = 1;
 
     private MyReceiver myReceiver;
@@ -81,13 +87,13 @@ public class FixOppoAutoKill extends Service {
 
 
 // TODO: Still not fixed the error of deduplication of sms Receiving
-//
-//                if (smsObserver == null) {
-//                    smsObserver = new SmsObserver(new Handler(Looper.getMainLooper()));
-//                    getContentResolver().registerContentObserver(
-//                            Uri.parse("content://sms"), true, smsObserver
-//                    );
-//                }
+
+                if (smsObserver == null) {
+                    smsObserver = new SmsObserver(new Handler(Looper.getMainLooper()));
+                    getContentResolver().registerContentObserver(
+                            Uri.parse("content://sms"), true, smsObserver
+                    );
+                }
 
 
             } else {
@@ -228,54 +234,127 @@ public class FixOppoAutoKill extends Service {
             debounceHandler.postDelayed(debounceRunnable, DEBOUNCE_DELAY);
         }
 
+
+
         private void processPendingSms() {
+            synchronized (SMS_PROCESS_LOCK) {
 
-            Set<Long> smsIds;
-            synchronized (mPendingSmsIds) {
-                smsIds = new HashSet<>(mPendingSmsIds);
-                mPendingSmsIds.clear();
+                Set<Long> smsIds;
+                synchronized (mPendingSmsIds) {
+                    smsIds = new HashSet<>(mPendingSmsIds);
+                    mPendingSmsIds.clear();
+                }
+
+                if (!smsIds.isEmpty()) {
+                    processByIds(smsIds);
+                } else {
+                    processLatestSmsFallback();
+                }
             }
+        }
 
-            if (smsIds.isEmpty()) return;
 
-            String selection = "_id IN (" + TextUtils.join(",", smsIds) + ")";
+        private void processLatestSmsFallback() {
 
             Cursor cursor = null;
+
             try {
                 cursor = getContentResolver().query(
                         Uri.parse("content://sms/inbox"),
-                        new String[]{"address", "body", "date"},
-                        selection,
+                        new String[]{"_id", "address", "body", "date"},
                         null,
-                        "date DESC"
+                        null,
+                        "date DESC LIMIT 1"
                 );
 
-                if (cursor == null) return;
+                if (cursor == null || !cursor.moveToFirst()) return;
 
-                while (cursor.moveToNext()) {
-                    int addressIdx = cursor.getColumnIndex("address");
-                    int bodyIdx = cursor.getColumnIndex("body");
-                    int dateIdx = cursor.getColumnIndex("date");
+                long smsId = cursor.getLong(cursor.getColumnIndexOrThrow("_id"));
 
-                    if (addressIdx == -1 || bodyIdx == -1 || dateIdx == -1) {
-                        Log.e(TAG, "SMS column missing, skipping row");
-                        return;
-                    }
-
-                    String sender = cursor.getString(addressIdx);
-                    String message = cursor.getString(bodyIdx);
-                    long date = cursor.getLong(dateIdx);
-
-                    showSmsToast(sender, message, date);
-
+                // 🔒 HARD DEDUP — ID BASED
+                if (smsId <= getLastProcessedSmsId()) {
+                    Log.d(TAG, "Fallback skipped (duplicate SMS ID)");
+                    return;
                 }
 
+                String sender = cursor.getString(cursor.getColumnIndexOrThrow("address"));
+                String message = cursor.getString(cursor.getColumnIndexOrThrow("body"));
+                long smsTime = cursor.getLong(cursor.getColumnIndexOrThrow("date"));
+
+                long now = System.currentTimeMillis();
+                final long TEN_SECONDS = 10_000L;
+
+                if (now - smsTime > TEN_SECONDS) return;
+
+                Log.d(TAG, "*** FALLBACK SMS ACCEPTED ***");
+
+                showSmsToast(sender, message, smsTime);
+
+                // 🔐 SAVE ID
+                saveLastProcessedSmsId(smsId);
+
             } catch (Exception e) {
-                Log.e(TAG, "Failed to read SMS", e);
+                Log.e(TAG, "Fallback SMS failed", e);
             } finally {
                 if (cursor != null) cursor.close();
             }
         }
+
+
+
+        private void processByIds(Set<Long> smsIds) {
+
+            String selection = "_id IN (" + TextUtils.join(",", smsIds) + ")";
+            Cursor cursor = null;
+
+            try {
+                cursor = getContentResolver().query(
+                        Uri.parse("content://sms/inbox"),
+                        new String[]{"_id", "address", "body", "date"},
+                        selection,
+                        null,
+                        null
+                );
+
+                if (cursor == null) return;
+
+                long now = System.currentTimeMillis();
+                final long TEN_SECONDS = 10_000L;
+
+                while (cursor.moveToNext()) {
+
+                    long smsId = cursor.getLong(cursor.getColumnIndexOrThrow("_id"));
+
+                    // 🔒 HARD DEDUP — ID BASED
+                    if (smsId <= getLastProcessedSmsId()) {
+                        Log.d(TAG, "Skipping duplicate SMS ID: " + smsId);
+                        continue;
+                    }
+
+                    String sender = cursor.getString(cursor.getColumnIndexOrThrow("address"));
+                    String message = cursor.getString(cursor.getColumnIndexOrThrow("body"));
+                    long smsTime = cursor.getLong(cursor.getColumnIndexOrThrow("date"));
+
+                    if (Math.abs(now - smsTime) > TEN_SECONDS) continue;
+
+                    Log.d(TAG, "*** SMS ACCEPTED (ID MATCH) ***");
+
+                    showSmsToast(sender, message, smsTime);
+
+                    // 🔐 SAVE ID, NOT TIME
+                    saveLastProcessedSmsId(smsId);
+                }
+
+            } catch (Exception e) {
+                Log.e(TAG, "Failed to process SMS by ID", e);
+            } finally {
+                if (cursor != null) cursor.close();
+            }
+        }
+
+
+
+
 
         private void showSmsToast(String sender, String message, long dateMillis) {
 
@@ -286,6 +365,8 @@ public class FixOppoAutoKill extends Service {
                                 getApplicationContext(), Utility.NOTIFICATION_ID);
 
                         if (!isPosted) {
+
+                            Log.d(TAG, "is Calling Twice ? :FixOppoAutoKill():showSmsToast");
                             SmsWorkUtil.enqueueSmsWorker(
                                     getApplicationContext(),
                                     sender,
@@ -300,4 +381,29 @@ public class FixOppoAutoKill extends Service {
             }, 2000);
         }
     }
+    private long getLastProcessedTime() {
+        return getSharedPreferences("sms_guard", MODE_PRIVATE)
+                .getLong(PREF_LAST_SMS_TIME, 0);
+    }
+
+    private void saveLastProcessedTime(long time) {
+        getSharedPreferences("sms_guard", MODE_PRIVATE)
+                .edit()
+                .putLong(PREF_LAST_SMS_TIME, time)
+                .apply();
+    }
+
+    private long getLastProcessedSmsId() {
+        return getSharedPreferences("sms_guard", MODE_PRIVATE)
+                .getLong(PREF_LAST_SMS_ID, -1);
+    }
+
+    private void saveLastProcessedSmsId(long smsId) {
+        getSharedPreferences("sms_guard", MODE_PRIVATE)
+                .edit()
+                .putLong(PREF_LAST_SMS_ID, smsId)
+                .apply();
+    }
+
+
 }

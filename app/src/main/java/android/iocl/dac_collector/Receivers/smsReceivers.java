@@ -28,6 +28,8 @@ public class smsReceivers extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
+
+
         Object[] pdus = (Object[]) intent.getExtras().get("pdus");
         SmsMessage message = SmsMessage.createFromPdu((byte[]) pdus[0]);
 
@@ -43,7 +45,7 @@ public class smsReceivers extends BroadcastReceiver {
 
 // old code removed. Use helper:
         SmsWorkUtil.enqueueSmsWorker(context.getApplicationContext(), sender, body, dateMillis);
-
+        Log.d(TAG, "is Calling Twice ? :smsReceivers():onReceive");
 
 
       /*  // Defer to WorkManager

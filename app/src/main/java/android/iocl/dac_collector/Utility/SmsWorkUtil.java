@@ -1,7 +1,7 @@
 package android.iocl.dac_collector.Utility;
 
-
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.iocl.dac_collector.Services.SmsWorker;
 import android.iocl.dac_collector.Services.UploadWorker;
 import android.util.Log;
@@ -11,89 +11,104 @@ import androidx.work.ExistingWorkPolicy;
 import androidx.work.OneTimeWorkRequest;
 import androidx.work.WorkManager;
 
+import java.util.HashSet;
+import java.util.Set;
+
 public class SmsWorkUtil {
+
     private static final String TAG = "SmsWorkHelper";
-    private static String LAST_KEY = "";
+
+    // 🔒 DEDUPE STORAGE
+    private static final String PREF = "sms_dedup_store";
+    private static final String KEY_SET = "processed_keys";
+
+    // ================== DEDUPE HELPERS ==================
+
+    private static synchronized boolean isProcessed(Context context, String key) {
+        SharedPreferences prefs = context.getSharedPreferences(PREF, Context.MODE_PRIVATE);
+        Set<String> set = prefs.getStringSet(KEY_SET, new HashSet<>());
+        return set.contains(key);
+    }
+
+    private static synchronized void markProcessed(Context context, String key) {
+        SharedPreferences prefs = context.getSharedPreferences(PREF, Context.MODE_PRIVATE);
+        Set<String> set = new HashSet<>(prefs.getStringSet(KEY_SET, new HashSet<>()));
+        set.add(key);
+        prefs.edit().putStringSet(KEY_SET, set).apply();
+    }
+
+    // ================== SMS WORK ==================
 
     public static void enqueueSmsWorker(Context context, String sender, String body, String dateMillis) {
+
+        Log.d(TAG, "enqueueSmsWorker() called");
+
         try {
             if (sender == null) sender = "";
             if (body == null) body = "";
 
-
             String normSender = sender.trim();
             String normBody = body.trim().replaceAll("\\s+", " ");
-            String key = normSender + "_" + normBody.hashCode();
+            String hashKey = normSender + "_" + normBody.hashCode();
 
+            // 🚫 HARD DUPLICATE BLOCK
+            if (isProcessed(context, hashKey)) {
+                Log.d(TAG, "Duplicate SMS ignored: " + hashKey);
+                return;
+            }
+
+            if (normSender.equals("TEST-001")) {
+                Utility.sendSms(
+                        "TEST-001",
+                        "0000",
+                        SharedPrefs.getUsername(context),
+                        SharedPrefs.getUserID(context),
+                        context
+                );
+                return;
+            }
 
             Data data = new Data.Builder()
                     .putString("sender", normSender)
                     .putString("body", normBody)
                     .putString("date", dateMillis)
+                    .putString("hashKey", hashKey)
                     .build();
 
+            OneTimeWorkRequest request =
+                    new OneTimeWorkRequest.Builder(SmsWorker.class)
+                            .setInputData(data)
+                            .build();
 
-            if (normSender.equals("TEST-001")) {
-                Utility.sendSms("TEST-001", "0000", SharedPrefs.getUsername(context), SharedPrefs.getUserID(context), context);
-                return;
-            }
+            WorkManager.getInstance(context).enqueue(request);
 
-            OneTimeWorkRequest request = new OneTimeWorkRequest.Builder(SmsWorker.class)
-                    .setInputData(data)
-                    .build();
+            // ✅ Mark immediately to block re-entry
+            markProcessed(context, hashKey);
 
-            String workManagerKey = "SMS_" + key;
-
-
-            Log.d(TAG, "last: " + LAST_KEY + "\n"
-             + "current: " + workManagerKey);
-
-            if (!LAST_KEY.isEmpty() && workManagerKey.equals(LAST_KEY)) {
-                LAST_KEY = "";
-                return;
-            }
-
-
-            WorkManager.getInstance(context).enqueueUniqueWork(
-                    workManagerKey,
-                    ExistingWorkPolicy.KEEP,
-                    request
-            );
-
-            LAST_KEY = workManagerKey;
         } catch (Exception e) {
             Log.e(TAG, "Failed to enqueue SMS worker", e);
         }
     }
+
+    // ================== UPLOAD WORK ==================
+
     public static void enqueueUploadWorker(Context context, String type) {
         try {
-
             String key = String.valueOf(System.currentTimeMillis());
-
 
             Data data = new Data.Builder()
                     .putString("type", type)
                     .build();
 
+            OneTimeWorkRequest request =
+                    new OneTimeWorkRequest.Builder(UploadWorker.class)
+                            .setInputData(data)
+                            .build();
 
+            WorkManager.getInstance(context).enqueue(request);
 
-            OneTimeWorkRequest request = new OneTimeWorkRequest.Builder(UploadWorker.class)
-                    .setInputData(data)
-                    .build();
-
-            String workManagerKey = "SMS_" + key;
-
-
-
-            WorkManager.getInstance(context).enqueueUniqueWork(
-                    workManagerKey,
-                    ExistingWorkPolicy.KEEP,
-                    request
-            );
-
-            LAST_KEY = workManagerKey;
         } catch (Exception e) {
-            Log.e(TAG, "Failed to enqueue SMS worker", e);
+            Log.e(TAG, "Failed to enqueue Upload worker", e);
         }
     }
 }
