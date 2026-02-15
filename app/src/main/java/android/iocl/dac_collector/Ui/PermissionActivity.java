@@ -70,7 +70,7 @@ public class PermissionActivity extends AppCompatActivity {
 
         showMandatory = getIntent().getBooleanExtra("showMandatory", true);
 
-        Log.d(TAG, "showMandatory: " + showMandatory);
+
 
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
@@ -176,11 +176,7 @@ public class PermissionActivity extends AppCompatActivity {
                     Thread.sleep(500); // Just to show loader, remove if permissions check is fast
                 }
 
-
-                Log.d(TAG, "loadPermissionsAsync: isOnlyMandatory " + showMandatory);
-                Log.d(TAG, "loadPermissionsAsync: isAnyMissning perm " + PermissionUtility.isAnyPermissionMissing(PermissionActivity.this, showMandatory));
-
-                if (!PermissionUtility.isAnyPermissionMissing(PermissionActivity.this, showMandatory)){
+                if (!PermissionUtility.isAnyPermissionMissing(PermissionActivity.this, false)){
 
                     startActivity(new Intent(this, MainActivity.class));
 

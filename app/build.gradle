@@ -101,9 +101,10 @@ android {
             keyPassword keystoreProperties['keyPassword']
         }
     }
+
+
+
 // TODO: Always Check for Publication
-
-
 
 
     buildTypes {
@@ -118,8 +119,12 @@ android {
     }
 
 
+
+
  // *** For Test ***  ///
-/*
+
+
+    /*
     buildTypes {
         release {
             minifyEnabled false
@@ -131,7 +136,9 @@ android {
         }
     }
 
- */
+     */
+
+
 
 
     externalNativeBuild {

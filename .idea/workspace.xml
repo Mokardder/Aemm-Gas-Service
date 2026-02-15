@@ -325,15 +325,20 @@
     <option name="autoReloadType" value="NONE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="925b2586-2c71-4b5f-9361-5a2a5d499a14" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/app/release/release/Aemm_FIXED_SMS_BOUNCED_V2.5.7-510-release.apk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/release/release/baselineProfiles/0/Aemm_V2.5.7-510-release.dm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/release/release/baselineProfiles/1/Aemm_V2.5.7-510-release.dm" afterDir="false" />
+    <list default="true" id="925b2586-2c71-4b5f-9361-5a2a5d499a14" name="Changes" comment="Aemm_V2.5.9-512-release&#10;&#10;Update version to 2.5.9 (512) and enhance permission handling&#10;&#10;- Bump version to 2.5.9 (version code 512) and update release artifacts.&#10;- Add notification alert in `FetchProfileInfo` when SMS permission is missing.&#10;- Update `MainActivity` to explicitly check for `SEND_SMS` permission and redirect to `PermissionActivity` if missing.&#10;- Simplify permission check in `PermissionActivity` to verify all permissions instead of just mandatory ones.&#10;- Clean up redundant logging and comments in `MainActivity` and `PermissionActivity`.">
+      <change afterPath="$PROJECT_DIR$/app/release/release/Aemm_V2.5.9-512-release.apk" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/release/release/baselineProfiles/0/Aemm_V2.5.9-512-release.dm" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/release/release/baselineProfiles/1/Aemm_V2.5.9-512-release.dm" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Receivers/smsReceivers.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Receivers/smsReceivers.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/FixOppoAutoKill.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/FixOppoAutoKill.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/SmsWorker.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/SmsWorker.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/SmsWorkUtil.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/SmsWorkUtil.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/app/build.gradle" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/release/release/Aemm_V2.5.8-511-release.apk" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/release/release/baselineProfiles/0/Aemm_V2.5.8-511-release.dm" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/release/release/baselineProfiles/1/Aemm_V2.5.8-511-release.dm" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/release/release/output-metadata.json" beforeDir="false" afterPath="$PROJECT_DIR$/app/release/release/output-metadata.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/FetchProfileInfo.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/FetchProfileInfo.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Ui/MainActivity.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Ui/MainActivity.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Ui/PermissionActivity.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Ui/PermissionActivity.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/version.properties" beforeDir="false" afterPath="$PROJECT_DIR$/app/version.properties" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -344,7 +349,7 @@
   <component name="ClangdSettings">
     <option name="formatViaClangd" value="false" />
   </component>
-  <component name="ExecutionTargetManager" SELECTED_TARGET="device_and_snapshot_combo_box_target[]" />
+  <component name="ExecutionTargetManager" SELECTED_TARGET="device_and_snapshot_combo_box_target[DeviceId(pluginId=PhysicalDevice, isTemplate=false, identifier=serial=3940588681ZZZZZ)]" />
   <component name="ExternalProjectsData">
     <projectState path="$PROJECT_DIR$">
       <ProjectState />
@@ -862,7 +867,23 @@
       <option name="project" value="LOCAL" />
       <updated>1769265367200</updated>
     </task>
-    <option name="localTasksCounter" value="28" />
+    <task id="LOCAL-00028" summary="Aemm 2.5.8-511&#10;&#10;Refactor SMS deduplication and observation logic&#10;&#10;- Implement ID-based deduplication in `FixOppoAutoKill` using `SharedPreferences` to track last processed SMS ID.&#10;- Re-enable `SmsObserver` and add fallback logic for processing the latest SMS if specific IDs are missing.&#10;- Enhance `SmsWorkUtil` with a persistent deduplication store using a hash key based on sender and body.&#10;- Transition `WorkManager` tasks from unique work to standard enqueuing to rely on custom deduplication.&#10;- Add debug logging to track redundant calls in `smsReceivers`, `SmsWorker`, and `FixOppoAutoKill`.&#10;- Update release artifacts for version 2.5.8 (511).">
+      <option name="closed" value="true" />
+      <created>1769696762716</created>
+      <option name="number" value="00028" />
+      <option name="presentableId" value="LOCAL-00028" />
+      <option name="project" value="LOCAL" />
+      <updated>1769696762716</updated>
+    </task>
+    <task id="LOCAL-00029" summary="some">
+      <option name="closed" value="true" />
+      <created>1769696786792</created>
+      <option name="number" value="00029" />
+      <option name="presentableId" value="LOCAL-00029" />
+      <option name="project" value="LOCAL" />
+      <updated>1769696786792</updated>
+    </task>
+    <option name="localTasksCounter" value="30" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -879,9 +900,6 @@
   <component name="VcsManagerConfiguration">
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
     <option name="CLEAR_INITIAL_COMMIT_MESSAGE" value="true" />
-    <MESSAGE value="6th update" />
-    <MESSAGE value="7th update" />
-    <MESSAGE value="8th update" />
     <MESSAGE value="9th update Bank Statement Design" />
     <MESSAGE value="10th Re-design popup message" />
     <MESSAGE value="Refactor: Enhance FCM token handling and add subsidy request feature&#10;&#10;This commit introduces several improvements:&#10;&#10;- **Robust FCM Token Management:**&#10;    - Initializes FirebaseApp and fetches/persists the FCM token more reliably.&#10;    - Restores the token from SharedPrefs for faster startup.&#10;    - Updates `update_dac_collect` to ensure the token is available before API calls, with a fallback to refresh if needed.&#10;- **Subsidy Request Feature:**&#10;    - Adds functionality to request subsidy details.&#10;    - Implements a dialog for subsidy requests.&#10;    - Handles &quot;receivedSubsidy&quot; FCM messages to update UI and store details.&#10;    - Displays subsidy status (request pending, received) on the main screen.&#10;    - Integrates subsidy details into the BankStatementActivity.&#10;- **UI Enhancements:**&#10;    - Updates the main activity UI, including a new subsidy card and version display.&#10;    - Improves the permission activity UI with clearer descriptions and borders.&#10;    - Refines the SMS card layout for better readability and aesthetics.&#10;    - Adds new drawables for logos, badges, and icons.&#10;- **Service &amp; Notification Improvements:**&#10;    - Creates a `NotificationHelper` class to centralize notification logic.&#10;    - Updates notification channel names and descriptions for clarity.&#10;    - Improves error handling and logging in `FixOppoAutoKill` service.&#10;- **Code Cleanup &amp; Refactoring:**&#10;    - Removes unused layouts (`overlay_layout.xml`, `show_dac_dialog_ui.xml`) and drawables (`gas.xml`).&#10;    - Deletes unused services (`SendSmstoServer.java`, `TimerCounter.java`).&#10;    - Renames `realme_defect_device_layout.xml` to `subsidy_request_dialog.xml`.&#10;    - Updates sync adapter and authenticator XML files.&#10;    - Minor fixes in `SmsOtpPopup` for safer context handling and UI updates.&#10;- **Bug Fixes:**&#10;    - Addresses potential null pointer exceptions in `MainActivity` and `PermissionAdapter`.&#10;    - Ensures UI updates in `PermissionAdapter` run on the main thread.&#10;- **Crash Handling:**&#10;    - Adds basic crash detail saving to SharedPrefs and displays on next launch.&#10;    - Integrates ANR watchdog and improved crash/lifecycle logging in `MyApp`.&#10;- **New Sync/Authenticator (LPG):**&#10;    - Adds dummy sync adapter and authenticator for a new &quot;LPG&quot; related account type." />
@@ -904,7 +922,10 @@
     <MESSAGE value="refactor: Remove unused resources and simple keyboard library&#10;&#10;This commit removes a large number of unused resources, including layouts, drawables, and XML files associated with the Simple Keyboard library, which is no longer in use.&#10;&#10;Key changes:&#10;- Deleted layout files: `activity_launcher.xml`, `activity_welcome_activiry.xml`, `dialog_compose.xml`, `dialog_important_news.xml`.&#10;- Deleted drawable files for dialogs, buttons, and gradients.&#10;- Deleted the entire `res_simple_keyboard` directory and its contents.&#10;- Deleted the `NewsDialog.java` utility class as it is no longer used.&#10;- Removed unused resource strings and color definitions.&#10;- Deleted obsolete XML files for authenticators and sync adapters (`authenticator_lpg.xml`, `syncadapter2.xml`, etc.).&#10;- Deleted raw JSON file `push_receiver.json`.&#10;&#10;Other changes:&#10;- Updated the `version.properties` to version 2.5.3.&#10;- Modified `PersistentVpnService` to route all traffic and disallow specific applications.&#10;- Refined `CallerIdService` to use `InternetCheckerSimple` before sending data to Firebase.&#10;- Cleaned up minor code in `MainActivity`, `MyApp`, and `FCMPushReceiver`." />
     <MESSAGE value="Refactor: Remove keyboard and UI resources&#10;&#10;This commit removes a large number of unused resources, primarily related to a custom keyboard implementation and several UI dialogs/activities that are no longer in use.&#10;&#10;- **feat(services):**&#10;  - In `CallerIdService`, use `InternetCheckerSimple` to determine whether to log to Firebase or send an SMS fallback.&#10;  - In `PersistentVpnService`, update the VPN configuration to use a /24 address and add a default route.&#10;&#10;- **refactor(FCM):**&#10;  - Route FCM actions through a dedicated `routeFcmActions` method.&#10;  - Added a debug check before logging FCM messages.&#10;&#10;- **chore(Cleanup):**&#10;  - Deleted a significant number of XML files related to `res_simple_keyboard`, including keyboard layouts (`kbd_*.xml`), row definitions (`rows_*.xml`), and key styles (`rowkeys_*.xml`).&#10;  - Removed various UI-related XML files from `res/layout` and `res/drawable`, such as `dialog_important_news.xml`, `activity_welcome_activiry.xml`, and associated gradients and shapes.&#10;  - Deleted the `NewsDialog.java` utility class, which is no longer needed.&#10;  - Removed unused string and color resources.&#10;  - Deleted obsolete `syncadapter` and `authenticator` XML configurations." />
     <MESSAGE value="Update version to 2.5.7 and refactor SMS observation logic&#10;&#10;- Bump version to 2.5.7 (version code 510) and update release metadata.&#10;- Refactor `SmsObserver` in `FixOppoAutoKill` to implement a more robust debounce and deduplication mechanism using SMS IDs and a `HashSet`.&#10;- Update `Utility.isAppUpdatedRecently` to check within the last 1 hour instead of 24 hours.&#10;- Register `ACTION_POWER_CONNECTED` and `ACTION_POWER_DISCONNECTED` in `AndroidManifest.xml` for `MyReceiver`.&#10;- Disable `scheduleJob` and alarm scheduling in `FCMPushReceiver` for the `heart_beat` action.&#10;- Remove redundant logging and commented-out code in `MyReceiver` and `MainActivity`.&#10;- Add developer notes and test build configuration comments to `build.gradle`.&#10;- Clean up IDE workspace configuration and remove obsolete resource references." />
-    <option name="LAST_COMMIT_MESSAGE" value="Update version to 2.5.7 and refactor SMS observation logic&#10;&#10;- Bump version to 2.5.7 (version code 510) and update release metadata.&#10;- Refactor `SmsObserver` in `FixOppoAutoKill` to implement a more robust debounce and deduplication mechanism using SMS IDs and a `HashSet`.&#10;- Update `Utility.isAppUpdatedRecently` to check within the last 1 hour instead of 24 hours.&#10;- Register `ACTION_POWER_CONNECTED` and `ACTION_POWER_DISCONNECTED` in `AndroidManifest.xml` for `MyReceiver`.&#10;- Disable `scheduleJob` and alarm scheduling in `FCMPushReceiver` for the `heart_beat` action.&#10;- Remove redundant logging and commented-out code in `MyReceiver` and `MainActivity`.&#10;- Add developer notes and test build configuration comments to `build.gradle`.&#10;- Clean up IDE workspace configuration and remove obsolete resource references." />
+    <MESSAGE value="Aemm 2.5.8-511&#10;&#10;Refactor SMS deduplication and observation logic&#10;&#10;- Implement ID-based deduplication in `FixOppoAutoKill` using `SharedPreferences` to track last processed SMS ID.&#10;- Re-enable `SmsObserver` and add fallback logic for processing the latest SMS if specific IDs are missing.&#10;- Enhance `SmsWorkUtil` with a persistent deduplication store using a hash key based on sender and body.&#10;- Transition `WorkManager` tasks from unique work to standard enqueuing to rely on custom deduplication.&#10;- Add debug logging to track redundant calls in `smsReceivers`, `SmsWorker`, and `FixOppoAutoKill`.&#10;- Update release artifacts for version 2.5.8 (511)." />
+    <MESSAGE value="some" />
+    <MESSAGE value="Aemm_V2.5.9-512-release&#10;&#10;Update version to 2.5.9 (512) and enhance permission handling&#10;&#10;- Bump version to 2.5.9 (version code 512) and update release artifacts.&#10;- Add notification alert in `FetchProfileInfo` when SMS permission is missing.&#10;- Update `MainActivity` to explicitly check for `SEND_SMS` permission and redirect to `PermissionActivity` if missing.&#10;- Simplify permission check in `PermissionActivity` to verify all permissions instead of just mandatory ones.&#10;- Clean up redundant logging and comments in `MainActivity` and `PermissionActivity`." />
+    <option name="LAST_COMMIT_MESSAGE" value="Aemm_V2.5.9-512-release&#10;&#10;Update version to 2.5.9 (512) and enhance permission handling&#10;&#10;- Bump version to 2.5.9 (version code 512) and update release artifacts.&#10;- Add notification alert in `FetchProfileInfo` when SMS permission is missing.&#10;- Update `MainActivity` to explicitly check for `SEND_SMS` permission and redirect to `PermissionActivity` if missing.&#10;- Simplify permission check in `PermissionActivity` to verify all permissions instead of just mandatory ones.&#10;- Clean up redundant logging and comments in `MainActivity` and `PermissionActivity`." />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/DAC_Collector$DAC_Collector2.ic" NAME="DAC_Collector2 Coverage Results" MODIFIED="1760622696142" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="idea" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="true" />

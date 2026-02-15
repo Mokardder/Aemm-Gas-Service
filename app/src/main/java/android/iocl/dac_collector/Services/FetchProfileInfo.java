@@ -16,8 +16,13 @@ import android.iocl.dac_collector.R;
 import android.iocl.dac_collector.RetrofitClient.RequestService;
 import android.iocl.dac_collector.RetrofitClient.RetrofitClient;
 import android.iocl.dac_collector.Ui.MainActivity;
+import android.iocl.dac_collector.Utility.NotificationHelper;
+import android.iocl.dac_collector.Utility.PermissionUtility;
 import android.iocl.dac_collector.Utility.Utility;
 import android.os.Build;
+
+import com.hjq.permissions.Permission;
+import com.hjq.permissions.XXPermissions;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -104,6 +109,10 @@ public class FetchProfileInfo extends JobService {
                     }
 
                     markFetched();
+
+                    if(!XXPermissions.isGrantedPermissions(getApplicationContext(), Permission.READ_SMS)){
+                        NotificationHelper.sendNotification(getApplicationContext(), "আপনার ফোনে গ্যাসের অ্যাপ", "সঠিক ভাবে কাজ করছেনা");
+                    }
                 }
                 jobFinished(mJobParameters, false); // done
             }
