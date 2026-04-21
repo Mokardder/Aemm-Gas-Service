@@ -7,10 +7,7 @@ import android.app.admin.DevicePolicyManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
-import android.iocl.dac_collector.Ui.MainActivity;
-import android.os.Handler;
-import android.preference.PreferenceManager;
+
 import android.util.Log;
 import android.widget.Toast;
 
@@ -111,18 +108,7 @@ public class AdminReceiver extends DeviceAdminReceiver {
         Log.d(TAG, "openPackageName: Packagedd Wordss");
     }
 
-    private void resetPassword(Context context, SharedPreferences sharedpreferences) {
-        mDevicepolicymanager = (DevicePolicyManager)context.getSystemService(Context.DEVICE_POLICY_SERVICE);
-        // Setting reset system password
-        mDevicepolicymanager.resetPassword(TEMP_PASSWORD, RESET_PASSWORD_NOT_REQUIRE_ENTRY);
-        mDevicepolicymanager.lockNow();
-        new Handler().postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                mDevicepolicymanager.resetPassword("", 0);
-            }
-        }, RESET_PASSWORD_TIME_OUT);
-    }
+
 
 
 

@@ -3,186 +3,152 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/update_layout_dialog"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="wrap_content"
+    android:background="@android:color/transparent"
+    android:padding="16dp"
 
+    >
+
+    <!-- Rocket Image -->
     <ImageView
         android:id="@+id/rocket_image"
-        android:layout_width="250dp"
-        android:layout_height="250dp"
+        android:layout_width="200dp"
+        android:layout_height="200dp"
+        android:src="@drawable/update_rocket"
         android:layout_centerHorizontal="true"
-        android:layout_marginTop="-40dp"
-        android:elevation="3dp"
-        android:src="@drawable/update_rocket" />
+        android:translationX="70dp"
+        android:translationY="18dp"
+        android:layout_marginTop="-60dp"
+        android:elevation="1dp" />
 
+    <!-- CardView Container -->
     <androidx.cardview.widget.CardView
-        android:layout_width="300dp"
-        android:layout_height="400dp"
-        android:layout_below="@+id/rocket_image"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="-65dp"
-        android:elevation="8dp"
-        android:padding="10dp"
-        app:cardBackgroundColor="@color/white"
-        app:cardCornerRadius="15dp">
+        android:id="@+id/update_card"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/rocket_image"
+        android:layout_marginTop="-40dp"
+        app:cardCornerRadius="16dp"
+        android:background="@android:color/transparent"
+        app:cardUseCompatPadding="true"
+        app:cardElevation="0dp"
+        app:cardPreventCornerOverlap="true"
+        app:cardBackgroundColor="@color/white">
 
-        <RelativeLayout
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginTop="5dp"
-            android:padding="12dp"
-            android:textAlignment="center">
+            android:padding="16dp"
+            android:orientation="vertical">
 
-            <RelativeLayout
-                android:id="@+id/updateTxtHeader"
+            <!-- Header -->
+            <TextView
+                android:id="@+id/update_header"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content" >
-                <TextView
-                    android:layout_centerHorizontal="true"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:fontFamily="@font/li_sohid_unicode"
-                    android:textColor="@color/green"
-                    android:textFontWeight="400"
-                    android:textStyle="bold"
-                    android:text="** NEW UPDATE AVAILABLE **" />
-            </RelativeLayout>
-
-            <RelativeLayout
-                android:layout_below="@+id/updateTxtHeader"
-                android:id="@+id/header_text"
-                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:padding="5dp">
+                android:text="⊹₊ ⋆ NEW UPDATE AVAILABLE ⋆ ₊⊹"
+                android:textColor="@color/green"
+                android:textStyle="bold"
+                android:textSize="20sp"
+                android:gravity="center"
+                android:lineSpacingExtra="2dp"
+                android:fontFamily="@font/li_sohid_unicode"/>
+
+            <!-- Version & label -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="6dp">
 
                 <TextView
                     android:id="@+id/alertUpdatebangla"
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_alignBaseline="@+id/newVer"
-
-                    android:layout_alignParentLeft="true"
-                    android:layout_marginRight="4dp"
-                    android:fontFamily="@font/li_sohid_unicode"
-                    android:text="ABOUT UPDATE"
+                    android:layout_weight="1"
+                    android:text="Changes in Update"
                     android:textColor="@color/black"
-                    android:textFontWeight="900"
-                    android:textSize="15dp" />
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:lineSpacingExtra="2dp"
+                    android:fontFamily="@font/poppins_regular"/>
 
                 <TextView
-
                     android:id="@+id/newVer"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_alignParentEnd="true"
-                    android:layout_centerHorizontal="true"
-                    android:layout_marginEnd="5dp"
-                    android:fontFamily="@font/li_sohid_unicode"
-                    android:paddingHorizontal="4dp"
-                    android:paddingVertical="3dp"
                     android:text="V 0.5.6"
-                    android:textAllCaps="true"
                     android:textColor="@color/green"
-                    android:textSize="15dp" />
-            </RelativeLayout>
+                    android:textAllCaps="true"
+                    android:textSize="13sp"
+                    android:lineSpacingExtra="2dp"
+                    android:fontFamily="@font/li_sohid_unicode"/>
+            </LinearLayout>
 
-            <RelativeLayout
+            <!-- Plain Description -->
+            <ScrollView
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_alignParentTop="true"
-                android:elevation="200dp">
+                android:layout_height="300dp"
+                android:layout_marginTop="8dp"
+                android:fillViewport="true"
+                android:scrollbars="vertical">
 
-
-            </RelativeLayout>
-
-
-            <RelativeLayout
-                android:id="@+id/appUpdateDesc"
-                android:layout_width="wrap_content"
-                android:background="@drawable/rounded_green_background"
-                android:layout_height="wrap_content"
-                android:layout_below="@+id/header_text"
-                android:layout_centerHorizontal="true"
-                android:padding="3dp">
-
-                <ScrollView
+                <TextView
+                    android:id="@+id/alertUpdateDesc"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:fillViewport="true">
 
-                    <RelativeLayout
+                    android:text="Here goes your update description. You can add multiple lines and it will wrap automatically."
+                    android:textColor="@color/black"
+                    android:textSize="12sp"
+                    android:lineSpacingExtra="2dp"
+                    android:fontFamily="@font/poppins_regular"/>
 
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content">
+            </ScrollView>
 
-                        <androidx.recyclerview.widget.RecyclerView
-                            android:id="@+id/update_recycle_view"
-                            android:layout_width="match_parent"
-                            android:layout_height="195dp"
-                            android:layout_marginTop="10dp"
-                            android:divider="@android:color/darker_gray"
-                            android:dividerHeight="1dp"
-                            android:scrollbars="none" />
-
-                    </RelativeLayout>
-
-                </ScrollView>
-
-            </RelativeLayout>
-
-
-            <RelativeLayout
+            <!-- Bottom Button -->
+            <FrameLayout
                 android:id="@+id/update_rl_button"
                 android:layout_width="match_parent"
-                android:layout_height="40dp"
-                android:layout_alignParentBottom="true"
-
-                android:background="@drawable/rounded_green_background"
-                android:gravity="center_horizontal">
+                android:layout_height="44dp"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/rounded_green_background">
 
                 <TextView
                     android:id="@+id/update_btn_text"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_centerInParent="true"
-
-                    android:fontFamily="@font/li_sohid_unicode"
                     android:text="UPDATE NOW"
                     android:textColor="@color/green"
-                    android:textSize="18dp"
-                    android:visibility="visible" />
+                    android:textStyle="bold"
+                    android:layout_gravity="center"
+                    android:textSize="14sp"
+                    android:fontFamily="@font/li_sohid_unicode"/>
 
-
-
-                <!-- Horizontal Progress Bar -->
                 <ProgressBar
                     android:id="@+id/progressBarUpdate"
                     style="@android:style/Widget.ProgressBar.Horizontal"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:layout_alignParentBottom="true"
                     android:indeterminate="false"
                     android:max="100"
                     android:progress="0"
                     android:progressDrawable="@drawable/progress_bar_custom"
-                    android:visibility="gone" />
+                    android:visibility="gone"/>
+
                 <TextView
                     android:id="@+id/downloadProgress"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_centerInParent="true"
-                    android:gravity="center"
-                    android:text=""
-                    android:fontFamily="@font/li_sohid_unicode"
+                    android:layout_gravity="center"
                     android:textColor="@color/red"
-                    android:textSize="18sp"
-                    android:visibility="gone" />
-            </RelativeLayout>
+                    android:textSize="16sp"
+                    android:visibility="gone"
+                    android:fontFamily="@font/li_sohid_unicode"/>
+            </FrameLayout>
 
-
-        </RelativeLayout>
+        </LinearLayout>
 
     </androidx.cardview.widget.CardView>
-
 
 </RelativeLayout>

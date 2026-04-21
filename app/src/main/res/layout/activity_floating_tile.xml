@@ -1,0 +1,261 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+
+    android:layout_width="350dp"
+    android:layout_height="wrap_content"
+    android:layout_gravity="center"
+    android:layout_margin="20dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="6dp"
+    app:cardUseCompatPadding="true"
+    app:cardBackgroundColor="@android:color/white">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/tvHello"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Hello, "
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="#222"/>
+
+        <!-- Name -->
+        <TextView
+            android:id="@+id/tvUserName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Ajema Bibi"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="@color/green"/>
+
+
+        <!-- NOTICE -->
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/noticeLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="12dp"
+            android:visibility="visible"
+            android:foreground="@drawable/bg_alert_animated___notice"
+            android:padding="12dp">
+
+            <com.google.android.material.imageview.ShapeableImageView
+                android:id="@+id/imgNotice"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                app:layout_constraintDimensionRatio="1:1"
+                android:scaleType="centerCrop"
+                android:visibility="visible"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:shapeAppearance="@style/roundded_square_corner"/>
+
+            <!-- LOADER OVERLAY -->
+
+            <TextView
+                android:id="@+id/tvNoticeTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Don't Panic, Don't Extra Book"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:textColor="@color/black"
+                android:textAlignment="center"
+                app:layout_constraintTop_toBottomOf="@id/imgNotice"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"/>
+
+            <TextView
+                android:id="@+id/tvNoticeDesc"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="প্যানিক হবেন না..."
+                android:fontFamily="@font/li_sohid_unicode"
+                android:textSize="14sp"
+                android:textColor="@color/red"
+                android:textAlignment="center"
+                app:layout_constraintTop_toBottomOf="@id/tvNoticeTitle"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"/>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <!-- ACTION CARD -->
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/layoutSubsidyCheck"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:enabled="true"
+
+            android:clickable="true"
+            android:focusable="true"
+            android:background="@drawable/rounded_border_selectable_item"
+            android:padding="12dp">
+
+            <ImageView
+                android:id="@+id/img_lpg_subsidy"
+                android:layout_width="42dp"
+                android:layout_height="42dp"
+                android:src="@drawable/lpg_subsidy_img"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"/>
+
+            <TextView
+                android:id="@+id/tvActionText"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:text="গ্যাসের সাবসিডি চেক করুন"
+                android:fontFamily="@font/li_sohid_unicode"
+                android:textSize="16sp"
+                android:textColor="#2E7D32"
+                app:layout_constraintStart_toEndOf="@id/img_lpg_subsidy"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="@id/img_lpg_subsidy"
+                app:layout_constraintBottom_toBottomOf="@id/img_lpg_subsidy"/>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <!-- VALIDITY CARD -->
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/rounded_green_background"
+            android:padding="14dp">
+
+            <!-- Watermark Icon -->
+            <ImageView
+                android:id="@+id/bgIcon"
+                android:clickable="true"
+                android:focusable="true"
+                android:layout_width="70dp"
+                android:layout_height="70dp"
+                android:src="@drawable/lpg_subsidy_img"
+                android:alpha="0.12"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"/>
+
+            <!-- Main Value -->
+            <TextView
+                android:id="@+id/tvRemainingValue"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="12"
+                android:textSize="30sp"
+                android:textStyle="bold"
+                android:textColor="#1B5E20"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintStart_toStartOf="parent"/>
+
+            <!-- Unit -->
+            <TextView
+                android:id="@+id/tvRemainingUnit"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Months Left"
+                android:textSize="13sp"
+                android:textColor="#2E7D32"
+                android:layout_marginStart="6dp"
+                app:layout_constraintStart_toEndOf="@id/tvRemainingValue"
+                app:layout_constraintBottom_toBottomOf="@id/tvRemainingValue"/>
+
+            <!-- Divider -->
+
+            <!-- Last Recharge -->
+            <TextView
+                android:id="@+id/tvLastLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Last Book:"
+                android:textSize="12sp"
+                android:textColor="#666"
+                android:layout_marginTop="8dp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/tvRemainingValue"
+                app:layout_constraintBottom_toBottomOf="parent"/>
+
+            <TextView
+                android:id="@+id/tvLastBook"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="12 Oct 2024"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="@color/blue"
+                android:layout_marginStart="6dp"
+                app:layout_constraintStart_toEndOf="@id/tvLastLabel"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="@id/tvLastLabel"
+                app:layout_constraintBottom_toBottomOf="@id/tvLastLabel"/>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/layoutOpenApp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:enabled="true"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="@drawable/rounded_border_selectable_item"
+            android:padding="12dp">
+
+            <ImageView
+                android:id="@+id/openAppIMG"
+                android:layout_width="42dp"
+                android:layout_height="42dp"
+                android:src="@drawable/gas_cylinder_icon"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"/>
+
+            <TextView
+                android:id="@+id/tvOpenApp"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:text="OPEN APP"
+                android:fontFamily="@font/li_sohid_unicode"
+                android:textSize="16sp"
+                android:textColor="#2E7D32"
+                app:layout_constraintStart_toEndOf="@id/openAppIMG"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="@id/openAppIMG"
+                app:layout_constraintBottom_toBottomOf="@id/openAppIMG"/>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <TextView
+            android:id="@+id/tvVersion"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="V1.0.0 | Prod: Padmalavpur"
+            android:textSize="12sp"
+            android:textColor="#999"
+            android:gravity="center"
+            android:alpha="0.8"/>
+
+
+    </LinearLayout>
+
+
+</androidx.cardview.widget.CardView>

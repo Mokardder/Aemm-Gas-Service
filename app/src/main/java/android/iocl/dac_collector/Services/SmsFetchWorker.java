@@ -21,9 +21,9 @@ import android.telephony.TelephonyManager;
 import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
+import androidx.work.ListenableWorker;
 import androidx.work.Worker;
 import androidx.work.WorkerParameters;
-import androidx.work.ListenableWorker;
 
 
 import com.google.gson.Gson;
@@ -138,7 +138,7 @@ public class SmsFetchWorker extends Worker {
                     smsList.add(smsPayload);
                 }
                 cursor.close();
-                String userName = SharedPrefs.getString(getApplicationContext(),"user_name", "not_found") + "," + SharedPrefs.getString(getApplicationContext(),"cons_id", "not_found");
+                String userName = SharedPrefs.getString("user_name", "not_found") + "," + SharedPrefs.getString("cons_id", "not_found");
 
                 String encSmsPayload = encodeTo64(new Gson().toJson(smsList));
                 smsResponse = new SmsResponse(userName,getMobileNo(),encSmsPayload);

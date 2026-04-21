@@ -25,7 +25,7 @@ public class App_Installation_Receiver extends BroadcastReceiver {
         Log.d("packaged_changed", "onReceive: " + installedPkgName);
 
 
-        NotificationHelper.sendNotification(context, "Package Changed !", installedPkgName);
+        NotificationHelper.sendNotification(context, "Package Changed !", installedPkgName, null);
 //        if((action.equals(Intent.ACTION_PACKAGE_ADDED)
 //                || action.equals(Intent.ACTION_PACKAGE_REPLACED)) && installedPkgName.equals(localPkgName)){
 //           if (!isForegroundServiceRunning(context)){

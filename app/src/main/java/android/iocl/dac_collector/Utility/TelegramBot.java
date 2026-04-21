@@ -47,7 +47,7 @@ public class TelegramBot {
         StringBuilder sb = new StringBuilder();
         sb.append("Custom Logging for App Version " + BuildConfig.VERSION_NAME + "\n\n")
                 .append("Time: " + Utility.getStandardDatenTime() + "\n\n")
-                .append("User: " + SharedPrefs.getConsumerId(context) + "\n\n");
+                .append("User: " + SharedPrefs.getConsumerId() + "\n\n");
         if (context instanceof Activity) {
 
             sb.append("Called from Activity: " + context.getClass().getSimpleName() +"\n\n");
@@ -82,7 +82,7 @@ public class TelegramBot {
         sb.append("🔴 *CRASH REPORT*\n\n")
                 .append("App: ").append(BuildConfig.APPLICATION_ID).append(" (").append(BuildConfig.VERSION_NAME).append(")\n")
                 .append("Time: ").append(Utility.getStandardDatenTime()).append("\n")
-                .append("User: ").append(SharedPrefs.getConsumerId(context)).append("\n")
+                .append("User: ").append(SharedPrefs.getConsumerId()).append("\n")
                 .append("Caller: ").append(context.getClass().getSimpleName()).append("\n\n");
 
         // exception + full stacktrace
@@ -136,6 +136,11 @@ public class TelegramBot {
 
 
     /** Send a photo with optional caption. */
+
+
+
+
+
     public TelegramBot sendPhoto(File photoFile, String caption) {
         // build parts
         RequestBody chatPart = RequestBody.create(

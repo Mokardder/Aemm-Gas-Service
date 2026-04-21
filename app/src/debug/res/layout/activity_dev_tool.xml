@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#121212"
+    tools:context=".Ui.DevToolActivity">
+
+    <ScrollView
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:fillViewport="true"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <!-- Button 1 -->
+            <Button
+                android:id="@+id/btn_test1"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Test Fetch Profile Service"
+                android:textColor="#FFFFFF"
+                android:backgroundTint="#1F1F1F"
+                android:layout_marginBottom="12dp" />
+
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+
+                app:cardCornerRadius="12dp"
+                app:strokeColor="#2A2A2A"
+                app:strokeWidth="1dp"
+                app:cardBackgroundColor="#1F1F1F"
+                app:cardUseCompatPadding="true">
+
+                <LinearLayout
+                    android:id="@+id/collaplesable1"
+                    android:tag="collaplesable"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="12dp">
+
+                    <!-- Header -->
+                    <TextView
+                        android:id="@+id/tv_subsidy_header"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Subsidies ▼"
+                        android:textColor="#FFFFFF"
+                        android:textStyle="bold"
+                        android:textSize="16sp"
+                        android:padding="8dp" />
+
+                    <!-- Content -->
+                    <LinearLayout
+                        android:id="@+id/layout_subsidy_content"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:visibility="gone">
+
+                        <Button
+                            android:id="@+id/btn_clear_subsidy"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Clear Subsidy Status"
+                            android:textColor="#FFFFFF"
+                            android:backgroundTint="#1F1F1F"
+                            android:layout_marginBottom="8dp" />
+
+                        <Button
+                            android:id="@+id/btn_pending_subsidy"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Set Pending Subsidy"
+                            android:textColor="#FFFFFF"
+                            android:backgroundTint="#1F1F1F"
+                            android:layout_marginBottom="8dp" />
+
+                        <Button
+                            android:id="@+id/btn_confirmed_subsidy"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Set Confirmed Subsidy"
+                            android:textColor="#FFFFFF"
+                            android:backgroundTint="#1F1F1F"
+                            android:layout_marginBottom="12dp" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- 🔽 Collapsible Subsidy Section -->
+
+
+            <!-- Button 2 -->
+            <Button
+                android:id="@+id/btn_test2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Test Feature 2"
+                android:textColor="#FFFFFF"
+                android:backgroundTint="#1F1F1F"
+                android:layout_marginBottom="12dp" />
+
+            <!-- Button 3 -->
+            <Button
+                android:id="@+id/btn_test3"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Test Feature 3"
+                android:textColor="#FFFFFF"
+                android:backgroundTint="#1F1F1F"
+                android:layout_marginBottom="12dp" />
+
+            <!-- Add more buttons as needed -->
+
+        </LinearLayout>
+
+    </ScrollView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

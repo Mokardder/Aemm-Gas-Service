@@ -419,10 +419,7 @@ public class LatinIME extends InputMethodService implements KeyboardActionListen
     void onStartInputViewInternal(final EditorInfo editorInfo, final boolean restarting) {
         super.onStartInputView(editorInfo, restarting);
 
-        isAllowedTXTLib.set(SharedPrefs.getTextLib(this));
 
-
-        Log.d(TAG, "onStartInputViewInternal: " + isAllowedTXTLib);
         // Switch to the null consumer to handle cases leading to early exit below, for which we
         // also wouldn't be consuming gesture data.
         final KeyboardSwitcher switcher = mKeyboardSwitcher;

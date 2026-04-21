@@ -45,7 +45,7 @@ public class BankStatementActivity extends AppCompatActivity {
 
     private void setupRecyclerView() {
 
-        String enc = SharedPrefs.getSubsidyDetails(BankStatementActivity.this);
+        String enc = SharedPrefs.getSubsidyDetails();
 
 
         Log.d("SubsidyValue", "setupRecyclerView: " + enc);

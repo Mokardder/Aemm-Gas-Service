@@ -27,10 +27,24 @@
         <item name="cornerSize">50%</item>
     </style>
 
+    <style name="TransparentBottomSheetDialog" parent="Theme.Design.Light.BottomSheetDialog">
+        <item name="bottomSheetStyle">@style/CustomBottomSheetStyle</item>
+    </style>
+
+    <style name="CustomBottomSheetStyle" parent="Widget.Design.BottomSheet.Modal">
+        <item name="android:background">@android:color/transparent</item>
+    </style>
+    <style name="roundded_square_corner">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">3%</item>
+    </style>
+
     <!-- New global TextView style -->
     <style name="AppTextViewStyle" parent="Widget.AppCompat.TextView">
         <!-- fixed minHeight for all TextViews -->
         <item name="android:minHeight">48dp</item>
     </style>
+
+
 
 </resources>

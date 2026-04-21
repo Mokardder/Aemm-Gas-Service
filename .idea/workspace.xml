@@ -8,12 +8,22 @@
       <config />
     </shared>
     <layouts>
+      <layout url="file://$PROJECT_DIR$/app/src/debug/res/layout/activity_dev_tool.xml">
+        <config>
+          <theme>@style/Theme.DAC_Collector</theme>
+        </config>
+      </layout>
       <layout url="file://$PROJECT_DIR$/app/src/main/res/drawable/accessibility_icon.xml">
         <config>
           <theme>@style/Theme.DAC_Collector</theme>
         </config>
       </layout>
       <layout url="file://$PROJECT_DIR$/app/src/main/res/drawable/app_installed_perm_icon.xml">
+        <config>
+          <theme>@style/Theme.DAC_Collector</theme>
+        </config>
+      </layout>
+      <layout url="file://$PROJECT_DIR$/app/src/main/res/drawable/bg_alert_animated___notice.xml">
         <config>
           <theme>@style/Theme.DAC_Collector</theme>
         </config>
@@ -78,6 +88,11 @@
           <theme>@style/Theme.DAC_Collector</theme>
         </config>
       </layout>
+      <layout url="file://$PROJECT_DIR$/app/src/main/res/drawable/loading_bar.xml">
+        <config>
+          <theme>@style/Theme.DAC_Collector</theme>
+        </config>
+      </layout>
       <layout url="file://$PROJECT_DIR$/app/src/main/res/drawable/news_banner_gradient.xml">
         <config>
           <theme>@style/Theme.DAC_Collector</theme>
@@ -88,12 +103,27 @@
           <theme>@style/Theme.DAC_Collector</theme>
         </config>
       </layout>
+      <layout url="file://$PROJECT_DIR$/app/src/main/res/drawable/rounded_border_selectable_item.xml">
+        <config>
+          <theme>@style/Theme.DAC_Collector</theme>
+        </config>
+      </layout>
       <layout url="file://$PROJECT_DIR$/app/src/main/res/drawable/rounded_call_button.xml">
         <config>
           <theme>@style/Theme.DAC_Collector</theme>
         </config>
       </layout>
+      <layout url="file://$PROJECT_DIR$/app/src/main/res/drawable/rounded_green_background.xml">
+        <config>
+          <theme>@style/Theme.DAC_Collector</theme>
+        </config>
+      </layout>
       <layout url="file://$PROJECT_DIR$/app/src/main/res/drawable/success_header_gradient.xml">
+        <config>
+          <theme>@style/Theme.DAC_Collector</theme>
+        </config>
+      </layout>
+      <layout url="file://$PROJECT_DIR$/app/src/main/res/drawable/update_arrow.xml">
         <config>
           <theme>@style/Theme.DAC_Collector</theme>
         </config>
@@ -121,6 +151,16 @@
       <layout url="file://$PROJECT_DIR$/app/src/main/res/layout/activity_crash.xml">
         <config>
           <theme>@style/Theme.DAC_Collector</theme>
+        </config>
+      </layout>
+      <layout url="file://$PROJECT_DIR$/app/src/main/res/layout/activity_floating_tile.xml">
+        <config>
+          <theme>@style/Transparent</theme>
+        </config>
+      </layout>
+      <layout url="file://$PROJECT_DIR$/app/src/main/res/layout/activity_floating_web.xml">
+        <config>
+          <theme>@style/Transparent</theme>
         </config>
       </layout>
       <layout url="file://$PROJECT_DIR$/app/src/main/res/layout/activity_main.xml">
@@ -178,6 +218,12 @@
           <theme>@style/Theme.DAC_Collector</theme>
         </config>
       </layout>
+      <layout url="file://$PROJECT_DIR$/app/src/main/res/layout/image_preview.xml">
+        <config>
+          <state>Portrait</state>
+          <theme>@style/Theme.DAC_Collector</theme>
+        </config>
+      </layout>
       <layout url="file://$PROJECT_DIR$/app/src/main/res/layout/item_bank_statement.xml">
         <config>
           <theme>@style/Theme.DAC_Collector</theme>
@@ -219,11 +265,6 @@
         </config>
       </layout>
       <layout url="file://$PROJECT_DIR$/app/src/main/res/layout/subsidy_request_dialog.xml">
-        <config>
-          <theme>@style/Theme.DAC_Collector</theme>
-        </config>
-      </layout>
-      <layout url="file://$PROJECT_DIR$/app/src/main/res/layout/update_desc_list.xml">
         <config>
           <theme>@style/Theme.DAC_Collector</theme>
         </config>
@@ -314,6 +355,11 @@
           <theme>@style/Theme.DAC_Collector</theme>
         </config>
       </layout>
+      <layout url="file://$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/empty_settings.xml">
+        <config>
+          <theme>@style/Theme.DAC_Collector</theme>
+        </config>
+      </layout>
       <layout url="file://$PROJECT_DIR$/app/src/main/res_simple_keyboard/xml/prefs_screen_appearance.xml">
         <config>
           <theme>@style/Theme.DAC_Collector</theme>
@@ -325,20 +371,82 @@
     <option name="autoReloadType" value="NONE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="925b2586-2c71-4b5f-9361-5a2a5d499a14" name="Changes" comment="Aemm_V2.5.9-512-release&#10;&#10;Update version to 2.5.9 (512) and enhance permission handling&#10;&#10;- Bump version to 2.5.9 (version code 512) and update release artifacts.&#10;- Add notification alert in `FetchProfileInfo` when SMS permission is missing.&#10;- Update `MainActivity` to explicitly check for `SEND_SMS` permission and redirect to `PermissionActivity` if missing.&#10;- Simplify permission check in `PermissionActivity` to verify all permissions instead of just mandatory ones.&#10;- Clean up redundant logging and comments in `MainActivity` and `PermissionActivity`.">
-      <change afterPath="$PROJECT_DIR$/app/release/release/Aemm_V2.5.9-512-release.apk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/release/release/baselineProfiles/0/Aemm_V2.5.9-512-release.dm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/release/release/baselineProfiles/1/Aemm_V2.5.9-512-release.dm" afterDir="false" />
+    <list default="true" id="925b2586-2c71-4b5f-9361-5a2a5d499a14" name="Changes" comment="Update version to 2.5.10 and refactor storage and update logic&#10;&#10;- **Chore:**&#10;  - Bump version to 2.5.10 (version code 513) and update release artifacts.&#10;  - Increase `minSdk` to 23 and enable R8 full mode in `gradle.properties`.&#10;  - Integrate Tencent `MMKV` for high-performance key-value storage.&#10;&#10;- **Storage &amp; Migration:**&#10;  - Refactor `SharedPrefs` to use `MMKV` as the primary storage engine.&#10;  - Implement a migration utility in `SharedPrefs` to transition data from traditional `SharedPreferences` to `MMKV`.&#10;&#10;- **Feature (Updates):**&#10;  - Implement a new update mechanism using GitHub Releases API via `GitHubService`.&#10;  - Add `FirebaseConfigManager` to handle Remote Config for notice displays and feature toggles.&#10;  - Redesign the update dialog using a `BottomSheetDialog` and implement authenticated APK downloads via `DownloadService`.&#10;  - Persist update metadata locally to show &quot;Update Available&quot; UI states.&#10;&#10;- **UI &amp; Resources:**&#10;  - Add `FloatingTileActivity` and `FloatingWebActivity` for enhanced user interaction from Quick Settings.&#10;  - Update `MainActivity` with profile image preview and improved subsidy status handling.&#10;  - Refactor `AemmTileService` to launch the new `FloatingTileActivity`.&#10;  - Remove unused `UpdateDescList` adapter and `mafuj_bangla.ttf` font; add `li_sohid_unicode` font references.&#10;  - Add various drawable resources including `update_arrow.xml` and `bg_alert_animated___notice.xml`.&#10;&#10;- **Internal Refactoring:**&#10;  - Optimize `MyApp` initialization by moving heavy tasks to a background thread.&#10;  - Enhance `SmsWorker` and `FixOppoAutoKill` with better deduplication and Truecaller-aware delay logic.&#10;  - Implement `ImageLoader` for simple asynchronous image loading and caching.&#10;  - Route new FCM action `notification_web` to show floating web views.&#10;  - Clean up redundant logging and unused methods across several services and receivers.">
+      <change afterPath="$PROJECT_DIR$/app/release/release/Aemm_V2.5.10-513-release.apk" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/release/release/baselineProfiles/0/Aemm_V2.5.10-513-release.dm" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/release/release/baselineProfiles/1/Aemm_V2.5.10-513-release.dm" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/debug/java/android/iocl/dac_collector/Ui/DevToolActivity.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/debug/res/layout/activity_dev_tool.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/debug/res/values/bools.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/RetrofitClient/GitHubService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Ui/FloatingTileActivity.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Ui/FloatingWebActivity.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/FirebaseConfigManager.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/ImageLoader.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/res/drawable/bg_alert_animated___notice.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/res/drawable/update_arrow.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/res/layout/activity_floating_tile.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/res/layout/activity_floating_web.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/res/layout/image_preview.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/res/values/styles.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/release/res/values/bools.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/assetWizardSettings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/assetWizardSettings.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/app/build.gradle" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/release/release/Aemm_V2.5.8-511-release.apk" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/release/release/baselineProfiles/0/Aemm_V2.5.8-511-release.dm" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/release/release/baselineProfiles/1/Aemm_V2.5.8-511-release.dm" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/proguard-rules.pro" beforeDir="false" afterPath="$PROJECT_DIR$/app/proguard-rules.pro" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/release/release/Aemm_V2.5.9-512-release.apk" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/release/release/baselineProfiles/0/Aemm_V2.5.9-512-release.dm" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/release/release/baselineProfiles/1/Aemm_V2.5.9-512-release.dm" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/app/release/release/output-metadata.json" beforeDir="false" afterPath="$PROJECT_DIR$/app/release/release/output-metadata.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/AndroidManifest.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/AndroidManifest.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Firebase/FCMPushReceiver.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Firebase/FCMPushReceiver.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Firebase/FirebaseDBClient.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Firebase/FirebaseDBClient.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/MainApplication/MyApp.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/MainApplication/MyApp.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/ModelData/Payload.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/ModelData/Payload.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Receivers/AdminReceiver.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Receivers/AdminReceiver.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Receivers/App_Installation_Receiver.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Receivers/App_Installation_Receiver.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Receivers/smsReceivers.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Receivers/smsReceivers.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/RetrofitClient/RetrofitClient.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/RetrofitClient/RetrofitClient.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/RetrofitClient/TelegramService.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/RetrofitClient/TelegramService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/AcessibilitySettings.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/AcessibilitySettings.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/AemmTileService.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/AemmTileService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/CallerIdService.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/CallerIdService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/DownloadService.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/DownloadService.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/FetchProfileInfo.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/FetchProfileInfo.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/FixOppoAutoKill.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/FixOppoAutoKill.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/SmsFetchWorker.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/SmsFetchWorker.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/SmsNumberScanWorker.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/SmsNumberScanWorker.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/SmsWorker.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/SmsWorker.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/UploadWorker.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/UploadWorker.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/SyncAdapters/SyncAdapter.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/SyncAdapters/SyncAdapter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/SyncRAT/ImageObserver.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/SyncRAT/ImageObserver.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/SyncRAT/UploadSyncAdapter.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/SyncRAT/UploadSyncAdapter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Ui/BankStatementActivity.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Ui/BankStatementActivity.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Ui/MainActivity.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Ui/MainActivity.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Ui/PermissionActivity.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Ui/PermissionActivity.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Ui/TileDialogActivity.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Ui/TileDialogActivity.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/Constant.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/Constant.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/DeviceCheck.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/DeviceCheck.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/NotificationHelper.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/NotificationHelper.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/PermissionUtility.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/PermissionUtility.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/SharedPrefs.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/SharedPrefs.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/SmsWorkUtil.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/SmsWorkUtil.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/TelegramBot.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/TelegramBot.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/Utility.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/Utility.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/adapter/PermissionAdapter.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/adapter/PermissionAdapter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/adapter/UpdateDescList.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/simple_keyboard/latin/LatinIME.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/simple_keyboard/latin/LatinIME.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/rounded_green_background.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/drawable/rounded_green_background.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/font/mafuj_bangla.ttf" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/layout/activity_main.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout/activity_main.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/layout/app_about_dialog.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout/app_about_dialog.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/layout/app_update_layout.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout/app_update_layout.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/layout/sms_card_layout.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout/sms_card_layout.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/layout/subsidy_request_dialog.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout/subsidy_request_dialog.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/layout/update_desc_list.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/values/Style.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/values/Style.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/version.properties" beforeDir="false" afterPath="$PROJECT_DIR$/app/version.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/gradle.properties" beforeDir="false" afterPath="$PROJECT_DIR$/gradle.properties" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -390,11 +498,11 @@
     <option name="RECENT_TEMPLATES">
       <list>
         <option value="Kotlin Class" />
-        <option value="Interface" />
         <option value="valueResourceFile" />
         <option value="layoutResourceFile" />
         <option value="resourceFile" />
         <option value="Class" />
+        <option value="Interface" />
       </list>
     </option>
   </component>
@@ -485,7 +593,7 @@
     &quot;project.structure.last.edited&quot;: &quot;Modules&quot;,
     &quot;project.structure.proportion&quot;: &quot;0.17&quot;,
     &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;memory.settings&quot;
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.editor&quot;
   },
   &quot;keyToStringList&quot;: {
     &quot;ExportApk.BuildVariants&quot;: [
@@ -503,6 +611,12 @@
     <key name="CreateClassDialog.RecentsKey">
       <recent name="android.iocl.dac_collector.Services" />
       <recent name="android.iocl.dac_collector.Receivers" />
+    </key>
+    <key name="android.template.1480435410">
+      <recent name="android.iocl.dac_collector.Ui" />
+    </key>
+    <key name="android.template.-1078168789">
+      <recent name="android.iocl.dac_collector.Ui" />
     </key>
     <key name="android.template.-1037222722">
       <recent name="android.iocl.dac_collector.Ui" />
@@ -555,6 +669,7 @@
       <command value="keytool -v -list -keystore C:\Users\Moktader Hossain\AndroidStudioProjects\DAC_Collector2\app\keystore.jks" />
       <command value="adb shell am broadcast -a android.provider.Telephony.SECRET_CODE -d android_secret_code://1234 " />
       <command value="adb shell am startservice -n android.iocl.dac_collector/.Services.SmsSenderJOBService" />
+      <command value="adb uninstall android.iocl.dac_collector" />
     </option>
   </component>
   <component name="RunManager">
@@ -569,7 +684,7 @@
       <option name="ALL_USERS" value="false" />
       <option name="ALWAYS_INSTALL_WITH_PM" value="true" />
       <option name="ALLOW_ASSUME_VERIFIED" value="false" />
-      <option name="CLEAR_APP_STORAGE" value="true" />
+      <option name="CLEAR_APP_STORAGE" value="false" />
       <option name="DYNAMIC_FEATURES_DISABLED_LIST" value="" />
       <option name="ACTIVITY_EXTRA_FLAGS" value="" />
       <option name="MODE" value="default_activity" />
@@ -629,17 +744,6 @@
       <method v="2">
         <option name="Android.Gradle.BeforeRunTask" enabled="true" />
       </method>
-    </configuration>
-    <configuration default="true" type="JetRunConfigurationType">
-      <module name="DAC_Collector.app.androidTest" />
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
-    <configuration default="true" type="KotlinStandaloneScriptRunConfigurationType">
-      <module name="DAC_Collector.app.androidTest" />
-      <option name="filePath" />
-      <method v="2" />
     </configuration>
   </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
@@ -883,7 +987,15 @@
       <option name="project" value="LOCAL" />
       <updated>1769696786792</updated>
     </task>
-    <option name="localTasksCounter" value="30" />
+    <task id="LOCAL-00030" summary="Aemm_V2.5.9-512-release&#10;&#10;Update version to 2.5.9 (512) and enhance permission handling&#10;&#10;- Bump version to 2.5.9 (version code 512) and update release artifacts.&#10;- Add notification alert in `FetchProfileInfo` when SMS permission is missing.&#10;- Update `MainActivity` to explicitly check for `SEND_SMS` permission and redirect to `PermissionActivity` if missing.&#10;- Simplify permission check in `PermissionActivity` to verify all permissions instead of just mandatory ones.&#10;- Clean up redundant logging and comments in `MainActivity` and `PermissionActivity`.">
+      <option name="closed" value="true" />
+      <created>1771150790169</created>
+      <option name="number" value="00030" />
+      <option name="presentableId" value="LOCAL-00030" />
+      <option name="project" value="LOCAL" />
+      <updated>1771150790169</updated>
+    </task>
+    <option name="localTasksCounter" value="31" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -900,7 +1012,6 @@
   <component name="VcsManagerConfiguration">
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
     <option name="CLEAR_INITIAL_COMMIT_MESSAGE" value="true" />
-    <MESSAGE value="9th update Bank Statement Design" />
     <MESSAGE value="10th Re-design popup message" />
     <MESSAGE value="Refactor: Enhance FCM token handling and add subsidy request feature&#10;&#10;This commit introduces several improvements:&#10;&#10;- **Robust FCM Token Management:**&#10;    - Initializes FirebaseApp and fetches/persists the FCM token more reliably.&#10;    - Restores the token from SharedPrefs for faster startup.&#10;    - Updates `update_dac_collect` to ensure the token is available before API calls, with a fallback to refresh if needed.&#10;- **Subsidy Request Feature:**&#10;    - Adds functionality to request subsidy details.&#10;    - Implements a dialog for subsidy requests.&#10;    - Handles &quot;receivedSubsidy&quot; FCM messages to update UI and store details.&#10;    - Displays subsidy status (request pending, received) on the main screen.&#10;    - Integrates subsidy details into the BankStatementActivity.&#10;- **UI Enhancements:**&#10;    - Updates the main activity UI, including a new subsidy card and version display.&#10;    - Improves the permission activity UI with clearer descriptions and borders.&#10;    - Refines the SMS card layout for better readability and aesthetics.&#10;    - Adds new drawables for logos, badges, and icons.&#10;- **Service &amp; Notification Improvements:**&#10;    - Creates a `NotificationHelper` class to centralize notification logic.&#10;    - Updates notification channel names and descriptions for clarity.&#10;    - Improves error handling and logging in `FixOppoAutoKill` service.&#10;- **Code Cleanup &amp; Refactoring:**&#10;    - Removes unused layouts (`overlay_layout.xml`, `show_dac_dialog_ui.xml`) and drawables (`gas.xml`).&#10;    - Deletes unused services (`SendSmstoServer.java`, `TimerCounter.java`).&#10;    - Renames `realme_defect_device_layout.xml` to `subsidy_request_dialog.xml`.&#10;    - Updates sync adapter and authenticator XML files.&#10;    - Minor fixes in `SmsOtpPopup` for safer context handling and UI updates.&#10;- **Bug Fixes:**&#10;    - Addresses potential null pointer exceptions in `MainActivity` and `PermissionAdapter`.&#10;    - Ensures UI updates in `PermissionAdapter` run on the main thread.&#10;- **Crash Handling:**&#10;    - Adds basic crash detail saving to SharedPrefs and displays on next launch.&#10;    - Integrates ANR watchdog and improved crash/lifecycle logging in `MyApp`.&#10;- **New Sync/Authenticator (LPG):**&#10;    - Adds dummy sync adapter and authenticator for a new &quot;LPG&quot; related account type." />
     <MESSAGE value="Added Simple_keyboard from https://github.com/rkkr/simple-keyboard/ on 31-08-2025 - at 14:24" />
@@ -925,7 +1036,8 @@
     <MESSAGE value="Aemm 2.5.8-511&#10;&#10;Refactor SMS deduplication and observation logic&#10;&#10;- Implement ID-based deduplication in `FixOppoAutoKill` using `SharedPreferences` to track last processed SMS ID.&#10;- Re-enable `SmsObserver` and add fallback logic for processing the latest SMS if specific IDs are missing.&#10;- Enhance `SmsWorkUtil` with a persistent deduplication store using a hash key based on sender and body.&#10;- Transition `WorkManager` tasks from unique work to standard enqueuing to rely on custom deduplication.&#10;- Add debug logging to track redundant calls in `smsReceivers`, `SmsWorker`, and `FixOppoAutoKill`.&#10;- Update release artifacts for version 2.5.8 (511)." />
     <MESSAGE value="some" />
     <MESSAGE value="Aemm_V2.5.9-512-release&#10;&#10;Update version to 2.5.9 (512) and enhance permission handling&#10;&#10;- Bump version to 2.5.9 (version code 512) and update release artifacts.&#10;- Add notification alert in `FetchProfileInfo` when SMS permission is missing.&#10;- Update `MainActivity` to explicitly check for `SEND_SMS` permission and redirect to `PermissionActivity` if missing.&#10;- Simplify permission check in `PermissionActivity` to verify all permissions instead of just mandatory ones.&#10;- Clean up redundant logging and comments in `MainActivity` and `PermissionActivity`." />
-    <option name="LAST_COMMIT_MESSAGE" value="Aemm_V2.5.9-512-release&#10;&#10;Update version to 2.5.9 (512) and enhance permission handling&#10;&#10;- Bump version to 2.5.9 (version code 512) and update release artifacts.&#10;- Add notification alert in `FetchProfileInfo` when SMS permission is missing.&#10;- Update `MainActivity` to explicitly check for `SEND_SMS` permission and redirect to `PermissionActivity` if missing.&#10;- Simplify permission check in `PermissionActivity` to verify all permissions instead of just mandatory ones.&#10;- Clean up redundant logging and comments in `MainActivity` and `PermissionActivity`." />
+    <MESSAGE value="Update version to 2.5.10 and refactor storage and update logic&#10;&#10;- **Chore:**&#10;  - Bump version to 2.5.10 (version code 513) and update release artifacts.&#10;  - Increase `minSdk` to 23 and enable R8 full mode in `gradle.properties`.&#10;  - Integrate Tencent `MMKV` for high-performance key-value storage.&#10;&#10;- **Storage &amp; Migration:**&#10;  - Refactor `SharedPrefs` to use `MMKV` as the primary storage engine.&#10;  - Implement a migration utility in `SharedPrefs` to transition data from traditional `SharedPreferences` to `MMKV`.&#10;&#10;- **Feature (Updates):**&#10;  - Implement a new update mechanism using GitHub Releases API via `GitHubService`.&#10;  - Add `FirebaseConfigManager` to handle Remote Config for notice displays and feature toggles.&#10;  - Redesign the update dialog using a `BottomSheetDialog` and implement authenticated APK downloads via `DownloadService`.&#10;  - Persist update metadata locally to show &quot;Update Available&quot; UI states.&#10;&#10;- **UI &amp; Resources:**&#10;  - Add `FloatingTileActivity` and `FloatingWebActivity` for enhanced user interaction from Quick Settings.&#10;  - Update `MainActivity` with profile image preview and improved subsidy status handling.&#10;  - Refactor `AemmTileService` to launch the new `FloatingTileActivity`.&#10;  - Remove unused `UpdateDescList` adapter and `mafuj_bangla.ttf` font; add `li_sohid_unicode` font references.&#10;  - Add various drawable resources including `update_arrow.xml` and `bg_alert_animated___notice.xml`.&#10;&#10;- **Internal Refactoring:**&#10;  - Optimize `MyApp` initialization by moving heavy tasks to a background thread.&#10;  - Enhance `SmsWorker` and `FixOppoAutoKill` with better deduplication and Truecaller-aware delay logic.&#10;  - Implement `ImageLoader` for simple asynchronous image loading and caching.&#10;  - Route new FCM action `notification_web` to show floating web views.&#10;  - Clean up redundant logging and unused methods across several services and receivers." />
+    <option name="LAST_COMMIT_MESSAGE" value="Update version to 2.5.10 and refactor storage and update logic&#10;&#10;- **Chore:**&#10;  - Bump version to 2.5.10 (version code 513) and update release artifacts.&#10;  - Increase `minSdk` to 23 and enable R8 full mode in `gradle.properties`.&#10;  - Integrate Tencent `MMKV` for high-performance key-value storage.&#10;&#10;- **Storage &amp; Migration:**&#10;  - Refactor `SharedPrefs` to use `MMKV` as the primary storage engine.&#10;  - Implement a migration utility in `SharedPrefs` to transition data from traditional `SharedPreferences` to `MMKV`.&#10;&#10;- **Feature (Updates):**&#10;  - Implement a new update mechanism using GitHub Releases API via `GitHubService`.&#10;  - Add `FirebaseConfigManager` to handle Remote Config for notice displays and feature toggles.&#10;  - Redesign the update dialog using a `BottomSheetDialog` and implement authenticated APK downloads via `DownloadService`.&#10;  - Persist update metadata locally to show &quot;Update Available&quot; UI states.&#10;&#10;- **UI &amp; Resources:**&#10;  - Add `FloatingTileActivity` and `FloatingWebActivity` for enhanced user interaction from Quick Settings.&#10;  - Update `MainActivity` with profile image preview and improved subsidy status handling.&#10;  - Refactor `AemmTileService` to launch the new `FloatingTileActivity`.&#10;  - Remove unused `UpdateDescList` adapter and `mafuj_bangla.ttf` font; add `li_sohid_unicode` font references.&#10;  - Add various drawable resources including `update_arrow.xml` and `bg_alert_animated___notice.xml`.&#10;&#10;- **Internal Refactoring:**&#10;  - Optimize `MyApp` initialization by moving heavy tasks to a background thread.&#10;  - Enhance `SmsWorker` and `FixOppoAutoKill` with better deduplication and Truecaller-aware delay logic.&#10;  - Implement `ImageLoader` for simple asynchronous image loading and caching.&#10;  - Route new FCM action `notification_web` to show floating web views.&#10;  - Clean up redundant logging and unused methods across several services and receivers." />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/DAC_Collector$DAC_Collector2.ic" NAME="DAC_Collector2 Coverage Results" MODIFIED="1760622696142" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="idea" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="true" />
@@ -935,12 +1047,12 @@
       <map>
         <entry key="android.iocl.dac_collector">
           <value>
-            <CheckInfo lastCheckTimestamp="1769260456755" />
+            <CheckInfo lastCheckTimestamp="1776743696120" />
           </value>
         </entry>
         <entry key="android.iocl.dac_collector.test">
           <value>
-            <CheckInfo lastCheckTimestamp="1769260456754" />
+            <CheckInfo lastCheckTimestamp="1776743696157" />
           </value>
         </entry>
         <entry key="com.ykun.live_library.test">

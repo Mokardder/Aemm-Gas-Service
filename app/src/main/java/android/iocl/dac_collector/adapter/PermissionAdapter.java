@@ -74,7 +74,7 @@ public class PermissionAdapter
         if (item.getTitle().equals("Add Tiles to Notification Bar")) {
             holder.button.setOnLongClickListener(v -> {
 
-                SharedPrefs.setTileAdded(context);
+                SharedPrefs.setTileAdded();
                 item.setGranted(true);
                 // Immediately update UI and re-check completion
                 notifyItemChanged(position);
@@ -98,7 +98,7 @@ public class PermissionAdapter
                 PermissionUtility.requestCallScreeningRole(context);
             } else if (title.contains("Add Tiles to Notification Bar")) {
                 // Make tile-activation explicit and refresh state
-                if (!SharedPrefs.isTileAdded(context)) {
+                if (!SharedPrefs.isTileAdded()) {
                     Toast.makeText(context,
                             "Open Notification bar and add cylinder icon to first page.",
                             Toast.LENGTH_LONG).show();
@@ -204,7 +204,7 @@ public class PermissionAdapter
             List<PermissionItem> newList = PermissionUtility.buildPermissionItemList(missing);
 
 
-            Log.d(TAG, "refreshAndCheckCompletion: " + missing);
+
 
             // Calculate diff
             DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(
@@ -223,12 +223,11 @@ public class PermissionAdapter
                 }
             }
 
-            if (permissionList.isEmpty() && !SharedPrefs.isTileAdded(context)) {
+            if (permissionList.isEmpty() && !SharedPrefs.isTileAdded()) {
                 allDone = false;
             }
 
             if (allDone) {
-                Log.d("PermsActivity", "Everything good ");
                 Intent intent = new Intent(context, MainActivity.class);
                 intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
                 context.startActivity(intent);

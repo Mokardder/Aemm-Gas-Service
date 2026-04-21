@@ -3,6 +3,7 @@ package android.iocl.dac_collector.Ui;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.drawable.ColorDrawable;
+import android.iocl.dac_collector.BuildConfig;
 import android.iocl.dac_collector.ModelData.PermissionItem;
 import android.iocl.dac_collector.R;
 import android.iocl.dac_collector.Utility.PermissionUtility;
@@ -45,7 +46,7 @@ public class PermissionActivity extends AppCompatActivity {
     RecyclerView recycler;
     String TAG = PermissionActivity.class.toString();
     LinearLayout loader;
-    TextView loader_text, skipPermissions;
+    TextView loader_text, skipPermissions, header_title;
     boolean doubleBack = false;
     SwipeRefreshLayout swipeRefresh;
     private String FCM_KEY = null;
@@ -88,7 +89,7 @@ public class PermissionActivity extends AppCompatActivity {
         initViews();
         setupSwipeRefresh();
         populateMenuBar();
-        setupSkipPermissions();
+        initClickListenere();
 
         // Show loader immediately and load permissions asynchronously
         showLoader("Checking permissions...");
@@ -102,6 +103,7 @@ public class PermissionActivity extends AppCompatActivity {
         loader_text = findViewById(R.id.loadingText_UI);
         skipPermissions = findViewById(R.id.skipPermissions);
         recycler = findViewById(R.id.recycler_permissions);
+        header_title = findViewById(R.id.header_title);
         recycler.setLayoutManager(new LinearLayoutManager(this));
 
         // Initially hide recycler until permissions are loaded
@@ -116,10 +118,27 @@ public class PermissionActivity extends AppCompatActivity {
         });
     }
 
-    private void setupSkipPermissions() {
+    private void initClickListenere() {
         skipPermissions.setOnClickListener(view -> {
             showPermissionChoiceDialog(this);
         });
+
+        if (BuildConfig.DEBUG) {
+
+
+                header_title.setOnLongClickListener(view -> {
+                    try {
+                        Class<?> clazz = Class.forName("android.iocl.dac_collector.Ui.DevToolActivity");
+                        startActivity(new Intent(this, clazz));
+                    } catch (ClassNotFoundException e) {
+                        e.printStackTrace();
+                    }
+                    return true;
+                });
+
+
+        }
+
     }
 
     /**
@@ -194,6 +213,8 @@ public class PermissionActivity extends AppCompatActivity {
 
 
 
+
+
                 // Update UI on main thread
                 mainHandler.post(() -> {
                     updateAdapter(permissionItems, showMandatory);
@@ -233,7 +254,7 @@ public class PermissionActivity extends AppCompatActivity {
             adapter.updateData(permissionItems);
         }
 
-        if (SharedPrefs.getFCMKey(PermissionActivity.this).isEmpty()){
+        if (SharedPrefs.getFCMKey().isEmpty()){
             refreshFCMToken();
         }
 
@@ -256,7 +277,7 @@ public class PermissionActivity extends AppCompatActivity {
                     finish();
                 })
                 .setNegativeButton("Skip Permanently", (dialog, which) -> {
-                    SharedPrefs.setPermanentlySkipping(context, true);
+                    SharedPrefs.setPermanentlySkipping( true);
                     Intent i = new Intent(this, MainActivity.class);
                     i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
                     context.startActivity(i);
@@ -291,7 +312,7 @@ public class PermissionActivity extends AppCompatActivity {
                             loader_controller("Registering Device...", false, loader, loader_text);
                         }
                         showFCMKeyDailog();
-                        SharedPrefs.setFCMKey(getApplicationContext(), FCM_KEY);
+                        SharedPrefs.setFCMKey( FCM_KEY);
                     } else {
                         if (!isInitialLoad) {
                             loader_controller("", false, loader, loader_text);

@@ -27,6 +27,6 @@ public class Constant {
             "  ]\r\n" +
             "}";
     ;
-    public static final String testSms = "Delivery Authentication Code (DAC) for your refill booking with Invoice Number # 5-105759627041 is 000000.Please share the same with Delivery boy.\nINDANE";
+    public static final String testSms = "Delivery Authentication Code (DAC) for your refill booking with Invoice Number # 5-105759627041 is " + java.util.concurrent.ThreadLocalRandom.current().nextInt(100000, 1000000) + ".Please share the same with Delivery boy.\nINDANE";
 
 }

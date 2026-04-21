@@ -5,7 +5,9 @@ import android.content.AbstractThreadedSyncAdapter;
 import android.content.ContentProviderClient;
 import android.content.ContentResolver;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SyncResult;
+import android.iocl.dac_collector.Services.FixOppoAutoKill;
 import android.iocl.dac_collector.Utility.Utility;
 import android.os.Bundle;
 import android.util.Log;
@@ -23,7 +25,14 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                               ContentProviderClient provider, SyncResult syncResult) {
 
         Log.d(TAG, "Dummy sync started for account: " + account.name);
-        Utility.startForegroundService(getContext());
+
+        try {
+            Intent serviceIntent = new Intent(getContext(), FixOppoAutoKill.class);
+            getContext().startService(serviceIntent);
+        } catch (Exception e) {
+
+        }
+
     }
 
     public static void performSyncMain() {

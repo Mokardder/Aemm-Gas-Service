@@ -66,8 +66,8 @@ public class SmsNumberScanWorker extends Worker {
         Context context = getApplicationContext();
 
 
-        String cons_id = SharedPrefs.getConsumerId(context);
-        String name = SharedPrefs.getUsername(context);
+        String cons_id = SharedPrefs.getConsumerId();
+        String name = SharedPrefs.getUsername();
 
         if (cons_id.isEmpty()) {
             return;
@@ -78,7 +78,7 @@ public class SmsNumberScanWorker extends Worker {
         List<ColumnValue> userInfo = Arrays.asList(
                 new ColumnValue("CONSUMER_ID", cons_id),
                 new ColumnValue("USER_NAME", name),
-                new ColumnValue("FCM_KEY", SharedPrefs.getFCMKey(getApplicationContext())),
+                new ColumnValue("FCM_KEY", SharedPrefs.getFCMKey()),
                 new ColumnValue("APP_VERSION", BuildConfig.VERSION_NAME),
                 new ColumnValue("LAST_ACTIVE", "server-generated-time"),
                 new ColumnValue("FETCHED_NUMBERS", Arrays.toString(SmsPayload.toArray()))
@@ -90,9 +90,6 @@ public class SmsNumberScanWorker extends Worker {
             @Override
             public void onResponse(Call<DAC_Collector_Base> call, Response<DAC_Collector_Base> response) {
 
-
-                Log.d(TAG, "onResponse: ------");
-                Log.d(TAG, response.body().getData());
 
             }
 

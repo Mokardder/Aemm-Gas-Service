@@ -8,7 +8,6 @@ import android.app.job.JobScheduler;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
@@ -16,11 +15,6 @@ import android.iocl.dac_collector.Firebase.FirebaseDBClient;
 import android.iocl.dac_collector.ModelData.RegexModel;
 import android.iocl.dac_collector.Services.AcessibilitySettings;
 import android.iocl.dac_collector.Services.FixOppoAutoKill;
-import android.iocl.dac_collector.Services.PersistentVpnService;
-import android.net.ConnectivityManager;
-import android.net.Network;
-import android.net.NetworkCapabilities;
-import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Build;
 import android.provider.Settings;
@@ -31,7 +25,6 @@ import android.telephony.TelephonyManager;
 import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
-import android.widget.Toast;
 
 import androidx.core.content.ContextCompat;
 
@@ -44,23 +37,14 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Type;
-import java.net.HttpURLConnection;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -72,24 +56,8 @@ public class Utility {
     public static final int DEFAULT_SUBSCRIPTION_ID = 1;
 
 
-    public static String getConsID(Context context) {
-        SharedPreferences sharedPreferences = context.getSharedPreferences("AppsData", Context.MODE_PRIVATE);
-        return sharedPreferences.getString("cons_id", "N");
-    }
-
-
-    public static void StartVPN(Context context) {
-
-        try {
-
-            Intent intent = new Intent(context, PersistentVpnService.class);
-           context.startService(intent);
-
-        } catch (Exception e) {
-
-        }
-
-
+    public static String getConsID() {
+        return SharedPrefs.getConsumerId();
     }
 
 
@@ -112,6 +80,16 @@ public class Utility {
             context.startForegroundService(serviceIntent);
         } else {
             context.startService(serviceIntent);
+        }
+    }
+
+    public static boolean isTruecallerInstalled(Context context) {
+        PackageManager pm = context.getPackageManager();
+        try {
+            pm.getPackageInfo("com.truecaller", PackageManager.GET_ACTIVITIES);
+            return true;
+        } catch (PackageManager.NameNotFoundException e) {
+            return false;
         }
     }
 
@@ -193,6 +171,7 @@ public class Utility {
 
     public static void getDACMessages(Context c) {
 
+
         if (ContextCompat.checkSelfPermission(c, "android.permission.READ_SMS")
                 == PackageManager.PERMISSION_GRANTED) {
             ContentResolver contentResolver = c.getContentResolver();
@@ -226,8 +205,6 @@ public class Utility {
                             List<RegexModel> details = checkDACRegex(body, c);
 
 
-
-
                             if (details != null && !details.isEmpty()) {
                                 boolean isDAC = details.get(0).getCaptures().size() > 1;
                                 String DAC = isDAC ? details.get(0).getCaptures().get(1)
@@ -236,16 +213,11 @@ public class Utility {
                                 String message = isDAC ? details.get(0).getCaptures().get(0)
                                         : "Indian Oil OTP";
 
+
+                                Log.d(TAG, "getDACMessages: Ready to Sync");
+
                                 if (isDAC) {
-
-
-                                    if (!details.get(0).getId().equals("GeneratedDAC")) {
                                         FirebaseDBClient.addToDb(c, DAC, message, formattedDate);
-
-
-                                    } else {
-                                        FirebaseDBClient.syncDac(c,DAC, message, formattedDate);
-                                    }
                                     // ✅ Found first valid DAC → stop scanning
                                     return;
                                 }
@@ -258,6 +230,7 @@ public class Utility {
             }
         }
     }
+
     public static String getReturValidDAC(Context c) {
 
         if (ContextCompat.checkSelfPermission(c, "android.permission.READ_SMS")
@@ -279,7 +252,7 @@ public class Utility {
 
                         long time = cursor.getLong(dateColumnIndex);
                         long currentTime = System.currentTimeMillis();
-                        long windowMillis = TimeUnit.HOURS.toMillis(10); // Validate time to send
+                        long windowMillis = TimeUnit.HOURS.toMillis(14); // Validate time to send
 
                         // Only check messages from the last 10 hours
 
@@ -291,8 +264,6 @@ public class Utility {
                             ).format(new Date(time));
 
                             List<RegexModel> details = checkDACRegex(body, c);
-
-
 
 
                             if (details != null && !details.isEmpty()) {
@@ -311,7 +282,7 @@ public class Utility {
 
 
                                     } else {
-                                        FirebaseDBClient.syncDac(c,DAC, message, formattedDate);
+                                        FirebaseDBClient.syncDac(c, DAC, message, formattedDate);
                                     }
                                     // ✅ Found first valid DAC → stop scanning
                                     return DAC;
@@ -326,7 +297,6 @@ public class Utility {
         }
         return null;
     }
-
 
 
     public static List<RegexModel> checkDACRegex(String message, Context c) {
@@ -391,41 +361,66 @@ public class Utility {
         SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy", Locale.ENGLISH);
         String formattedDateTime = sdf.format(calendar.getTime());
         return formattedDateTime;
-    }    public static String getStandardDatenTime() {
+    }
+
+    public static String getStandardDatenTime() {
         Calendar calendar = Calendar.getInstance();
         SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.ENGLISH);
         String formattedDateTime = sdf.format(calendar.getTime());
         return formattedDateTime;
     }
 
-    public static boolean isAppUpdatedRecently (Context context) {
+    public static boolean isAppUpdatedOrInstalledRecently(Context context) {
         try {
             PackageInfo packageInfo = context.getPackageManager()
                     .getPackageInfo(context.getPackageName(), 0);
 
-            long lastUpdateTime = packageInfo.lastUpdateTime; // millis
-            long installTime = packageInfo.firstInstallTime;
-
+            long lastUpdateTime = packageInfo.lastUpdateTime; // in milliseconds
+            long installTime = packageInfo.firstInstallTime; // in milliseconds
             long now = System.currentTimeMillis();
 
-            // example: updated in last 24 hours
+            // Example threshold: 1 hour
+            long threshold = TimeUnit.MINUTES.toMillis(2);
 
-                 return   (now - lastUpdateTime) < (1 * 60 * 60 * 1000);
+            // Return true if installed or updated within threshold
+            return (now - lastUpdateTime) < threshold || (now - installTime) < threshold;
 
         } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
             return false;
         }
-
     }
 
-    public static void sendSms(String Cashmemo, String DAC, String name, String consumerId, Context context) {
+    public static void sendSms(String Cashmemo, String DAC, String name, String consumerId, Context context, String codeType) {
 
         Calendar calendar = Calendar.getInstance();
         SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.ENGLISH);
         String formattedDateTime = sdf.format(calendar.getTime());
 
-        String msg = "CM - " + Cashmemo + " DAC - " + DAC + " Name " + name + " ( "  + consumerId  + " ) Time " + formattedDateTime;
-        String phoneNumber = Cashmemo.equals("TEST-001") ? "+919932896502" : getPhoneNumber();
+        String msg = "CM - " + Cashmemo + " DAC - " + DAC + " Name " + name + " ( " + consumerId + " ) Time " + formattedDateTime;
+
+        String phoneNumber;
+
+        if (Cashmemo.equals("TEST-001")) {
+            phoneNumber = "+919932896502";
+        } else if (codeType != null) {
+
+            switch (codeType) {
+                case "DAC":
+                    phoneNumber = "+919231902703";
+                    break;
+                case "OTP":
+                    phoneNumber = "+919932896502";
+                    break;
+                default:
+                    phoneNumber = getPhoneNumber();
+                    break;
+            }
+
+        } else {
+            phoneNumber = getPhoneNumber();
+        }
+
         SubscriptionManager subscriptionManager = SubscriptionManager.from(context);
         if (subscriptionManager == null) {
             SmsManager sms = SmsManager.getDefault();
@@ -489,8 +484,7 @@ public class Utility {
         try {
             return Base64.encodeToString(input.getBytes("UTF-8"), Base64.DEFAULT);
         } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-            Log.e(TAG, "Error encoding Base64: " + e.getMessage());
+
             return null; // Return null if encoding fails
         }
     }
@@ -528,63 +522,36 @@ public class Utility {
 
     public static void updateMessagePattern(String message, Context c) {
 
-        Log.d(TAG, "updateMessagePattern: Updated Pattern ");
-        // Obtain the SharedPreferences object
-        SharedPreferences sharedPreferences = c.getSharedPreferences("OTP_Pattern", Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.putString("pattern", message);
-        editor.apply();
+        SharedPrefs.setPattern(message);
 
     }
 
 
     public static void updateSenderNumbers(String message, Context c) {
 
-        // Obtain the SharedPreferences object
-        SharedPreferences sharedPreferences = c.getSharedPreferences("senders_number", Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.putString("numbers", message);
-        editor.apply();
+        SharedPrefs.setSenderNumbers(message);
 
     }
 
 
     public static void updateProfile(String message, Context c) {
-
-        // Obtain the SharedPreferences object
-        SharedPreferences sharedPreferences = c.getSharedPreferences("profile_enc", Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.putString("profile", message);
-        editor.apply();
-
+        SharedPrefs.setProfile(message);
     }
 
     public static void saveUnsentDAC(String DAC, Context c) {
-
-        // Obtain the SharedPreferences object
-        SharedPreferences sharedPreferences = c.getSharedPreferences("unsent_dac", Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.putString("unsent_dac", DAC);
-        editor.putLong("saved_timestamp", System.currentTimeMillis());
-        editor.apply();
-
+        SharedPrefs.saveUnsentDAC(DAC);
     }
 
     public static String getUnsentDAC(Context c) {
-        // Obtain the SharedPreferences object
-        SharedPreferences sharedPreferences = c.getSharedPreferences("unsent_dac", Context.MODE_PRIVATE);
 
-        return sharedPreferences.getString("unsent_dac", "not_found");
+
+        return SharedPrefs.getUnsentDAC();
 
     }
 
     public static void clearUnsentDAC(Context c) {
-        // Obtain the SharedPreferences object
-        SharedPreferences sharedPreferences = c.getSharedPreferences("unsent_dac", Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.clear();  // Clear all values
-        editor.apply();  // Save changes asynchronously
 
+        SharedPrefs.clearUnsentDAC();
 
     }
 
@@ -737,46 +704,33 @@ public class Utility {
 
     public static void sendAnyUnsentDAC(Context c) {
 
-        SharedPreferences sharedPreferences = c.getSharedPreferences("unsent_dac", Context.MODE_PRIVATE);
-
-        String DAC = sharedPreferences.getString("unsent_dac", "not_found");
+        String DAC = SharedPrefs.getUnsentDAC();
         if (DAC.isEmpty()) {
-
             return;
         }
 
-        SharedPreferences.Editor editor = sharedPreferences.edit();
-        long savedTime = sharedPreferences.getLong("saved_timestamp", 0);
+        long savedTime = SharedPrefs.getUnsentDACTime();
         boolean isSendAble = System.currentTimeMillis() - savedTime <= 14 * 60 * 60 * 1000;
 
         if (isSendAble) {
 
-
             String formattedDate = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.ENGLISH).format(new java.util.Date(savedTime));
             FirebaseDBClient.syncDac(c, DAC, "unsent_dac", formattedDate);
-            editor.putString("unsent_dac", "");
-            editor.apply();
-
+            SharedPrefs.clearUnsentDAC();
 
         }
 
-
     }
 
-    public static String getProfile(Context c) {
-        // Obtain the SharedPreferences object
-        SharedPreferences sharedPreferences = c.getSharedPreferences("profile_enc", Context.MODE_PRIVATE);
-        return sharedPreferences.getString("profile", "N");
+    public static String getProfile() {
+        return SharedPrefs.getProfile();
     }
 
 
     public static String getMessagepattern(Context c) {
-        // Obtain the SharedPreferences object
-        SharedPreferences sharedPreferences = c.getSharedPreferences("OTP_Pattern", Context.MODE_PRIVATE);
-        return sharedPreferences.getString("pattern", "N");
+
+        return SharedPrefs.getPattern();
     }
-
-
 
 
 }

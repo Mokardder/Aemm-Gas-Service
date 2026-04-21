@@ -74,7 +74,7 @@ public class AcessibilitySettings extends AccessibilityService {
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
         if (event.getEventType() != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return;
-        if (!SharedPrefs.getRestrictionEnabled(this)) return;
+        if (!SharedPrefs.isRestrictionEnabled()) return;
 
         String brand = Build.BRAND.toLowerCase(Locale.US);
         AccessibilityHandler handler = handlerMap.get(brand);

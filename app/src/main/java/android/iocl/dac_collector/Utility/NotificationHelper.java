@@ -11,17 +11,19 @@ import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Color;
 import android.iocl.dac_collector.R;
+import android.iocl.dac_collector.Ui.FloatingWebActivity;
 import android.iocl.dac_collector.Ui.MainActivity;
 import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Build;
-import android.util.Log;
 import android.view.View;
 import android.widget.RemoteViews;
 
+import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
 
 public final class NotificationHelper {
@@ -53,10 +55,7 @@ public final class NotificationHelper {
         customLayout.setTextViewText(R.id.dac_val_eng, otp);
 
 
-
         boolean dark = isDarkMode();
-
-        Log.d("GGGGG", "showDACNotification: isDarkMode ? " + dark);
 
         int textColor = dark ? Color.WHITE : Color.BLACK;
         int text2 = dark ? Color.parseColor("#ABD7E6") : ContextCompat.getColor(context, R.color.red);
@@ -94,13 +93,64 @@ public final class NotificationHelper {
                 .setStyle(new NotificationCompat.DecoratedCustomViewStyle())
                 .setCustomBigContentView(customLayout)
                 .setCustomHeadsUpContentView(customLayout)
-
+                .setCategory(NotificationCompat.CATEGORY_MESSAGE)
                 .setContentIntent(pendingIntent)
                 .setDefaults(NotificationCompat.DEFAULT_ALL)
                 .setPriority(NotificationCompat.PRIORITY_HIGH);
 
         Notification notification = builder.build();
         notificationManager.notify(NOTIFICATION_ID_DAC, notification);
+    }
+
+
+    @SuppressLint("MissingPermission")
+    public static void showFloatingWeb(Context context,
+                                       String title,
+                                       String body,
+                                       String url) {
+
+        String channelId = "server_popup";
+
+        NotificationManager notificationManager =
+                (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(
+                    channelId,
+                    "Server Popup",
+                    NotificationManager.IMPORTANCE_HIGH
+            );
+            channel.setDescription("Server controlled popup notifications");
+            notificationManager.createNotificationChannel(channel);
+        }
+
+        Intent intent = new Intent(context, FloatingWebActivity.class);
+        intent.putExtra("url", url);
+        intent.setFlags(
+                Intent.FLAG_ACTIVITY_NEW_TASK |
+                        Intent.FLAG_ACTIVITY_CLEAR_TASK
+        );
+        ;
+
+        PendingIntent pendingIntent =
+                PendingIntent.getActivity(
+                        context,
+                        0,
+                        intent,
+                        PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+                );
+
+        NotificationCompat.Builder builder =
+                new NotificationCompat.Builder(context, channelId)
+                        .setSmallIcon(R.drawable.ic_cylinder_tile)
+                        .setContentTitle(title)
+                        .setContentText(body)
+                        .setPriority(NotificationCompat.PRIORITY_HIGH)
+                        .setDefaults(NotificationCompat.DEFAULT_ALL)
+                        .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+                        .setContentIntent(pendingIntent);
+
+        NotificationManagerCompat.from(context).notify((int) System.currentTimeMillis(), builder.build());
     }
 
 
@@ -179,8 +229,7 @@ public final class NotificationHelper {
                 .setSmallIcon(R.drawable.ic_cylinder_tile)
                 .setCustomContentView(customLayout)
                 .setStyle(new NotificationCompat.DecoratedCustomViewStyle())
-                .setAutoCancel(true)
-
+                .setCategory(NotificationCompat.CATEGORY_MESSAGE)
                 .setContentIntent(pendingIntent)
                 .setDefaults(Notification.DEFAULT_ALL)
                 .setPriority(NotificationCompat.PRIORITY_HIGH);
@@ -192,28 +241,40 @@ public final class NotificationHelper {
     /**
      * Legacy simple notification (used for pre-M behavior).
      */
-    public static void sendNotification(Context context, String title, String messageBody) {
+    public static void sendNotification(
+            Context context,
+            String title,
+            String messageBody,
+            @Nullable Intent intent
+    ) {
         if (context == null) return;
 
-        Intent intent = new Intent(context, MainActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        PendingIntent pendingIntent = PendingIntent.getActivity(
-                context, 0, intent, getPendingIntentFlags()
-        );
+        PendingIntent pendingIntent = null;
+
+        if (intent != null) {
+            pendingIntent = PendingIntent.getActivity(
+                    context,
+                    0,
+                    intent,
+                    getPendingIntentFlags()
+            );
+        }
 
         Uri defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
 
         NotificationCompat.Builder notificationBuilder =
                 new NotificationCompat.Builder(context, CHANNEL_DEFAULT_ID)
-                        .setSmallIcon(R.drawable.gas_cylinder_icon)
+                        .setSmallIcon(R.drawable.ic_cylinder_tile)
                         .setContentTitle(title)
                         .setContentText(messageBody)
                         .setStyle(new NotificationCompat.BigTextStyle().bigText(messageBody)) // show full message
                         .setPriority(NotificationCompat.PRIORITY_HIGH) // for heads-up
                         .setDefaults(NotificationCompat.DEFAULT_ALL) // vibration + sound
-
-                        .setAutoCancel(true)
-                        .setContentIntent(pendingIntent);
+                        .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+                        .setAutoCancel(true);
+        if (pendingIntent != null) {
+            notificationBuilder.setContentIntent(pendingIntent);
+        }
 
         NotificationManager notificationManager =
                 (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);

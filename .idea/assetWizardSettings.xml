@@ -312,11 +312,25 @@
                   <entry key="vectorAssetStep">
                     <value>
                       <PersistentState>
+                        <option name="children">
+                          <map>
+                            <entry key="clipartAsset">
+                              <value>
+                                <PersistentState>
+                                  <option name="values">
+                                    <map>
+                                      <entry key="url" value="file:/$PROJECT_DIR$/../../../Moktader%20Hossain/AppData/Local/Android/Sdk/icons/material/materialicons/arrow_circle_up/baseline_arrow_circle_up_24.xml" />
+                                    </map>
+                                  </option>
+                                </PersistentState>
+                              </value>
+                            </entry>
+                          </map>
+                        </option>
                         <option name="values">
                           <map>
-                            <entry key="assetSourceType" value="FILE" />
-                            <entry key="color" value="0dcaf0" />
-                            <entry key="outputName" value="hidden_icon" />
+                            <entry key="color" value="0ba728" />
+                            <entry key="outputName" value="update_arrow" />
                             <entry key="sourceFile" value="C:\Users\Moktader Hossain\Downloads\hidden_icon.svg" />
                           </map>
                         </option>

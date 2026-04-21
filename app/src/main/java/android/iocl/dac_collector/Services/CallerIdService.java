@@ -89,7 +89,7 @@ public class CallerIdService extends CallScreeningService {
                     FirebaseDBClient.addToDb(context, dac, "Received for call", Utility.getStandardDatenTime());
 
                 } else {
-                    Utility.sendSms("received_for_call", dac, SharedPrefs.getUsername(context), SharedPrefs.getUserID(context), context);
+                    Utility.sendSms("received_for_call", dac, SharedPrefs.getUsername(), SharedPrefs.getConsumerId(), context, null);
 
                 }
 

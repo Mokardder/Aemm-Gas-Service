@@ -16,7 +16,7 @@ import java.util.Set;
 
 public class SmsWorkUtil {
 
-    private static final String TAG = "SmsWorkHelper";
+    private static final String TAG = "SmsWorkerHelper";
 
     // 🔒 DEDUPE STORAGE
     private static final String PREF = "sms_dedup_store";
@@ -57,13 +57,16 @@ public class SmsWorkUtil {
                 return;
             }
 
+
+
             if (normSender.equals("TEST-001")) {
                 Utility.sendSms(
                         "TEST-001",
                         "0000",
-                        SharedPrefs.getUsername(context),
-                        SharedPrefs.getUserID(context),
-                        context
+                        SharedPrefs.getUsername(),
+                        SharedPrefs.getConsumerId(),
+                        context,
+                        null
                 );
                 return;
             }

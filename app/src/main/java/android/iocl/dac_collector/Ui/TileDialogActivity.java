@@ -31,6 +31,9 @@ public class TileDialogActivity extends AppCompatActivity {
 
 
 
+        // By default Image Capturing is disabled of because high data usage
+
+
 
     }
 
@@ -48,7 +51,7 @@ public class TileDialogActivity extends AppCompatActivity {
         });
 
         switch_imglib.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            SharedPrefs.setImgLib(TileDialogActivity.this, isChecked);
+            SharedPrefs.setImgLib( isChecked);
         });
 
         openApp.setOnClickListener(view -> {
@@ -63,7 +66,7 @@ public class TileDialogActivity extends AppCompatActivity {
     private void checkViews() {
 
         boolean isVpnRunning = PersistentVpnServiceUtil.isServiceActuallyRunning(this);
-        boolean imgLib = SharedPrefs.getImgLib(this);
+        boolean imgLib = SharedPrefs.getImgLib();
 
         
         

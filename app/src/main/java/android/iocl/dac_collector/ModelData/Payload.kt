@@ -76,10 +76,7 @@ data class check_update(
     val type: String?
 )
 
-data class appUpdateDesc(
-    val desc: String?,
-    val numbering: String?,
-)
+
 data class PermissionItem(
     val title: String,
     val isOptional: Boolean = false,
@@ -129,6 +126,21 @@ data class FCM_Update(
     @SerializedName("status")val status: Boolean
 )
 
+
+class GitHubRelease {
+    var tag_name: String? = null
+    var name: String? = null
+    var body: String? = null // description
+    var assets: List<Asset>? = null
+
+    class Asset {
+        var name: String? = null
+        var id: Long = 0
+        var browser_download_url: String? = null
+    }
+}
+
+class AppUpdateInfo(var tag: String, var versionCode: Int, var apkUrl: String, var body: String)
 
 
 data class update_consumer(

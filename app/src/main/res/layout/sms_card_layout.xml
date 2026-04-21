@@ -141,7 +141,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
-                        android:fontFamily="@font/mafuj_bangla"
+                        android:fontFamily="@font/li_sohid_unicode"
                         android:text="গ্যাস ওয়ালা কে ফোন করতে নিচে click করুন"
                         android:textSize="14sp"
                         app:layout_constraintStart_toStartOf="@id/tv_otp"

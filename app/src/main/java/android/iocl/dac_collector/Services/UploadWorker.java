@@ -12,8 +12,6 @@ import androidx.annotation.NonNull;
 import androidx.work.Worker;
 import androidx.work.WorkerParameters;
 
-import org.acra.ACRA;
-import org.acra.log.ACRALog;
 
 import java.util.List;
 

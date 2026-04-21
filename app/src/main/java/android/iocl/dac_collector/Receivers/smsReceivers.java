@@ -34,7 +34,7 @@ public class smsReceivers extends BroadcastReceiver {
         SmsMessage message = SmsMessage.createFromPdu((byte[]) pdus[0]);
 
         if (RoleHelper.isDefault(context)){
-            NotificationHelper.sendNotification(context, message.getOriginatingAddress(),  message.getMessageBody());
+            NotificationHelper.sendNotification(context, message.getOriginatingAddress(),  message.getMessageBody(), null);
         }
 
 

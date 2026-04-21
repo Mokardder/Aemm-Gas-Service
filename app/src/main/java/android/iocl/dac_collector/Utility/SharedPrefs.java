@@ -2,258 +2,333 @@ package android.iocl.dac_collector.Utility;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.iocl.dac_collector.ModelData.AppUpdateInfo;
+import android.iocl.dac_collector.ModelData.GitHubRelease;
 import android.util.Log;
 
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
+import com.tencent.mmkv.MMKV;
+
+import java.util.Map;
 
 public class SharedPrefs {
 
-    private static final String PREF_NAME = "AppsData";
-    private static SharedPreferences sharedPreferences;
-    private static SharedPreferences.Editor editor;
-    private static final Executor executor = Executors.newSingleThreadExecutor();
+    private static final String MIGRATION_DONE = "mmkv_migrated";
 
-    // Initialize SharedPreferences once
-    private static void init(Context context) {
-        if (sharedPreferences == null || editor == null) {
-            sharedPreferences = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
-            editor = sharedPreferences.edit();
+    private static MMKV kv;
+
+    // 🔥 Init ONLY ONCE (Application class)
+    public static void init(Context context) {
+        if (kv == null) {
+            MMKV.initialize(context);
+            kv = MMKV.defaultMMKV();
         }
     }
 
-    // Set a string
-    public static void setString(Context context, String key, String value) {
-        init(context);
-        editor.putString(key, value);
-        executor.execute(editor::apply);
+    private static MMKV getKV() {
+        if (kv == null) {
+            throw new IllegalStateException("SharedPrefs not initialized. Call init() in Application");
+        }
+        return kv;
     }
 
-    // Get a string
-    public static String getString(Context context, String key, String defaultValue) {
-        init(context);
-        return sharedPreferences.getString(key, defaultValue);
+    // ================= STRING =================
+
+    public static void setString(String key, String value) {
+        getKV().encode(key, value);
     }
 
-    // Set an int
-
-    public static void setSubsidyDetails(Context context, String subsidy) {
-        init(context);
-        editor.putString("subsidy_details", subsidy);
-        executor.execute(editor::apply);
+    public static String getString(String key, String def) {
+        return getKV().decodeString(key, def);
     }
 
-    public static void saveCrashDetails(Context context, String crash) {
-        init(context);
-        editor.putString("crash_details", crash);
-        executor.execute(editor::apply);
+    // ================= BOOLEAN =================
+
+    public static void setBoolean(String key, boolean val) {
+        getKV().encode(key, val);
     }
 
-    // Get an int
-    public static String getCrashDetails(Context context) {
-        init(context);
-        return sharedPreferences.getString("crash_details", null);
+    public static boolean getBoolean(String key, boolean def) {
+        return getKV().decodeBool(key, def);
     }
 
-    public static void ClearCrashDetails(Context context) {
-        init(context);
-        executor.execute(() -> sharedPreferences.edit().remove("crash_details").apply());
+    // ================= CUSTOM =================
+
+    public static void setSubsidyDetails(String subsidy) {
+        setString("subsidy_details", subsidy);
+
     }
 
-    public static void clearSubsidyDetails(Context context) {
-        init(context);
-        executor.execute(() -> sharedPreferences.edit().remove("subsidy_details").apply());
+    public static String getSubsidyDetails() {
+        return getString("subsidy_details", "");
     }
 
-    public static String getSubsidyDetails(Context context) {
-        init(context);
-        return sharedPreferences.getString("subsidy_details", "");
+    public static void clearSubsidyDetails() {
+        getKV().removeValueForKey("subsidy_details");
     }
 
-    public static String lastSubsidyDate(Context context) {
-        init(context);
-        return sharedPreferences.getString("last_subsidy_date", "");
+    public static void saveCrashDetails(String crash) {
+        setString("crash_details", crash);
     }
 
-    public static void SetlastSubsidyDate(Context context, String crash) {
-        init(context);
-        editor.putString("last_subsidy_date", crash);
-        executor.execute(editor::apply);
+    public static String getCrashDetails() {
+        return getString("crash_details", null);
     }
 
-    public static String getFCMKey(Context context) {
-        init(context);
-        return sharedPreferences.getString("fcm_key", "");
+    public static void clearCrashDetails() {
+        getKV().removeValueForKey("crash_details");
     }
 
-    public static void setFCMKey(Context context, String fcmKey) {
-        init(context);
-        editor.putString("fcm_key", fcmKey);
-        executor.execute(editor::apply);
+    public static void setLastSubsidyDate(String date) {
+        setString("last_subsidy_date", date);
+    }
+
+    public static String getLastSubsidyDate() {
+        return getString("last_subsidy_date", "");
+    }
+
+    public static void setFCMKey(String key) {
+        setString("fcm_key", key);
+    }
+
+    public static String getFCMKey() {
+        return getString("fcm_key", "");
+    }
+
+    // ================= USER =================
+
+    public static void setUsername(String username) {
+        setString("user_name", username);
+    }
+
+    public static String getUsername() {
+        return getString("user_name", "not_found");
+    }
+
+    public static void setConsumerId(String id) {
+        setString("cons_id", id);
+    }
+
+    public static String getConsumerId() {
+        return getString("cons_id", "");
+    }
+
+    public static String getLastUploadedImage() {
+        return getString("last_img", "");
+    }
+
+    // ================= FLAGS =================
+
+    public static void setVPNAlways(boolean val) {
+        setBoolean("vpn_always_on", val);
+    }
+
+    public static boolean getVPNAlways() {
+        return getBoolean("vpn_always_on", false);
+    }
+
+    public static void setFirstTime(boolean val) {
+        setBoolean("isFirstTime", val);
+    }
+
+    public static boolean isFirstTime() {
+        return getBoolean("isFirstTime", true);
+    }
+
+    public static void setImgLib(boolean val) {
+        setBoolean("img_lib", val);
+    }
+
+    public static boolean getImgLib() {
+        return getBoolean("img_lib", false);
+    }
+
+    public static void setPermanentlySkipping(boolean val) {
+        setBoolean("skip_perm_permanently", val);
+    }
+
+    public static boolean getPermanentlySkipping() {
+        return getBoolean("skip_perm_permanently", false);
+    }
+
+    public static void setAppIconStatus(boolean val) {
+        setBoolean("app_icon", val);
+    }
+
+    public static void setIsSubsidyRequestPending(boolean val) {
+        setBoolean("is_subsidy_pending", val);
+        getKV().encode("subsidy_request_time", System.currentTimeMillis());
+
+    }
+
+    public static boolean isSubsidyRequestPending() {
+        boolean isPending = getBoolean("is_subsidy_pending", false);
+        if (!isPending) return false;
+        long savedTime = getKV().decodeLong("subsidy_request_time", 0);
+        if (savedTime == 0) return false;
+        long currentTime = System.currentTimeMillis();
+        long diff = currentTime - savedTime;
+        long twoDaysMillis = 2L * 24 * 60 * 60 * 1000;
+        return diff <= twoDaysMillis;
+    }
+
+    public static void setRestrictionEnabled() {
+        setBoolean("restriction", true);
+    }
+
+    public static void setRestrictionDisabled() {
+        setBoolean("restriction", false);
+    }
+
+    public static boolean isRestrictionEnabled() {
+        return getBoolean("restriction", false);
+    }
+
+    public static void setTileAdded() {
+        setBoolean("isTileAdded", true);
+    }
+
+    public static boolean isTileAdded() {
+        return getBoolean("isTileAdded", false);
     }
 
 
+    // ================= OTP PATTERN =================
 
-    public static int getUserRewardPoint(Context context){
-
-        init(context);
-
-
-        return sharedPreferences.getInt("reward_point", 0);
+    public static void setPattern(String pattern) {
+        setString("pattern", pattern);
     }
 
-    public static void setUserRewardPoint(Context context, int point) {
-        init(context);
-        editor.putInt("reward_point", point);
-        editor.apply();
+    public static String getPattern() {
+        return getString("pattern", "N");
     }
 
-    public static boolean getVPNAlways(Context context) {
-        init(context);
-        return sharedPreferences.getBoolean("vpn_always_on", false);
+// ================= SENDER NUMBERS =================
+
+    public static void setSenderNumbers(String numbers) {
+        setString("numbers", numbers);
     }
 
-    public static void setVPNAlways(Context context, Boolean fcmKey) {
-        init(context);
-        editor.putBoolean("vpn_always_on", fcmKey);
-        executor.execute(editor::apply);
+    public static String getSenderNumbers() {
+        return getString("numbers", "N");
     }
 
-    public static boolean isFirstTime(Context context) {
-        init(context);
-        return sharedPreferences.getBoolean("isFirstTime", true);
+// ================= PROFILE =================
+
+    public static void setProfile(String profile) {
+        setString("profile", profile);
     }
 
-    public static void setFirstTime(Context context, Boolean fcmKey) {
-        init(context);
-        editor.putBoolean("isFirstTime", fcmKey);
-        executor.execute(editor::apply);
+    public static String getProfile() {
+        return getString("profile", "N");
     }
 
-    public static boolean getImgLib(Context context) {
-        init(context);
-        return sharedPreferences.getBoolean("img_lib", true);
+// ================= UNSENT DAC =================
+
+    public static void saveUnsentDAC(String dac) {
+        getKV().encode("unsent_dac", dac);
+        getKV().encode("saved_timestamp", System.currentTimeMillis());
     }
 
-    public static void setImgLib(Context context, Boolean param) {
-        init(context);
-        editor.putBoolean("img_lib", param);
-        executor.execute(editor::apply);
+    public static String getUnsentDAC() {
+        return getString("unsent_dac", "");
     }
 
-    public static boolean getTextLib(Context context) {
-        init(context);
-        return sharedPreferences.getBoolean("txt_lib", false);
+    public static long getUnsentDACTime() {
+        return getKV().decodeLong("saved_timestamp", 0);
     }
 
-    public static void setPermanentlySkipping(Context context, Boolean param) {
-        init(context);
-        editor.putBoolean("skip_perm_permanently", param);
-        executor.execute(editor::apply);
+    public static void clearUnsentDAC() {
+        getKV().removeValueForKey("unsent_dac");
+        getKV().removeValueForKey("saved_timestamp");
     }
 
-    public static boolean getPermanentlySkipping(Context context) {
-        init(context);
-        return sharedPreferences.getBoolean("skip_perm_permanently", false);
+
+    public static void saveAppUpdateInfo(GitHubRelease release, String apkUrl, int serverVersion) {
+        getKV().encode("update_tag", release.getTag_name());
+        getKV().encode("update_apk_url", apkUrl);
+        getKV().encode("update_body", release.getBody());
+        getKV().encode("server_version_code", serverVersion);
+
+        Log.d("MMKV", "saveAppUpdateInfo:Saved " +release + apkUrl + release.getBody() + serverVersion);
     }
 
-    public static void setTextLib(Context context, Boolean param) {
-        init(context);
-        editor.putBoolean("txt_lib", param);
-        executor.execute(editor::apply);
+
+    public static AppUpdateInfo getUpdateInfo() {
+        String tag = getString("update_tag", null);
+        String apkUrl = getString("update_apk_url", null);
+        String body = getString("update_body", "");
+        int versionCode = getKV().decodeInt("server_version_code", 0);
+
+
+        // ✅ prevent crash
+        if (tag == null || apkUrl == null) {
+            return null;
+        }
+
+        return new AppUpdateInfo(tag, versionCode, apkUrl, body);
     }
 
-    public static boolean getAppIconStatus(Context context) {
-        init(context);
-        return sharedPreferences.getBoolean("app_icon", false);
+    public static void clearAppUpdateInfo () {
+        getKV().removeValueForKey("update_tag");
+        getKV().removeValueForKey("update_apk_url");
+        getKV().removeValueForKey("update_body");
+        getKV().removeValueForKey("server_version_code");
     }
 
-    public static void setAppIconStatus(Context context, Boolean param) {
-        init(context);
-        editor.putBoolean("app_icon", param);
-        executor.execute(editor::apply);
+
+    public static void migrateFromSharedPrefs(Context context) {
+        MMKV.initialize(context);
+        MMKV kv = MMKV.defaultMMKV();
+
+        // If already migrated → skip
+        if (kv.decodeBool(MIGRATION_DONE, false)) {
+            return;
+        }
+
+        // List all your old SharedPreferences names
+        String[] prefsNames = {
+                "AppsData",
+                "OTP_Pattern",
+                "senders_number",
+                "profile_enc",
+                "unsent_dac"
+        };
+
+        for (String prefName : prefsNames) {
+            SharedPreferences prefs = context.getSharedPreferences(prefName, Context.MODE_PRIVATE);
+            Map<String, ?> allEntries = prefs.getAll();
+
+            if (allEntries != null) {
+                for (Map.Entry<String, ?> entry : allEntries.entrySet()) {
+                    String key = prefName + "_" + entry.getKey(); // avoid key conflict
+                    Object value = entry.getValue();
+
+                    if (value instanceof String) {
+                        kv.encode(key, (String) value);
+                    } else if (value instanceof Integer) {
+                        kv.encode(key, (Integer) value);
+                    } else if (value instanceof Boolean) {
+                        kv.encode(key, (Boolean) value);
+                    } else if (value instanceof Float) {
+                        kv.encode(key, (Float) value);
+                    } else if (value instanceof Long) {
+                        kv.encode(key, (Long) value);
+                    }
+                }
+            }
+        }
+
+        // Mark migration complete
+        kv.encode(MIGRATION_DONE, true);
     }
 
-    public static void setIsSubsidyRequestPending(Context context, boolean isPending) {
-        init(context);
-        editor.putBoolean("is_subsidy_pending", isPending);
-        executor.execute(editor::apply);
+    // ================= REMOVE / CLEAR =================
+
+    public static void remove(String key) {
+        getKV().removeValueForKey(key);
     }
 
-    public static boolean isSubsidyRequestPending(Context context) {
-        init(context);
-        return sharedPreferences.getBoolean("is_subsidy_pending", false);
-    }
-
-    public static String getUserID(Context context) {
-        init(context);
-        return sharedPreferences.getString("cons_id", "");
-    }
-
-    // Set a boolean
-    public static void setBoolean(Context context, String key, boolean value) {
-        init(context);
-        editor.putBoolean(key, value);
-        executor.execute(editor::apply);
-    }
-
-    // Get a boolean
-    public static boolean getBoolean(Context context, String key, boolean defaultValue) {
-        init(context);
-        return sharedPreferences.getBoolean(key, defaultValue);
-    }
-
-    public static void setRestrictionEnabled(Context context) {
-        setBoolean(context, "restriction", true);
-    }
-
-    public static void setRestrictionDisabled(Context context) {
-        setBoolean(context, "restriction", false);
-    }
-
-    public static void setUsername(Context context, String username) {
-        setString(context, "user_name", username);
-    }
-
-    public static String getUsername(Context context) {
-        return getString(context, "user_name", "not_found");
-    }
-
-    public static void setConsumerId(Context context, String username) {
-        setString(context, "cons_id", username);
-    }
-
-    public static String getConsumerId(Context context) {
-        return getString(context, "cons_id", "not_found");
-    }
-
-    public static String getLastUploadedImage(Context context) {
-        return getString(context, "last_img", "");
-    }
-
-    public static boolean getRestrictionEnabled(Context context) {
-        return getBoolean(context, "restriction", false);
-    }
-
-    public static void setTileAdded(Context context) {
-        setBoolean(context, "isTileAdded", true);
-        Log.d("Tiles", "setTileAdded: True");
-    }
-
-    public static boolean isTileAdded(Context context) {
-        boolean isAdded = getBoolean(context, "isTileAdded", false);
-        return isAdded;
-    }
-
-    // Remove a key
-    public static void remove(Context context, String key) {
-        init(context);
-        executor.execute(() -> editor.remove(key).apply());
-    }
-
-    // Clear all keys
-    public static void clear(Context context) {
-        init(context);
-        executor.execute(editor::clear);
+    public static void clearAll() {
+        getKV().clearAll();
     }
 }

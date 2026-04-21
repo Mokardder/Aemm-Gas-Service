@@ -20,13 +20,9 @@ public class DeviceCheck {
         if (manufacturer.contains("xiaomi") || brand.contains("redmi")) {
             return DeviceType.XIAOMI;
         }
+        return DeviceType.OTHER;
 
 
-        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P || BuildConfig.DEBUG){
-            return DeviceType.OTHER;
-        }
-
-        return null;
 
     }
 }

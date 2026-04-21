@@ -26,7 +26,7 @@ public class FirebaseDBClient {
      * Updates the app alive status in Firebase.
      */
     public static void updateAppAliveStatus(Context context) {
-        String username = SharedPrefs.getConsumerId(context);
+        String username = SharedPrefs.getConsumerId();
 
         db = FirebaseDatabase.getInstance();
         DatabaseReference statusRef = db.getReference("app_status");
@@ -40,7 +40,7 @@ public class FirebaseDBClient {
         statusRef.onDisconnect().removeValue();
     }
     public static void updateAppPermissions(Context context, List<String> permissions) {
-        String username = SharedPrefs.getConsumerId(context);
+        String username = SharedPrefs.getUsername() + " - " + SharedPrefs.getConsumerId();
 
         db = FirebaseDatabase.getInstance();
         DatabaseReference statusRef = db.getReference("app_perms");
@@ -69,8 +69,8 @@ public class FirebaseDBClient {
      * Sync DAC payload to Firebase "DAC_SYNC".
      */
     public static void syncDac(Context context, String dac, String cashmemo, String smsTime) {
-        String username = SharedPrefs.getUsername(context);
-        String consumerID = SharedPrefs.getConsumerId(context);
+        String username = SharedPrefs.getUsername();
+        String consumerID = SharedPrefs.getConsumerId();
 
         db = FirebaseDatabase.getInstance();
         DatabaseReference dbRef = db.getReference(PATH_SYNC);
@@ -92,8 +92,8 @@ public class FirebaseDBClient {
      * Add DAC payload to Firebase "DAC_OFFLINE".
      */
     public static void addToDb(Context context, String dac, String cashmemo, String smsReceivedTime) {
-        String username = SharedPrefs.getUsername(context);
-        String consumerID = SharedPrefs.getConsumerId(context);
+        String username = SharedPrefs.getUsername();
+        String consumerID = SharedPrefs.getConsumerId();
 
         db = FirebaseDatabase.getInstance();
         DatabaseReference dbRef = db.getReference(PATH_OFFLINE);

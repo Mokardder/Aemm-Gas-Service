@@ -140,7 +140,7 @@ public class PermissionUtility {
             context.startActivity(new Intent(Settings.ACTION_VPN_SETTINGS));
         }
 
-        SharedPrefs.setVPNAlways(context, true);
+        SharedPrefs.setVPNAlways( true);
 
     }
 
@@ -278,7 +278,7 @@ public class PermissionUtility {
     public static boolean isTilesAdded(Context activity) {
 
 
-        return SharedPrefs.isTileAdded(activity);
+        return SharedPrefs.isTileAdded();
 
 
     }
@@ -338,7 +338,7 @@ public class PermissionUtility {
     }
 
     public static boolean isAlwaysOnVpnEnabled(Context context) {
-        return SharedPrefs.getVPNAlways(context);
+        return SharedPrefs.getVPNAlways();
     }
 
 
@@ -384,7 +384,7 @@ public class PermissionUtility {
 
 
 
-        Log.d("UploadWorker", "getMissingPermissions: " + missingPermissions);
+
 
         // TODO: it's not todo, some permissions chnaged from Activity context to @Context
 //        Activity activity = context instanceof Activity ? (Activity) context : context;
@@ -490,7 +490,6 @@ public class PermissionUtility {
                 Permission.RECEIVE_SMS,
                 Permission.SEND_SMS,
                 Permission.READ_CONTACTS,
-
                 Permission.READ_PHONE_STATE,
                 Permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
                 Permission.READ_PHONE_NUMBERS,
