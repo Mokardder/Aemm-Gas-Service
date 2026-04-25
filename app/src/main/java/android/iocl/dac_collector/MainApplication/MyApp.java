@@ -176,19 +176,33 @@ public class MyApp extends Application implements Application.ActivityLifecycleC
 
         try {
             Cockroach.install(this, new ExceptionHandler() {
+
                 @Override
                 protected void onUncaughtExceptionHappened(Thread thread, Throwable throwable) {
+
+                    Log.e(TAG, "🔥 Uncaught Exception in thread: " + thread.getName(), throwable);
+
                     crashlytics.recordException(throwable);
                 }
 
                 @Override
                 protected void onBandageExceptionHappened(Throwable throwable) {
+
+                    Log.e(TAG, "🩹 Bandage Exception (handled by Cockroach)", throwable);
+
                     crashlytics.recordException(throwable);
                 }
 
-                @Override protected void onEnterSafeMode() {}
+                @Override
+                protected void onEnterSafeMode() {
+                    Log.w(TAG, "⚠️ App entered SAFE MODE due to crash");
+                }
 
-                @Override protected void onMayBeBlackScreen(Throwable e) {
+                @Override
+                protected void onMayBeBlackScreen(Throwable e) {
+
+                    Log.e(TAG, "🖤 Possible BLACK SCREEN detected", e);
+
                     crashlytics.recordException(e);
                 }
             });

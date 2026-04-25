@@ -11,9 +11,9 @@
       "type": "SINGLE",
       "filters": [],
       "attributes": [],
-      "versionCode": 513,
-      "versionName": "2.5.10-513",
-      "outputFile": "Aemm_V2.5.10-513-release.apk"
+      "versionCode": 514,
+      "versionName": "2.5.11-514",
+      "outputFile": "Aemm_V2.5.11-514-release.apk"
     }
   ],
   "elementType": "File",
@@ -22,14 +22,14 @@
       "minApi": 28,
       "maxApi": 30,
       "baselineProfiles": [
-        "baselineProfiles/1/Aemm_V2.5.10-513-release.dm"
+        "baselineProfiles/1/Aemm_V2.5.11-514-release.dm"
       ]
     },
     {
       "minApi": 31,
       "maxApi": 2147483647,
       "baselineProfiles": [
-        "baselineProfiles/0/Aemm_V2.5.10-513-release.dm"
+        "baselineProfiles/0/Aemm_V2.5.11-514-release.dm"
       ]
     }
   ],

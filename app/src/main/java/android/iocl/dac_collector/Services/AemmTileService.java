@@ -19,6 +19,7 @@ public class AemmTileService extends TileService {
     @Override
     public void onTileAdded() {
         super.onTileAdded();
+        SharedPrefs.setTileAdded();
 
     }
 
@@ -37,9 +38,6 @@ public class AemmTileService extends TileService {
 
         try {
 
-            if (SharedPrefs.isTileAdded()){
-                SharedPrefs.setTileAdded();
-            }
 
             if (SharedPrefs.isFirstTime()){
                 Intent intent = new Intent(this, PermissionActivity.class);

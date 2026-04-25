@@ -596,10 +596,18 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
 
 
     private void checkIfAppUpdated() {
-        if (!SharedPrefs.getConsumerId().equals("not_found")) {
-            if (Utility.isAppUpdatedOrInstalledRecently(this)) {
-                update_dac_collect(SharedPrefs.getConsumerId(), SharedPrefs.getUsername(), null, loader, loader_text);
-            }
+        if (SharedPrefs.getConsumerId() != null
+                && !SharedPrefs.getConsumerId().isEmpty()
+                && !"not_found".equals(SharedPrefs.getConsumerId())
+                && Utility.isAppUpdatedOrInstalledRecently(this)) {
+
+            update_dac_collect(
+                    SharedPrefs.getConsumerId(),
+                    SharedPrefs.getUsername(),
+                    null,
+                    loader,
+                    loader_text
+            );
         }
     }
 
@@ -720,7 +728,7 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
                 String message = response.body().getMessage();
 
                 if (isSuccess) {
-                    Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show();
+                    safeToast(MainActivity.this, message);
                     if (dialog != null) dialog.dismiss();
                     SharedPrefs.setFirstTime(false);
                     if (cons_id.trim().isEmpty()) {
@@ -729,7 +737,7 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
                     }
                     subscribeToConsID(cons_id);
                 } else {
-                    Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show();
+                    safeToast(MainActivity.this, message);
                 }
             }
 
@@ -829,6 +837,13 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
 
             userFind(searchTerm, loader, loader_txt, view, alertDialog);
         });
+    }
+
+    private void safeToast(Context ctx, String msg) {
+        if (msg == null || msg.trim().isEmpty()) {
+            msg = "Something went wrong"; // fallback
+        }
+        Toast.makeText(ctx, msg, Toast.LENGTH_SHORT).show();
     }
 
     @SuppressLint("SetTextI18n")
@@ -982,8 +997,6 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
 
                         if (dialog != null) dialog.dismiss();
 
-                    } else {
-                        Toast.makeText(MainActivity.this, "Already Latest Version : " + BuildConfig.VERSION_NAME, Toast.LENGTH_SHORT).show();
                     }
                 } else {
                     Toast.makeText(MainActivity.this,
@@ -1022,7 +1035,7 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
                 boolean isSuccess = Boolean.TRUE.equals(body.getSuccess());
                 if (!isSuccess) {
                     String message = body.getMessage() != null ? body.getMessage() : "Operation failed";
-                    Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show();
+                    safeToast(MainActivity.this, message);
                     return;
                 }
                 String encResponse = response.body().getData();

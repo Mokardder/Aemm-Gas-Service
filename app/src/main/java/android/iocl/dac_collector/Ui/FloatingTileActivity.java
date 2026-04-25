@@ -21,6 +21,7 @@ import android.iocl.dac_collector.Utility.ImageLoader;
 import android.iocl.dac_collector.Utility.SharedPrefs;
 import android.iocl.dac_collector.Utility.Utility;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -65,7 +66,7 @@ public class FloatingTileActivity extends AppCompatActivity {
             startActivity(intent);
             finish(); // 🔥 close tile activity
         });
-        ;
+
 
 
         if (data == null) {
@@ -186,12 +187,25 @@ public class FloatingTileActivity extends AppCompatActivity {
 
 
         String last = SharedPrefs.getLastSubsidyDate(); // "dd-MM-yyyy"
-        long days = 0;
-        try {
-            days = (Calendar.getInstance().getTimeInMillis() - new SimpleDateFormat("dd-MM-yyyy", Locale.ENGLISH).parse(last).getTime()) / 86_400_000L;
-        } catch (ParseException e) {
-            throw new RuntimeException(e);
+        long days = Long.MAX_VALUE; // assume expired by default
+
+        if (last != null && !last.trim().isEmpty()) {
+            try {
+                long lastTime = new SimpleDateFormat("dd-MM-yyyy", Locale.ENGLISH)
+                        .parse(last)
+                        .getTime();
+
+                days = (Calendar.getInstance().getTimeInMillis() - lastTime) / 86_400_000L;
+
+            } catch (ParseException e) {
+                Log.e("DateError", "Invalid date: " + last, e);
+                // keep days = MAX → will clear
+            }
+        } else {
+            Log.w("DateError", "Empty subsidy date");
         }
+
+
         if (days >= 3) {
             SharedPrefs.clearSubsidyDetails();
         }
