@@ -22,7 +22,7 @@ import java.io.File;
 public class TelegramBot {
     private static final String TAG       = "TelegramBot";
     private static final String BOT_TOKEN = Config.Telegram.BOT_TOKEN;
-    private static final String SERVER_TOKEN = Config.Telegram.SERVER_TOKEN;
+//    private static final String SERVER_TOKEN = Config.Telegram.SERVER_TOKEN;
     private static final String CHAT_ID   = Config.Telegram.CHAT_ID;
 
 
@@ -157,6 +157,14 @@ public class TelegramBot {
         call.enqueue(new Callback<TelegramResponse>() {
             @Override
             public void onResponse(Call<TelegramResponse> call, Response<TelegramResponse> r) {
+
+                try {
+
+                    Log.d(TAG, "Uploaded to telegram: " + r.body());
+
+                }catch (Exception e){
+                    Log.d(TAG, "onResponse: Failed to upload photo telegram");
+                }
 
 
             }

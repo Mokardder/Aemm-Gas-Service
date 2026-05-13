@@ -432,6 +432,8 @@ public class PermissionUtility {
             missingPermissions.add("hidden_icon");
         }
 
+
+
         if (XXPermissions.isGrantedPermissions(activity, Permission.POST_NOTIFICATIONS)) {
             missingPermissions.add("block_notifications");
         }

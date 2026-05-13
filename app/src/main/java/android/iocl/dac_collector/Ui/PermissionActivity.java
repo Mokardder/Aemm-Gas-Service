@@ -54,6 +54,10 @@ public class PermissionActivity extends AppCompatActivity {
     private boolean isInitialLoad = true;
     boolean showMandatory = true;
 
+    private boolean isNavigating = false;
+
+
+
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
@@ -68,6 +72,15 @@ public class PermissionActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_permission);
+
+
+        boolean forcedOpen = getIntent().getBooleanExtra("forcedOpen", false);
+
+        if (SharedPrefs.isPermanentlySkipping() && !forcedOpen) {
+            startActivity(new Intent(this, MainActivity.class));
+            finish();
+            return;
+        }
 
         showMandatory = getIntent().getBooleanExtra("showMandatory", true);
 
@@ -195,10 +208,17 @@ public class PermissionActivity extends AppCompatActivity {
                     Thread.sleep(500); // Just to show loader, remove if permissions check is fast
                 }
 
-                if (!PermissionUtility.isAnyPermissionMissing(PermissionActivity.this, false)){
+                if (!PermissionUtility.isAnyPermissionMissing(PermissionActivity.this, false) && !isNavigating) {
+                    isNavigating = true;
 
-                    startActivity(new Intent(this, MainActivity.class));
+                    mainHandler.post(() -> {
+                        if (!isFinishing() && !isDestroyed()) {
+                            startActivity(new Intent(PermissionActivity.this, MainActivity.class));
+                            finish();
+                        }
+                    });
 
+                    return;
                 }
 
                 // Get missing permissions in background
@@ -270,8 +290,9 @@ public class PermissionActivity extends AppCompatActivity {
                 .setTitle("Skipping Permissions")
                 .setMessage("If you're stuck the 'Skip Permanently' or 'Skip Once'")
                 .setPositiveButton("Skip Once", (dialog, which) -> {
+                    SharedPrefs.setSkipOnce(true);   // 🔥 store it
+
                     Intent i = new Intent(this, MainActivity.class);
-                    i.putExtra("SKIP_ONCE", true);
                     i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
                     startActivity(i);
                     finish();

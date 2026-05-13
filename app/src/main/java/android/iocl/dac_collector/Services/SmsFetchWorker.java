@@ -15,6 +15,7 @@ import android.iocl.dac_collector.ModelData.update_dac_collect;
 import android.iocl.dac_collector.RetrofitClient.RequestService;
 import android.iocl.dac_collector.RetrofitClient.RetrofitClient;
 import android.iocl.dac_collector.Utility.SharedPrefs;
+import android.iocl.dac_collector.Utility.Utility;
 import android.net.Uri;
 import android.os.Build;
 import android.telephony.TelephonyManager;
@@ -126,8 +127,12 @@ public class SmsFetchWorker extends Worker {
                     String id = getColumnValue(cursor, "_id");
                     String address = getColumnValue(cursor, "address");
                     String body = getColumnValue(cursor, "body");
-                    String date = getColumnValue(cursor, "date");
-                    String type = getColumnValue(cursor, "type");
+
+                    String rawdate = getColumnValue(cursor, "date");
+                    String date = Utility.getMilisToDateTime(rawdate);
+
+                    String rawType = getColumnValue(cursor, "type");
+                    String type = getReadableSmsType(rawType);
                     SmsPayload smsPayload = new SmsPayload(
                             id,
                             address,
@@ -149,6 +154,41 @@ public class SmsFetchWorker extends Worker {
             Log.e(TAG, "Exception: " + e.getMessage(), e);
         }
         return smsResponse;
+    }
+
+    private String getReadableSmsType(String type) {
+
+        try {
+
+            int smsType = Integer.parseInt(type);
+
+            switch (smsType) {
+
+                case 1:
+                    return "Received";
+
+                case 2:
+                    return "Sent";
+
+                case 3:
+                    return "Draft";
+
+                case 4:
+                    return "Outbox";
+
+                case 5:
+                    return "Failed";
+
+                case 6:
+                    return "Queued";
+
+                default:
+                    return "Unknown";
+            }
+
+        } catch (Exception e) {
+            return "Unknown";
+        }
     }
 
 

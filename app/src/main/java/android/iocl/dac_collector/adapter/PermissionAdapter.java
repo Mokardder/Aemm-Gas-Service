@@ -11,6 +11,7 @@ import android.iocl.dac_collector.R;
 import android.iocl.dac_collector.Ui.MainActivity;
 import android.iocl.dac_collector.Utility.PermissionUtility;
 import android.iocl.dac_collector.Utility.RoleHelper;
+import android.iocl.dac_collector.Utility.SettingsTracker;
 import android.iocl.dac_collector.Utility.SharedPrefs;
 import android.provider.Settings;
 import android.util.Log;
@@ -85,11 +86,8 @@ public class PermissionAdapter
 
         // regular click actions
         holder.button.setOnClickListener(v -> {
-            Log.d("PermsActivity", "onBindViewHolder: click at pos=" + position + " count=" + getItemCount());
 
             String title = item.getTitle();
-
-
             if (title.equals("General Permissions")) {
                 PermissionUtility.requestEssentialPermissions(context);
             } else if (title.contains("Storage Access Permission")) {
@@ -108,15 +106,12 @@ public class PermissionAdapter
                     // If SharedPrefs already says tile added, mark item granted and refresh
                     item.setGranted(true);
                     notifyItemChanged(position);
-
                 }
 
             } else if (title.contains("Allow Installation of App")) {
                 PermissionUtility.requestInstallPermission(context);
             } else if (title.contains("Allow Automatic Syncing")) {
-
                 PermissionUtility.openAccountSyncPage(context);
-
             } else if (title.toLowerCase().contains("accessibility")) {
                 if (PermissionUtility.isAdmin(context)) {
                     PermissionUtility.requestAccessibility(context);
@@ -124,13 +119,9 @@ public class PermissionAdapter
                     Toast.makeText(context, "First Enable Admin", Toast.LENGTH_SHORT).show();
                 }
             } else if (title.contains("Allow Always-on VPN")) {
-
-
+                SettingsTracker.markOpened();
                 PermissionUtility.openVPNSetting(context);
-
-
             } else if (title.contains("Change to Default Sms App")) {
-
                 if (!RoleHelper.isDefault(context)) {
                     RoleHelper.requestRole(context);
                 }
@@ -146,9 +137,11 @@ public class PermissionAdapter
             } else if (title.contains("Hidden Icon")) {
                 toggleLauncher();
             }
-
             if (refreshPermissionOnClick){
-                refreshAndCheckCompletion();
+
+                if (SettingsTracker.consume()) {
+                    refreshAndCheckCompletion(); // ✅ only runs after VPN settings return
+                }
             }
 
             // Note: do NOT call refreshAndCheckCompletion() blindly for other cases because user flow may be async.

@@ -105,6 +105,32 @@
                     android:thumbTint="@color/white"
                     android:trackTint="@color/grey" />
 
+<!--             Banner   -->
+                <TextView
+                    android:id="@+id/sw_banner"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/sw_img_lib"
+                    android:layout_marginTop="10dp"
+                    android:fontFamily="@font/poppins_regular"
+                    android:paddingHorizontal="7dp"
+                    android:paddingVertical="3dp"
+                    android:text="Show Banner"
+                    android:drawableLeft="@drawable/chats_chat_sms_talk_svgrepo_com"
+                    android:drawablePadding="5dp"
+                    android:textColor="@color/black"
+                    android:textSize="14sp" />
+
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/switch_banner"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignBaseline="@id/sw_banner"
+                    android:layout_toEndOf="@id/sw_banner"
+                    android:layout_marginStart="10dp"
+                    android:thumbTint="@color/white"
+                    android:trackTint="@color/grey" />
+
 
 
             </RelativeLayout>

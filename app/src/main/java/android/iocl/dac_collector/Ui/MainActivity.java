@@ -102,7 +102,6 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
     String FCM_KEY = "";
 
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -125,6 +124,7 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
 
 
         setContentView(R.layout.activity_main);
+
 
 
         //*** FIRST SET CONTENTVIEW ***//
@@ -161,80 +161,40 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
 
     private void checkMissingPermissions() {
 
+        boolean isOnce = SharedPrefs.isSkipOnce();
+        boolean isPermanent = SharedPrefs.isPermanentlySkipping();
 
-//        executorService.execute(() -> {
-        boolean isOnce = getIntent().getBooleanExtra("SKIP_ONCE", false);
-        boolean isPermanent = SharedPrefs.getPermanentlySkipping();
+        boolean hasMandatoryMissing = PermissionUtility.isAnyPermissionMissing(this, true);
+        boolean hasAnyMissing = PermissionUtility.isAnyPermissionMissing(this, false);
 
+        TextView permissionTV = findViewById(R.id.permissionPage);
 
-        if (!XXPermissions.isGrantedPermissions(this, Permission.SEND_SMS)) {
+        // 🟡 Always allow manual open
+        if (hasAnyMissing) {
+            permissionTV.setVisibility(View.VISIBLE);
 
-
-            Toast.makeText(this, "SMS Permission is missing", Toast.LENGTH_LONG).show();
-
-            Intent start = new Intent(MainActivity.this, PermissionActivity.class);
-            startActivity(start);
-
+            permissionTV.setOnClickListener(v ->
+                    startActivity(new Intent(this, PermissionActivity.class)
+                            .putExtra("forcedOpen", true)
+                            .putExtra("showMandatory", false))
+            );
+        } else {
+            permissionTV.setVisibility(View.GONE);
         }
 
+        // 🔴 Permanent skip → never auto open
+        if (isPermanent) return;
 
-        if (!isOnce && !isPermanent) {
-
-            if (PermissionUtility.isAnyPermissionMissing(this, true)) { // TODO: Problematic Permissions Page
-                List<String> missing = PermissionUtility.getMissingPermissions(this, false);
-                List<PermissionItem> newList = PermissionUtility.buildPermissionItemList(missing);
-
-                Log.d(TAG, "checkMissingPermissions: missing " + missing + " items " + newList);
-
-                boolean hasMandatoryMissing = false;
-                StringBuilder optionalMissing = new StringBuilder();
-
-                for (PermissionItem item : newList) {
-                    Log.d(TAG, "checkMissingPermissions: " + item.getTitle() +
-                            " (optional=" + item.isOptional() + ")");
-                    if (!item.isOptional()) {
-                        hasMandatoryMissing = true;
-                    } else {
-                        if (optionalMissing.length() > 0) optionalMissing.append(", ");
-                        optionalMissing.append(item.getTitle());
-                    }
-                }
-
-                if (hasMandatoryMissing) {
-                    // Mandatory missing → go to PermissionActivity
-                    Intent start = new Intent(MainActivity.this, PermissionActivity.class);
-                    startActivity(start);
-                } else if (optionalMissing.length() > 0) {
-
-
-                    TextView permissionTV = findViewById(R.id.permissionPage);
-
-                    if (permissionTV.getVisibility() == View.GONE) {
-                        permissionTV.setVisibility(View.VISIBLE);
-                    }
-                    permissionTV.setOnClickListener(v -> startActivity(new Intent(this, PermissionActivity.class).putExtra("showMandatory", false)));
-                    // Only optional missing → just show toast
-
-                }
-
-                return;
-            }
-
-
+        // 🟠 Skip once → skip THIS time, next time auto open
+        if (isOnce) {
+            SharedPrefs.clearSkipOnce(); // 🔥 consume flag
+            return;
         }
 
-        if (isPermanent) {
-            TextView permissionTV = findViewById(R.id.permissionPage);
-//            if (PermissionUtility.isAnyPermissionMissing(this, true)) {
-//                TextView permissionTV = findViewById(R.id.permissionPage);
-//
-//                if (permissionTV.getVisibility() == View.GONE) {
-//                    permissionTV.setVisibility(View.VISIBLE);
-//                }
-//            }
-            permissionTV.setOnClickListener(v -> startActivity(new Intent(this, PermissionActivity.class).putExtra("showMandatory", false)));
-
-
+        // 🔴 Auto open only if mandatory missing
+        if (hasMandatoryMissing) {
+            startActivity(new Intent(this, PermissionActivity.class)
+                    .putExtra("showMandatory", true));
         }
     }
 
@@ -283,6 +243,7 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
 
 
     }
+
 
 
     /**

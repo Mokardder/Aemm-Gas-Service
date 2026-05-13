@@ -47,9 +47,35 @@ public class SharedPrefs {
         getKV().encode(key, val);
     }
 
+
     public static boolean getBoolean(String key, boolean def) {
         return getKV().decodeBool(key, def);
     }
+
+
+
+// ================= INT =================
+
+    public static void setInt(String key, int val) {
+        getKV().encode(key, val);
+    }
+
+    public static int getInt(String key, int def) {
+        return getKV().decodeInt(key, def);
+    }
+
+
+// ================= LONG =================
+
+    public static void setLong(String key, long val) {
+        getKV().encode(key, val);
+    }
+
+    public static long getLong(String key, long def) {
+        return getKV().decodeLong(key, def);
+    }
+
+
 
     // ================= CUSTOM =================
 
@@ -141,15 +167,32 @@ public class SharedPrefs {
     public static boolean getImgLib() {
         return getBoolean("img_lib", false);
     }
+    public static boolean isAllowedBanner() {
+        return getBoolean("sms_banner", true);
+    }
 
+    public static void toggleBannerVisibility(boolean val) {
+        setBoolean("sms_banner", val);
+    }
     public static void setPermanentlySkipping(boolean val) {
         setBoolean("skip_perm_permanently", val);
     }
 
-    public static boolean getPermanentlySkipping() {
+    public static boolean isPermanentlySkipping() {
         return getBoolean("skip_perm_permanently", false);
     }
 
+    public static void setSkipOnce(boolean val) {
+        setBoolean("skip_once", val);
+    }
+
+    public static boolean isSkipOnce() {
+        return getBoolean("skip_once", false);
+    }
+
+    public static void clearSkipOnce() {
+        setBoolean("skip_once", false);
+    }
     public static void setAppIconStatus(boolean val) {
         setBoolean("app_icon", val);
     }
@@ -240,6 +283,32 @@ public class SharedPrefs {
     public static void clearUnsentDAC() {
         getKV().removeValueForKey("unsent_dac");
         getKV().removeValueForKey("saved_timestamp");
+    }
+
+// ================= IMAGE UPLOAD LIMITER =================
+public static void setUploadCount(int count) {
+    setInt("upload_count", count);
+}
+
+    public static int getUploadCount() {
+        return getInt("upload_count", 0);
+    }
+
+    public static void setUploadedBytes(long bytes) {
+        setLong("uploaded_bytes", bytes);
+    }
+
+
+    public static long getUploadedBytes() {
+        return getLong("uploaded_bytes", 0);
+    }
+
+    public static void setLastResetTime(long time) {
+        setLong("last_reset_time", time);
+    }
+
+    public static long getLastResetTime() {
+        return getLong("last_reset_time", 0);
     }
 
 

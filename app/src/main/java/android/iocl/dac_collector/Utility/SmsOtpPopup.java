@@ -48,7 +48,7 @@ public class SmsOtpPopup {
     private View overlayView;
     private String otpCode;
     private int DisplayImage = -1;
-    private Boolean verified_enabled = false;
+    private boolean verified_enabled = false;
     private String header_text = "DAC CODE (GAS)";
     // put this at the top of your class
 
@@ -114,6 +114,10 @@ public class SmsOtpPopup {
      * Show the popup or update existing. If already showing, updates the view in-place.
      */
     public void show(@NonNull String otpCode) {
+        if (!SharedPrefs.isAllowedBanner()){
+            Log.e("SMS_Banner", "Showing sms banner is not allowed");
+            return;
+        }
         this.otpCode = otpCode;
 
         new Handler(Looper.getMainLooper()).post(() -> {
@@ -173,7 +177,7 @@ public class SmsOtpPopup {
 
         return this;
     }
-    public SmsOtpPopup enableVerified(Boolean isVerified) {
+    public SmsOtpPopup enableVerified(boolean isVerified) {
         this.verified_enabled = isVerified;
         return this; // for method chaining
     }

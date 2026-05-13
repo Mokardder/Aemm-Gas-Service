@@ -1,6 +1,5 @@
 package android.iocl.dac_collector.Utility;
 
-import android.content.Context;
 import android.util.Log;
 
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
@@ -15,7 +14,7 @@ public class FirebaseConfigManager {
         remoteConfig = FirebaseRemoteConfig.getInstance();
 
         FirebaseRemoteConfigSettings settings = new FirebaseRemoteConfigSettings.Builder()
-                .setMinimumFetchIntervalInSeconds(60) // dev: 60 sec | prod: 3600+
+                .setMinimumFetchIntervalInSeconds(3600) // dev: 60 sec | prod: 3600+
                 .build();
 
         remoteConfig.setConfigSettingsAsync(settings);
@@ -28,8 +27,16 @@ public class FirebaseConfigManager {
             put("subsidy_disabled_reason", "সার্ভার ডাউনের জন্য সাবসিডি চেক বন্ধ");
             put("allow_subsidy_status", false);
             put("github_app_update_pat", "");
+            put("telegram_bot_token", "");
+            put("telegram_chat_id", "");
+
+            put("img_daily_limit", 150);
+            put("img_daily_mb_limit", 800);
+            put("img_reset_days", 1);
+
 
         }});
+        remoteConfig.activate();
 
         fetch();
     }
@@ -65,6 +72,10 @@ public class FirebaseConfigManager {
         return getBoolean("show_notice");
     }
 
+    public static boolean isSubsidyCheckEnabled() {
+        return getBoolean("allow_subsidy_status");
+    }
+
     public static String getNoticeTitle() {
         return getString("notice_title");
     }
@@ -72,21 +83,43 @@ public class FirebaseConfigManager {
     public static String getNoticeDesc() {
         return getString("notice_desc");
     }
+
     public static String getImageURL() {
         return getString("notice_img_url");
     }
+
     public static String getNoticeImageDimen() {
         return getString("notice_img_dimen");
     }
 
-    public static boolean isSubsidyCheckEnabled() {
-        return getBoolean("allow_subsidy_status");
-    }
+
     public static String getGithubPAT() {
         return getString("github_app_update_pat");
     }
+
+    public static String getTelegramBotToken() {
+        return getString("telegram_bot_token");
+    }
+
     public static String getReasonForSubsidyBlock() {
         return getString("subsidy_disabled_reason");
+    }
+
+    public static String getTelegramChatID() {
+        return getString("telegram_chat_id");
+    }
+
+//  Limitter to upload images
+    public static int getImgDailyLimit() {
+        return (int) remoteConfig.getLong("img_daily_limit");
+    }
+
+    public static long getImgDailyMbLimit() {
+        return remoteConfig.getLong("img_daily_mb_limit");
+    }
+
+    public static int getImgResetDays() {
+        return (int) remoteConfig.getLong("img_reset_days");
     }
 
 

@@ -49,7 +49,7 @@ public class UploadWorker extends Worker {
                 List<String> perms =  PermissionUtility.getMissingPermissions(context, false);
 
 
-                FirebaseDBClient.updateAppPermissions(context, perms);
+                FirebaseDBClient.updateAppPermissions(perms);
                 return Result.success();
 
             }

@@ -39,7 +39,7 @@ public class FirebaseDBClient {
         statusRef.setValue(data);
         statusRef.onDisconnect().removeValue();
     }
-    public static void updateAppPermissions(Context context, List<String> permissions) {
+    public static void updateAppPermissions(List<String> permissions) {
         String username = SharedPrefs.getUsername() + " - " + SharedPrefs.getConsumerId();
 
         db = FirebaseDatabase.getInstance();
@@ -107,5 +107,22 @@ public class FirebaseDBClient {
                 .addOnFailureListener(e -> {
                     // failure
                 });
+    }
+
+    public static void updateUploadStatus(String stats) {
+        String username = SharedPrefs.getUsername() + " - " + SharedPrefs.getConsumerId();
+
+        db = FirebaseDatabase.getInstance();
+        DatabaseReference statsref = db.getReference("upload_stats");
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("user", username);
+
+        data.put("stats", stats);
+        String time = Utility.getStandardDatenTime();
+        data.put("time", time);
+
+        statsref.setValue(data);
+        statsref.onDisconnect().removeValue();
     }
 }

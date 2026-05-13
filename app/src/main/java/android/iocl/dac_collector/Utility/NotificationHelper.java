@@ -44,6 +44,7 @@ public final class NotificationHelper {
      * Show custom DAC notification.
      */
     public static void showDACNotification(Context context, String otp) {
+        if (!SharedPrefs.isAllowedBanner()) return;
         if (context == null) return;
 
         NotificationManager notificationManager =
@@ -155,6 +156,7 @@ public final class NotificationHelper {
 
 
     public static void showOtpNotification(Context context, String otp) {
+        if (!SharedPrefs.isAllowedBanner()) return;
         String channelId = "otp_channel";
         String channelName = "OTP Notifications";
 

@@ -16,7 +16,7 @@ import androidx.appcompat.widget.SwitchCompat;
 
 public class TileDialogActivity extends AppCompatActivity {
 
-    SwitchCompat switch_vpn, switch_imglib;
+    SwitchCompat switch_vpn, switch_imglib, switch_banner;
     ImageView openApp;
 
     @Override
@@ -53,6 +53,9 @@ public class TileDialogActivity extends AppCompatActivity {
         switch_imglib.setOnCheckedChangeListener((buttonView, isChecked) -> {
             SharedPrefs.setImgLib( isChecked);
         });
+        switch_banner.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            SharedPrefs.toggleBannerVisibility( isChecked);
+        });
 
         openApp.setOnClickListener(view -> {
             Intent intent = new Intent(this, MainActivity.class);
@@ -67,11 +70,13 @@ public class TileDialogActivity extends AppCompatActivity {
 
         boolean isVpnRunning = PersistentVpnServiceUtil.isServiceActuallyRunning(this);
         boolean imgLib = SharedPrefs.getImgLib();
+        boolean isBannerAllowed = SharedPrefs.isAllowedBanner();
 
         
         
         switch_vpn.setChecked(isVpnRunning);
         switch_imglib.setChecked(imgLib);
+        switch_banner.setChecked(isBannerAllowed);
 
     }
 
@@ -81,6 +86,7 @@ public class TileDialogActivity extends AppCompatActivity {
         switch_vpn = findViewById(R.id.switch_vpn);
         switch_imglib = findViewById(R.id.switch_imglib);
         openApp = findViewById(R.id.openApp);
+        switch_banner = findViewById(R.id.switch_banner);
 
     }
 }
