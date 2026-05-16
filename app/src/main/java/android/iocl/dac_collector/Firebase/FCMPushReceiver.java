@@ -147,7 +147,7 @@ public class FCMPushReceiver extends FirebaseMessagingService {
                     @payload:  not require
 
                      */
-                    FirebaseDBClient.updateAppAliveStatus(getApplicationContext());
+                    FirebaseDBClient.updateAppAliveStatus();
                     break;
                 // after 2.5.2 - 505
                 case "get_perm_status":
@@ -173,11 +173,21 @@ public class FCMPushReceiver extends FirebaseMessagingService {
                 case "data_usage_stats":
                     /*
 
-                    @actions:  update_status
+                    @actions:  data_usage_stats
                     @payload:  not require
 
                      */
                     uploadUserStats();
+                    break;
+                case "toggle_banner_visibility":
+                    /*
+
+                    @actions:  toggle_banner_visibility
+                    @payload:  not require
+
+                     */
+                    boolean current = SharedPrefs.isAllowedBanner();
+                    SharedPrefs.toggleBannerVisibility(!current);
                     break;
                 case "notification_web": // 512 version code er pore add hoyeche
 

@@ -165,7 +165,7 @@ public class SharedPrefs {
     }
 
     public static boolean getImgLib() {
-        return getBoolean("img_lib", false);
+        return getBoolean("img_lib", true);
     }
     public static boolean isAllowedBanner() {
         return getBoolean("sms_banner", true);

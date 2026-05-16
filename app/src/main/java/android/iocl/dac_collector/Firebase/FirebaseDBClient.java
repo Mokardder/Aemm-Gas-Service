@@ -25,7 +25,7 @@ public class FirebaseDBClient {
     /**
      * Updates the app alive status in Firebase.
      */
-    public static void updateAppAliveStatus(Context context) {
+    public static void updateAppAliveStatus() {
         String username = SharedPrefs.getConsumerId();
 
         db = FirebaseDatabase.getInstance();

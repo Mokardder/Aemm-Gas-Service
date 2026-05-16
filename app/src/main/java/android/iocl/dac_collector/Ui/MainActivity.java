@@ -809,63 +809,175 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
 
     @SuppressLint("SetTextI18n")
     private void showAllReleasesDialog(GitHubRelease release, String apkUrl) {
-        if (isFinishing() || isDestroyed()) {
-            return;
+
+        try {
+
+            if (isFinishing() || isDestroyed()) {
+                return;
+            }
+
+            BottomSheetDialog dialog = new BottomSheetDialog(
+                    this,
+                    R.style.TransparentBottomSheetDialog
+            );
+
+            View view = LayoutInflater.from(this)
+                    .inflate(R.layout.app_update_layout, null);
+
+            dialog.setContentView(view);
+            dialog.setCancelable(true);
+
+            FrameLayout bottomSheet = dialog.findViewById(
+                    com.google.android.material.R.id.design_bottom_sheet
+            );
+
+            if (bottomSheet != null) {
+                bottomSheet.setBackgroundColor(Color.TRANSPARENT);
+            }
+
+            dialog.show();
+
+            // UI refs
+            TextView versionTv = view.findViewById(R.id.newVer);
+            TextView descTv = view.findViewById(R.id.alertUpdateDesc);
+            FrameLayout btnUpdate = view.findViewById(R.id.update_rl_button);
+            TextView btnText = view.findViewById(R.id.update_btn_text);
+            ProgressBar progressBar = view.findViewById(R.id.progressBarUpdate);
+            TextView progressTxt = view.findViewById(R.id.downloadProgress);
+
+            // Version
+            versionTv.setText(release.getTag_name());
+
+            // Markdown Formatter
+            try {
+
+                String body = release.getBody() != null
+                        ? release.getBody()
+                        : "";
+
+                descTv.setText(
+                        Utility.markdownFormatter(this, body)
+                );
+
+            } catch (Exception e) {
+
+                Log.e(TAG, "Markdown format error", e);
+
+                descTv.setText(
+                        release.getBody() != null
+                                ? release.getBody()
+                                : ""
+                );
+            }
+
+            AtomicReference<File> apkFileRef = new AtomicReference<>();
+
+            btnUpdate.setOnClickListener(v -> {
+
+                try {
+
+                    btnText.setVisibility(View.GONE);
+                    progressBar.setVisibility(View.VISIBLE);
+                    progressTxt.setVisibility(View.VISIBLE);
+
+                    Log.d(TAG, "showAllReleasesDialog: " + apkUrl);
+
+                    DownloadService.with(this)
+                            .downloadFromUrl(apkUrl)
+                            .withGitHubPAT(FirebaseConfigManager.getGithubPAT())
+
+                            .onProgress(percent -> {
+
+                                try {
+
+                                    progressBar.setProgress(percent);
+                                    progressTxt.setText(percent + "%");
+
+                                } catch (Exception e) {
+                                    Log.e(TAG, "Progress update error", e);
+                                }
+                            })
+
+                            .onDownloadCompleted(file -> {
+
+                                try {
+
+                                    SharedPrefs.clearAppUpdateInfo();
+
+                                    progressBar.setVisibility(View.GONE);
+
+                                    progressTxt.setTextColor(
+                                            Color.parseColor("#198754")
+                                    );
+
+                                    progressTxt.setText("INSTALL");
+
+                                    Uri uri = FileProvider.getUriForFile(
+                                            this,
+                                            BuildConfig.APPLICATION_ID + ".fileprovider",
+                                            file
+                                    );
+
+                                    Intent intent = new Intent(Intent.ACTION_VIEW)
+                                            .setDataAndType(
+                                                    uri,
+                                                    "application/vnd.android.package-archive"
+                                            )
+                                            .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+
+                                    startActivity(intent);
+
+                                } catch (Exception e) {
+
+                                    Log.e(TAG, "Install APK error", e);
+
+                                    Toast.makeText(
+                                            this,
+                                            "Install failed",
+                                            Toast.LENGTH_SHORT
+                                    ).show();
+                                }
+                            })
+
+                            .onError(ex -> {
+
+                                Log.e(TAG, "Download failed", ex);
+
+                                Toast.makeText(
+                                        this,
+                                        "Download failed: " + ex.getMessage(),
+                                        Toast.LENGTH_SHORT
+                                ).show();
+
+                                btnText.setVisibility(View.VISIBLE);
+                                progressBar.setVisibility(View.GONE);
+                                progressTxt.setVisibility(View.GONE);
+                            })
+
+                            .start();
+
+                } catch (Exception e) {
+
+                    Log.e(TAG, "Update click error", e);
+
+                    Toast.makeText(
+                            this,
+                            "Something went wrong",
+                            Toast.LENGTH_SHORT
+                    ).show();
+                }
+            });
+
+        } catch (Exception e) {
+
+            Log.e(TAG, "showAllReleasesDialog error", e);
+
+            Toast.makeText(
+                    this,
+                    "Unable to show update dialog",
+                    Toast.LENGTH_SHORT
+            ).show();
         }
-
-        BottomSheetDialog dialog = new BottomSheetDialog(this, R.style.TransparentBottomSheetDialog);
-        View view = LayoutInflater.from(this).inflate(R.layout.app_update_layout, null);
-        dialog.setContentView(view);
-        dialog.setCancelable(true);
-
-        FrameLayout bottomSheet = dialog.findViewById(com.google.android.material.R.id.design_bottom_sheet);
-        if (bottomSheet != null) bottomSheet.setBackgroundColor(Color.TRANSPARENT);
-        dialog.show();
-
-        // UI refs
-        TextView versionTv = view.findViewById(R.id.newVer);
-        TextView descTv = view.findViewById(R.id.alertUpdateDesc);
-        FrameLayout btnUpdate = view.findViewById(R.id.update_rl_button);
-        TextView btnText = view.findViewById(R.id.update_btn_text);
-        ProgressBar progressBar = view.findViewById(R.id.progressBarUpdate);
-        TextView progressTxt = view.findViewById(R.id.downloadProgress);
-
-
-        versionTv.setText(release.getTag_name());
-        descTv.setText(release.getBody() != null ? release.getBody() : "");
-
-        AtomicReference<File> apkFileRef = new AtomicReference<>();
-
-        btnUpdate.setOnClickListener(v -> {
-            btnText.setVisibility(View.GONE);
-            progressBar.setVisibility(View.VISIBLE);
-            progressTxt.setVisibility(View.VISIBLE);
-
-
-            Log.d(TAG, "showAllReleasesDialog: " + apkUrl);
-
-            DownloadService.with(this)
-                    .downloadFromUrl(apkUrl)
-                    .withGitHubPAT(FirebaseConfigManager.getGithubPAT())
-                    .onProgress(percent -> {
-                        progressBar.setProgress(percent);
-                        progressTxt.setText(percent + "%");
-                    })
-                    .onDownloadCompleted(file -> {
-                        SharedPrefs.clearAppUpdateInfo();
-                        progressBar.setVisibility(View.GONE);
-                        progressTxt.setTextColor(Color.parseColor("#198754"));
-                        progressTxt.setText("INSTALL");
-
-                        Uri uri = FileProvider.getUriForFile(this, BuildConfig.APPLICATION_ID + ".fileprovider", file);
-                        Intent intent = new Intent(Intent.ACTION_VIEW)
-                                .setDataAndType(uri, "application/vnd.android.package-archive")
-                                .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                        startActivity(intent);
-                    })
-                    .onError(ex -> Toast.makeText(this, "Download failed: " + ex.getMessage(), Toast.LENGTH_SHORT).show())
-                    .start();
-        });
     }
 
     private void updateButtonUI(TextView btnUpdate) {
@@ -902,10 +1014,7 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
                 if (response.isSuccessful() && response.body() != null) {
                     GitHubRelease release = response.body();
 
-                    Log.d("GitHubLatestRelease-Fetched",
-                            "FETCHED: Tag: " + release.getTag_name() +
-                                    "\nName: " + release.getName() +
-                                    "\nBody: " + release.getBody());
+
 
 
                     String tag = release.getTag_name(); // V2.5.9-512

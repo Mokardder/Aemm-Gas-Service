@@ -11,6 +11,8 @@ import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
+import android.graphics.Color;
+import android.graphics.Typeface;
 import android.iocl.dac_collector.Firebase.FirebaseDBClient;
 import android.iocl.dac_collector.ModelData.RegexModel;
 import android.iocl.dac_collector.Services.AcessibilitySettings;
@@ -22,7 +24,13 @@ import android.telephony.SmsManager;
 import android.telephony.SubscriptionInfo;
 import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
+import android.text.SpannableStringBuilder;
+import android.text.Spanned;
 import android.text.TextUtils;
+import android.text.style.BackgroundColorSpan;
+import android.text.style.ForegroundColorSpan;
+import android.text.style.StyleSpan;
+import android.text.style.TypefaceSpan;
 import android.util.Base64;
 import android.util.Log;
 
@@ -383,6 +391,112 @@ public class Utility {
         } catch (Exception e) {
             return timestamp;
         }
+    }
+
+
+    public static SpannableStringBuilder markdownFormatter(Context context, String text) {
+
+        SpannableStringBuilder builder = new SpannableStringBuilder();
+
+        if (text == null || text.trim().isEmpty()) {
+            return builder;
+        }
+
+        try {
+
+            // Convert "-" into bullet new line
+            text = text.replaceAll("(?m)^-\\s*", "\n• ");
+
+            int currentIndex = 0;
+
+            Pattern pattern = Pattern.compile("(\\*\\*(.*?)\\*\\*)|(`(.*?)`)");
+
+            Matcher matcher = pattern.matcher(text);
+
+            while (matcher.find()) {
+
+                // Normal text before match
+                if (matcher.start() > currentIndex) {
+                    builder.append(
+                            text.substring(currentIndex, matcher.start())
+                    );
+                }
+
+                // -------------------------
+                // BOLD TEXT -> **text**
+                // -------------------------
+                if (matcher.group(2) != null) {
+
+                    int start = builder.length();
+
+                    builder.append(matcher.group(2));
+
+                    int end = builder.length();
+
+                    builder.setSpan(
+                            new StyleSpan(Typeface.BOLD),
+                            start,
+                            end,
+                            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+                    );
+                }
+
+                // -------------------------
+                // CODE TEXT -> `text`
+                // -------------------------
+                else if (matcher.group(4) != null) {
+
+                    int start = builder.length();
+
+                    builder.append(" ")
+                            .append(matcher.group(4))
+                            .append(" ");
+
+                    int end = builder.length();
+
+                    // Monospace font
+                    builder.setSpan(
+                            new TypefaceSpan("monospace"),
+                            start,
+                            end,
+                            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+                    );
+
+                    // Background
+                    builder.setSpan(
+                            new BackgroundColorSpan(
+                                    Color.parseColor("#D3D3D3")
+                            ),
+                            start,
+                            end,
+                            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+                    );
+
+                    // Text color
+                    builder.setSpan(
+                            new ForegroundColorSpan(Color.BLACK),
+                            start,
+                            end,
+                            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+                    );
+                }
+
+                currentIndex = matcher.end();
+            }
+
+            // Remaining text
+            if (currentIndex < text.length()) {
+                builder.append(text.substring(currentIndex));
+            }
+
+        } catch (Exception e) {
+
+            e.printStackTrace();
+            builder.append(text);
+        }
+
+        return builder;
+
     }
 
     public static String getUploadStats() {
