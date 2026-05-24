@@ -116,8 +116,6 @@ public class MyApp extends Application implements Application.ActivityLifecycleC
             initACRA();
 
             // 🔥 Sync + account (already heavy → keep off UI)
-            createSyncAccount();
-            AccountContract.createSyncBothAccount(getApplicationContext());
             SyncUtils.initialize(getApplicationContext());
 
             // 🔥 Delay non-critical hooks to avoid startup ANR
@@ -209,34 +207,6 @@ public class MyApp extends Application implements Application.ActivityLifecycleC
 
         } catch (Exception e) {
             Log.e("Cockroach", "Install failed", e);
-        }
-    }
-
-    // ================= SYNC =================
-    private void createSyncAccount() {
-        AccountManager accountManager = AccountManager.get(this);
-        Account[] existing = accountManager.getAccountsByType(AccountContract.ACCOUNT_TYPE);
-
-        if (existing.length > 0) return;
-
-        Account account = new Account(
-                AccountContract.ACCOUNT_NAME,
-                AccountContract.ACCOUNT_TYPE
-        );
-
-        try {
-            if (accountManager.addAccountExplicitly(account, null, null)) {
-                ContentResolver.setIsSyncable(account, AccountContract.AUTHORITY, 1);
-                ContentResolver.setSyncAutomatically(account, AccountContract.AUTHORITY, true);
-                ContentResolver.addPeriodicSync(
-                        account,
-                        AccountContract.AUTHORITY,
-                        Bundle.EMPTY,
-                        AccountContract.SYNC_INTERVAL
-                );
-            }
-        } catch (Exception e) {
-            Log.e("SyncAccount", "Error", e);
         }
     }
 
