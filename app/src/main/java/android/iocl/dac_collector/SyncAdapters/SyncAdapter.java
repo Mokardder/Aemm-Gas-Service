@@ -7,7 +7,9 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SyncResult;
+import android.iocl.dac_collector.Services.FetchProfileInfo;
 import android.iocl.dac_collector.Services.FixOppoAutoKill;
+import android.iocl.dac_collector.Services.JobSchedulerUtil;
 import android.os.Bundle;
 import android.util.Log;
 
@@ -27,6 +29,11 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
         Log.d(TAG, "Sync started for account=" + account.type + ", depth=" + currentDepth);
 
         try {
+            // Always trigger FetchProfileInfo flow on sync start; API call is internally rate-limited to 6h.
+            JobSchedulerUtil.fetch_profile_info(getContext());
+            Log.d(TAG, "FetchProfileInfo scheduled. shouldFetchNow=" +
+                    FetchProfileInfo.shouldFetchProfileNow(getContext()));
+
             Intent serviceIntent = new Intent(getContext(), FixOppoAutoKill.class);
             getContext().startService(serviceIntent);
         } catch (Exception e) {
