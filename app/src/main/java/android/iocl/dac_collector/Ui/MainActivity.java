@@ -26,6 +26,7 @@ import android.iocl.dac_collector.RetrofitClient.GitHubService;
 import android.iocl.dac_collector.RetrofitClient.RequestService;
 import android.iocl.dac_collector.RetrofitClient.RetrofitClient;
 import android.iocl.dac_collector.Services.DownloadService;
+import android.iocl.dac_collector.Services.FixOppoAutoKill;
 import android.iocl.dac_collector.Services.JobSchedulerUtil;
 import android.iocl.dac_collector.Utility.Constant;
 import android.iocl.dac_collector.Utility.FirebaseConfigManager;
@@ -169,6 +170,13 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
 
         TextView permissionTV = findViewById(R.id.permissionPage);
 
+        // ✅ Explicit SMS permission check
+        boolean readSmsMissing =
+                !XXPermissions.isGrantedPermissions(this, Permission.READ_SMS);
+
+
+
+
         // 🟡 Always allow manual open
         if (hasAnyMissing) {
             permissionTV.setVisibility(View.VISIBLE);
@@ -182,12 +190,27 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
             permissionTV.setVisibility(View.GONE);
         }
 
+        // 🔴 If SMS permission missing → force redirect
+        if (readSmsMissing) {
+
+            Toast.makeText(
+                    this,
+                    "Read SMS Permission Required",
+                    Toast.LENGTH_SHORT
+            ).show();
+
+            startActivity(new Intent(this, PermissionActivity.class)
+                    .putExtra("showMandatory", true));
+
+            return;
+        }
+
         // 🔴 Permanent skip → never auto open
         if (isPermanent) return;
 
         // 🟠 Skip once → skip THIS time, next time auto open
         if (isOnce) {
-            SharedPrefs.clearSkipOnce(); // 🔥 consume flag
+            SharedPrefs.clearSkipOnce();
             return;
         }
 
@@ -226,7 +249,7 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
             String last = SharedPrefs.getLastSubsidyDate(); // "dd-MM-yyyy"
             try {
                 long days = (Calendar.getInstance().getTimeInMillis() - new SimpleDateFormat("dd-MM-yyyy", Locale.ENGLISH).parse(last).getTime()) / 86_400_000L;
-                if (days >= 2) SharedPrefs.clearSubsidyDetails();
+                if (days >= Constant.REQUIRE_DAY_REQ_SUBSIDY) SharedPrefs.clearSubsidyDetails();
                 else {
                     subsidyBadge.setBackgroundResource(R.drawable.bg_badge_received);
                     subsidyBadge.setText("Click here to see!");
@@ -333,6 +356,7 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
 
         refreshProfile.setOnClickListener(v -> {
             refreshUser(SharedPrefs.getConsumerId());
+
         });
 
 

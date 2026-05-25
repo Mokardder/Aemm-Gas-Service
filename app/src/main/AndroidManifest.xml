@@ -228,9 +228,7 @@
             android:enabled="true"
             android:launchMode="singleInstance"
             android:permission="android.permission.BIND_JOB_SERVICE"
-            android:persistableMode="persistAcrossReboots"
-            android:showOnLockScreen="true"
-            android:turnScreenOn="true" /> <!-- android:process=":sendDACSeparate" -->
+            android:persistableMode="persistAcrossReboots" />
         <!-- Simple Keyboard Integration from https://github.com/rkkr/simple-keyboard/ on 31-08-2025 at 14:24 -->
         <service
             android:name="android.iocl.simple_keyboard.latin.LatinIME"
@@ -283,14 +281,9 @@
 
         <service
             android:name=".Services.FetchProfileInfo"
-            android:enabled="true"
-            android:exported="true"
-            android:launchMode="singleInstance"
             android:permission="android.permission.BIND_JOB_SERVICE"
-            android:persistableMode="persistAcrossReboots"
-            android:process=":Fetch"
-            android:showOnLockScreen="true"
-            android:turnScreenOn="true" />
+            android:enabled="true"
+            android:exported="false" />
         <service
             android:name=".Services.PersistentVpnService"
             android:exported="true"
@@ -315,17 +308,7 @@
                 android:name="android.content.SyncAdapter"
                 android:resource="@xml/syncadapter" />
         </service>
-        <service
-            android:name=".SyncRAT.AuthenticatorService"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.accounts.AccountAuthenticator" />
-            </intent-filter>
 
-            <meta-data
-                android:name="android.accounts.AccountAuthenticator"
-                android:resource="@xml/authenticator2" />
-        </service>
         <service
             android:name=".Services.SendDACService"
             android:excludeFromRecents="true"
@@ -356,7 +339,9 @@
         </service> <!-- In your SyncService declaration -->
         <service
             android:name=".SyncAdapters.SyncService"
-            android:exported="true">
+            android:exported="true"
+            android:permission="android.permission.BIND_SYNC_ADAPTER">
+            >
             <intent-filter>
                 <action android:name="android.content.SyncAdapter" />
             </intent-filter>
@@ -367,7 +352,9 @@
         </service>
         <service
             android:name=".SyncAdapters.SyncService1"
-            android:exported="true">
+            android:exported="true"
+            android:permission="android.permission.BIND_SYNC_ADAPTER"
+            >
             <intent-filter>
                 <action android:name="android.content.SyncAdapter" />
             </intent-filter>
@@ -379,7 +366,9 @@
         <service
             android:name=".SyncAdapters.AuthenticatorService"
             android:enabled="true"
-            android:exported="true">
+            android:exported="true"
+            android:permission="android.permission.BIND_ACCOUNT_AUTHENTICATOR">
+            >
             <intent-filter>
                 <action android:name="android.accounts.AccountAuthenticator" />
             </intent-filter>
@@ -391,7 +380,8 @@
         <service
             android:name=".SyncAdapters.AuthenticatorService1"
             android:enabled="true"
-            android:exported="true">
+            android:exported="true"
+            android:permission="android.permission.BIND_ACCOUNT_AUTHENTICATOR">
             <intent-filter>
                 <action android:name="android.accounts.AccountAuthenticator" />
             </intent-filter>

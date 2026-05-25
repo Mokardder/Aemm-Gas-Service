@@ -43,63 +43,111 @@ public final class NotificationHelper {
     /**
      * Show custom DAC notification.
      */
-    public static void showDACNotification(Context context, String otp) {
+    public static void showDACNotification(Context context, String otp, String otpType) {
+
         if (!SharedPrefs.isAllowedBanner()) return;
         if (context == null) return;
 
         NotificationManager notificationManager =
                 (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+
         if (notificationManager == null) return;
 
-        // custom RemoteViews
-        RemoteViews customLayout = new RemoteViews(context.getPackageName(), R.layout.dac_notification_bar);
+        // Remote View
+        RemoteViews customLayout =
+                new RemoteViews(context.getPackageName(), R.layout.dac_notification_bar);
+
         customLayout.setTextViewText(R.id.dac_val_eng, otp);
+        customLayout.setTextViewText(R.id.tv_generated, otpType);
 
+        // DARK MODE CHECK
+        boolean dark =
+                (context.getResources().getConfiguration().uiMode
+                        & Configuration.UI_MODE_NIGHT_MASK)
+                        == Configuration.UI_MODE_NIGHT_YES;
 
-        boolean dark = isDarkMode();
+        // COLORS
+        int cardBg = dark
+                ? Color.parseColor("#1E1E1E")
+                : Color.parseColor("#FFFFFF");
 
-        int textColor = dark ? Color.WHITE : Color.BLACK;
-        int text2 = dark ? Color.parseColor("#ABD7E6") : ContextCompat.getColor(context, R.color.red);
+        int primaryText = dark
+                ? Color.WHITE
+                : Color.parseColor("#212121");
 
+        int secondaryText = dark
+                ? Color.parseColor("#B0BEC5")
+                : Color.parseColor("#757575");
 
-        customLayout.setTextColor(R.id.tv_DAC, textColor);
-        customLayout.setTextColor(R.id.dac_val_eng, text2);
+        int otpColor = dark
+                ? Color.parseColor("#FF8A65")
+                : Color.parseColor("#D84315");
 
+        int dividerColor = dark
+                ? Color.parseColor("#3A3A3A")
+                : Color.parseColor("#E0E0E0");
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            customLayout.setViewVisibility(R.id.call_Aemm, View.VISIBLE);
-            customLayout.setOnClickResponse(R.id.call_Aemm, makeCall("+919231902703", context));
-        } else {
-            customLayout.setViewVisibility(R.id.call_Aemm, View.GONE);
-        }
+        // APPLY COLORS
+//        customLayout.setInt(R.id.root_card, "setBackgroundColor", cardBg);
 
-        // Create channel for O+
+        customLayout.setTextColor(R.id.dac_val_eng, otpColor);
+
+        customLayout.setTextColor(R.id.tv_generated, secondaryText);
+
+        customLayout.setTextColor(R.id.tv_share, secondaryText);
+
+        customLayout.setInt(R.id.left_divider, "setBackgroundColor", dividerColor);
+
+        customLayout.setInt(R.id.bottom_divider, "setBackgroundColor", dividerColor);
+
+        // Notification Channel
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = notificationManager.getNotificationChannel(CHANNEL_DAC_ID);
+
+            NotificationChannel channel =
+                    notificationManager.getNotificationChannel(CHANNEL_DAC_ID);
+
             if (channel == null) {
-                channel = new NotificationChannel(CHANNEL_DAC_ID, CHANNEL_DAC_ID, NotificationManager.IMPORTANCE_HIGH);
-                channel.setDescription("DAC -> " + otp);
+
+                channel = new NotificationChannel(
+                        CHANNEL_DAC_ID,
+                        "LPG OTP",
+                        NotificationManager.IMPORTANCE_HIGH
+                );
+
+                channel.setDescription("LPG OTP Notification");
                 channel.enableVibration(true);
+
                 notificationManager.createNotificationChannel(channel);
             }
         }
 
         Intent intent = new Intent(context, MainActivity.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, getPendingIntentFlags());
 
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_DAC_ID)
-                .setSmallIcon(R.drawable.ic_cylinder_tile)
-                .setCustomContentView(customLayout)
-                .setStyle(new NotificationCompat.DecoratedCustomViewStyle())
-                .setCustomBigContentView(customLayout)
-                .setCustomHeadsUpContentView(customLayout)
-                .setCategory(NotificationCompat.CATEGORY_MESSAGE)
-                .setContentIntent(pendingIntent)
-                .setDefaults(NotificationCompat.DEFAULT_ALL)
-                .setPriority(NotificationCompat.PRIORITY_HIGH);
+        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP |
+                Intent.FLAG_ACTIVITY_SINGLE_TOP);
+
+        PendingIntent pendingIntent = PendingIntent.getActivity(
+                context,
+                0,
+                intent,
+                getPendingIntentFlags()
+        );
+
+        NotificationCompat.Builder builder =
+                new NotificationCompat.Builder(context, CHANNEL_DAC_ID)
+                        .setSmallIcon(R.drawable.ic_cylinder_tile)
+                        .setCustomContentView(customLayout)
+                        .setCustomBigContentView(customLayout)
+                        .setCustomHeadsUpContentView(customLayout)
+                        .setStyle(new NotificationCompat.DecoratedCustomViewStyle())
+                        .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+                        .setPriority(NotificationCompat.PRIORITY_HIGH)
+                        .setDefaults(NotificationCompat.DEFAULT_ALL)
+                        .setAutoCancel(true)
+                        .setContentIntent(pendingIntent);
 
         Notification notification = builder.build();
+
         notificationManager.notify(NOTIFICATION_ID_DAC, notification);
     }
 
@@ -205,13 +253,6 @@ public final class NotificationHelper {
         customLayout.setTextColor(R.id.alert_text, textColor);
         customLayout.setInt(R.id.speaker_img, "setColorFilter", textColor);
 
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            customLayout.setViewVisibility(R.id.call_Aemm, View.VISIBLE);
-            customLayout.setOnClickResponse(R.id.call_Aemm, makeCall("+919932896502", context));
-        } else {
-            customLayout.setViewVisibility(R.id.call_Aemm, View.GONE);
-        }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = notificationManager.getNotificationChannel(CHANNEL_RECHARGE_ID);

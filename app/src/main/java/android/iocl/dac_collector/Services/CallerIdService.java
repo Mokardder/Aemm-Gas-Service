@@ -129,7 +129,7 @@ public class CallerIdService extends CallScreeningService {
 
                 String dac = Utility.getReturValidDAC(context);
                 if (dac != null) {
-                    NotificationHelper.showDACNotification(context, dac);
+                    NotificationHelper.showDACNotification(context, dac, "OTP");
                 }
 
                 notifyCount++;

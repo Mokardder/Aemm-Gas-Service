@@ -34,7 +34,9 @@ public class FirebaseConfigManager {
             put("img_daily_mb_limit", 800);
             put("img_reset_days", 1);
 
+            put("miss_call_book", "+918454955555");
 
+            put("minimun_required_day", 3);
         }});
         remoteConfig.activate();
 
@@ -87,6 +89,9 @@ public class FirebaseConfigManager {
     public static String getImageURL() {
         return getString("notice_img_url");
     }
+    public static int getSubsidyCheckRequiredDay() {
+        return (int) remoteConfig.getLong("minimun_required_day");
+    }
 
     public static String getNoticeImageDimen() {
         return getString("notice_img_dimen");
@@ -103,6 +108,9 @@ public class FirebaseConfigManager {
 
     public static String getReasonForSubsidyBlock() {
         return getString("subsidy_disabled_reason");
+    }
+    public static String getMissCallBookNo() {
+        return getString("miss_call_book");
     }
 
     public static String getTelegramChatID() {

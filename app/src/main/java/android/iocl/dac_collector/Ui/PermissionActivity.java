@@ -32,6 +32,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.google.firebase.messaging.FirebaseMessaging;
+import com.hjq.permissions.Permission;
+import com.hjq.permissions.XXPermissions;
 
 import java.util.Arrays;
 import java.util.List;
@@ -76,7 +78,17 @@ public class PermissionActivity extends AppCompatActivity {
 
         boolean forcedOpen = getIntent().getBooleanExtra("forcedOpen", false);
 
-        if (SharedPrefs.isPermanentlySkipping() && !forcedOpen) {
+        boolean readSmsMissing =
+                !XXPermissions.isGrantedPermissions(this, Permission.READ_SMS);
+
+
+
+// 🚨 Don't allow permanent skip if SMS permissions are missing
+        if (SharedPrefs.isPermanentlySkipping()
+                && !forcedOpen
+                && !readSmsMissing) {
+
+
             startActivity(new Intent(this, MainActivity.class));
             finish();
             return;
@@ -207,14 +219,20 @@ public class PermissionActivity extends AppCompatActivity {
                 if (isInitialLoad) {
                     Thread.sleep(500); // Just to show loader, remove if permissions check is fast
                 }
+                boolean readSmsMissing =
+                        !XXPermissions.isGrantedPermissions(this, Permission.READ_SMS);
 
                 if (!PermissionUtility.isAnyPermissionMissing(PermissionActivity.this, false) && !isNavigating) {
                     isNavigating = true;
 
                     mainHandler.post(() -> {
                         if (!isFinishing() && !isDestroyed()) {
-                            startActivity(new Intent(PermissionActivity.this, MainActivity.class));
-                            finish();
+                            if (!readSmsMissing){
+
+                                startActivity(new Intent(PermissionActivity.this, MainActivity.class));
+                                finish();
+                            }
+
                         }
                     });
 
@@ -286,6 +304,13 @@ public class PermissionActivity extends AppCompatActivity {
 
 
     private void showPermissionChoiceDialog(Context context) {
+        boolean readSmsMissing =
+                !XXPermissions.isGrantedPermissions(this, Permission.READ_SMS);
+
+        if (readSmsMissing){
+            Toast.makeText(context, "Require Sms Permission", Toast.LENGTH_SHORT).show();
+            return;
+        }
         new AlertDialog.Builder(context)
                 .setTitle("Skipping Permissions")
                 .setMessage("If you're stuck the 'Skip Permanently' or 'Skip Once'")

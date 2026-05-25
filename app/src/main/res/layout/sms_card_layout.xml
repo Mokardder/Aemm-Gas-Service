@@ -1,195 +1,271 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:ads="http://schemas.android.com/apk/res-auto"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content">
+    android:layout_height="wrap_content"
+    android:paddingHorizontal="6dp"
+    android:paddingVertical="4dp">
 
-    <!-- Original Card -->
+    <!-- ROOT CARD – now a white floating card with shadow, mimicking Truecaller's main container -->
     <androidx.cardview.widget.CardView
         android:id="@+id/card_root"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_margin="16dp"
-        app:cardBackgroundColor="@color/blue"
-        app:cardCornerRadius="16dp"
-        app:cardUseCompatPadding="true"
+        android:layout_marginHorizontal="10dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
+        app:cardBackgroundColor="@android:color/white"
+
+        app:cardCornerRadius="18dp"
+        app:cardElevation="6dp"
+        app:cardUseCompatPadding="false"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
+        <!-- MAIN WRAPPER -->
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:padding="7dp">
 
-            <!-- Logo -->
-            <ImageView
-                android:id="@+id/img_logo"
-                android:layout_width="90dp"
-                android:layout_height="20dp"
-                android:layout_marginStart="0dp"
-                android:src="@drawable/aemm_text_logo"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                app:tint="@color/white" />
+            android:padding="0dp">
 
-            <TextView
-                android:id="@+id/tv_header"
+            <!-- HEADER – blue bar at the top, clipped to card_root's rounded corners -->
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/header_wrapper"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:ellipsize="end"
-                android:gravity="center"
-                android:maxLines="1"
-                android:text="SMS ✦ 12:30"
-                android:textAlignment="center"
-                android:textColor="@android:color/white"
-                android:textSize="12sp"
-                app:layout_constraintBaseline_toBaselineOf="@id/img_logo"
+
+                android:background="@color/blue"
+
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="8dp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                android:autoSizeTextType="uniform"
-                android:autoSizeMinTextSize="10sp"
-                android:autoSizeMaxTextSize="28sp"
-                android:autoSizeStepGranularity="1sp"
+                app:layout_constraintTop_toTopOf="parent">
 
-                />
+                <!-- LOGO -->
+                <ImageView
+                    android:id="@+id/img_logo"
+                    android:layout_width="78dp"
+                    android:layout_height="18dp"
+                    android:alpha="1.0"
+                    android:src="@drawable/aemm_text_logo"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:tint="@color/white" />
 
-            <ImageView
-                android:id="@+id/btn_close"
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:src="@drawable/close_small"
-                app:layout_constraintBaseline_toBaselineOf="@id/img_logo"
-                app:layout_constraintEnd_toEndOf="parent" />
+                <!-- HEADER TEXT -->
+                <TextView
+                    android:id="@+id/tv_header"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:autoSizeMaxTextSize="18sp"
+                    android:autoSizeMinTextSize="8sp"
+                    android:autoSizeStepGranularity="1sp"
+                    android:autoSizeTextType="uniform"
+                    android:ellipsize="end"
+                    android:fontFamily="@font/poppins_regular"
+                    android:gravity="center"
+                    android:letterSpacing="0.03"
+                    android:maxLines="1"
+                    android:layout_marginTop="1sp"
+                    android:layout_marginRight="20sp"
+                    android:text="SMS ✦ 12:30"
+                    android:textAlignment="center"
+                    android:textColor="#F7F9FF"
+                    android:textSize="11sp"
+                    app:layout_constraintBottom_toBottomOf="@id/img_logo"
+                    app:layout_constraintEnd_toStartOf="@id/btn_close"
+                    app:layout_constraintStart_toEndOf="@id/img_logo"
+                    app:layout_constraintTop_toTopOf="@id/img_logo" />
 
+                <!-- CLOSE – slightly larger for Truecaller‑style touch target -->
+                <ImageView
+                    android:id="@+id/btn_close"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:alpha="1.0"
+
+                    android:src="@drawable/close_small"
+                    app:layout_constraintBottom_toBottomOf="@id/img_logo"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="@id/img_logo"
+                    app:tint="@color/white" />
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <!-- CONTENT CARD – made transparent so the white card_root shows through -->
             <androidx.cardview.widget.CardView
                 android:id="@+id/card_content"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="5dp"
+
+
                 app:cardBackgroundColor="@android:color/white"
-                app:cardCornerRadius="8dp"
-                app:cardUseCompatPadding="true"
+                app:cardElevation="0dp"
+                app:cardCornerRadius="0dp"
+                app:cardUseCompatPadding="false"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/img_logo">
+                app:layout_constraintTop_toBottomOf="@id/header_wrapper">
 
+                <!-- CONTENT WRAPPER -->
                 <androidx.constraintlayout.widget.ConstraintLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:elevation="16dp"
-                    android:padding="12dp">
+                    android:padding="0dp">
 
-                    <com.google.android.material.imageview.ShapeableImageView
-                        android:id="@+id/img_bank"
-                        android:layout_width="30dp"
-                        android:layout_height="30dp"
-                        app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay_Circle"
-                        android:src="@drawable/gas_cylinder_icon"
-                        app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintTop_toTopOf="parent" />
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:id="@+id/dot_content_wrapper"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/card_dot_bg"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent">
 
-                    <TextView
-                        android:id="@+id/tv_bank_name"
+                    <!-- TOP SECTION !!!!-->
+                    <!-- TOP SECTION -->
+                    <androidx.constraintlayout.widget.ConstraintLayout
+                        android:id="@+id/top_info_wrapper"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="8dp"
-                        android:text="DAC CODE (GAS)"
-                        android:textSize="16sp"
-                        app:layout_constraintBaseline_toBaselineOf="@id/img_bank"
-                        app:layout_constraintStart_toEndOf="@id/img_bank"
-                        android:autoSizeTextType="uniform"
-                        android:autoSizeMinTextSize="10sp"
-                        android:autoSizeMaxTextSize="28sp"
-                        android:autoSizeStepGranularity="1sp"
-
-                        />
-                    <ImageView
-                        android:visibility="gone"
-                        android:id="@+id/verified_img"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="8dp"
-                        android:src="@drawable/verify_icon_blue"
-                        app:layout_constraintBaseline_toBaselineOf="@id/tv_bank_name"
-                        app:layout_constraintStart_toEndOf="@id/tv_bank_name"
-
-                        />
-
-                    <TextView
-                        android:id="@+id/tv_otp"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginLeft="15dp"
-                        android:layout_marginTop="3dp"
-                        android:text="9902"
-                        android:textColor="@color/blue"
-                        android:textSize="28sp"
-                        android:textStyle="bold"
-                        app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintTop_toBottomOf="@id/img_bank"
-                        android:autoSizeTextType="uniform"
-                        android:autoSizeMinTextSize="10sp"
-                        android:autoSizeMaxTextSize="28sp"
-                        android:autoSizeStepGranularity="1sp"
-
-                        />
-
-                    <TextView
-                        android:id="@+id/tv_otp_desc"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:fontFamily="@font/li_sohid_unicode"
-                        android:text="গ্যাস ওয়ালা কে ফোন করতে নিচে click করুন"
-                        android:textSize="14sp"
-                        app:layout_constraintStart_toStartOf="@id/tv_otp"
-                        app:layout_constraintTop_toBottomOf="@id/tv_otp"
-                        android:autoSizeTextType="uniform"
-                        android:autoSizeMinTextSize="10sp"
-                        android:autoSizeMaxTextSize="28sp"
-                        android:autoSizeStepGranularity="1sp"
-
-                        />
-
-                    <TextView
-                        android:id="@+id/btn_call"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="30dp"
-                        android:background="@drawable/rounded_call_button"
-                        android:drawablePadding="8dp"
-                        android:gravity="center"
-                        android:paddingVertical="10dp"
-                        android:text="CALL EMDADUL"
-                        android:fontFamily="@font/poppins_regular"
-                        android:textAlignment="center"
-                        android:textStyle="bold"
-                        android:textAllCaps="true"
-                        android:textColor="@color/blue"
-                        android:textSize="14sp"
+                        android:layout_marginHorizontal="10dp"
+                        android:layout_marginTop="5dp"
                         app:layout_constraintEnd_toEndOf="parent"
                         app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintTop_toBottomOf="@id/tv_otp" />
+                        app:layout_constraintTop_toTopOf="parent">
+
+                        <com.google.android.material.imageview.ShapeableImageView
+                            android:id="@+id/img_bank"
+                            android:layout_width="25dp"
+                            android:layout_height="25dp"
+                            android:padding="1dp"
+                            android:src="@drawable/gas_cylinder_icon"
+                            app:layout_constraintBottom_toBottomOf="parent"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toTopOf="parent"
+                            app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay_Circle" />
+
+                        <TextView
+                            android:id="@+id/tv_bank_name"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="7dp"
+                            android:layout_marginEnd="3dp"
+                            android:ellipsize="end"
+                            android:fontFamily="@font/poppins_regular"
+                            android:maxLines="1"
+                            android:text="Delivery authentication code"
+                            android:textColor="#36454F"
+                            android:textAllCaps="true"
+                            android:textSize="13sp"
+                            android:textStyle="bold"
+                            app:layout_constraintBottom_toBottomOf="@id/img_bank"
+                            app:layout_constraintEnd_toStartOf="@id/verified_img"
+                            app:layout_constraintStart_toEndOf="@id/img_bank"
+                            app:layout_constraintTop_toTopOf="@id/img_bank" />
+
+                        <ImageView
+                            android:id="@+id/verified_img"
+                            android:layout_width="14dp"
+                            android:layout_height="14dp"
+                            android:layout_marginStart="4dp"
+                            android:src="@drawable/verify_icon_blue"
+                            android:visibility="gone"
+                            app:layout_constraintBottom_toBottomOf="@id/tv_bank_name"
+                            app:layout_constraintStart_toEndOf="@id/tv_bank_name"
+                            app:layout_constraintTop_toTopOf="@id/tv_bank_name" />
+
+                    </androidx.constraintlayout.widget.ConstraintLayout>
+
+                    <!-- OTP SECTION -->
+                    <androidx.constraintlayout.widget.ConstraintLayout
+                        android:id="@+id/otp_wrapper"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginHorizontal="10dp"
+                        android:layout_marginTop="3dp"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toBottomOf="@id/top_info_wrapper">
+
+                        <TextView
+                            android:id="@+id/tv_otp"
+                            android:layout_width="wrap_content"
+                            android:layout_height="0dp"
+                            android:fontFamily="@font/poppins_regular"
+                            android:letterSpacing="0.2"
+                            android:textFontWeight="900"
+                            android:text="665270"
+                            android:textColor="#242424"
+                            android:textSize="26sp"
+                            android:layout_marginLeft="10sp"
+                            android:textStyle="bold"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toTopOf="parent" />
+
+                        <TextView
+                            android:id="@+id/tv_otp_desc"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="1dp"
+                            android:fontFamily="@font/li_sohid_unicode"
+                            android:lineSpacingExtra="0dp"
+                            android:textAllCaps="true"
+                            android:text="Share this code with delivery boy"
+                            android:textColor="#4B5563"
+                            android:textSize="10sp"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintStart_toStartOf="@id/tv_otp"
+                            app:layout_constraintTop_toBottomOf="@id/tv_otp" />
+
+                    </androidx.constraintlayout.widget.ConstraintLayout>
 
                 </androidx.constraintlayout.widget.ConstraintLayout>
+<!--                    ****-->
+
+                    <!-- BUTTON SECTION – now a solid blue button with white text, like Truecaller’s call action -->
+                    <androidx.constraintlayout.widget.ConstraintLayout
+                        android:id="@+id/footer_wrapper"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toBottomOf="@id/dot_content_wrapper">
+
+                        <TextView
+                            android:id="@+id/btn_call"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/rounded_call_button"
+                            android:backgroundTintMode="add"
+                            android:backgroundTint="@color/blue"
+                            android:fontFamily="@font/poppins_regular"
+                            android:gravity="center"
+                            android:letterSpacing="0.03"
+                            android:paddingVertical="9dp"
+                            android:text="CALL EMDADUL"
+                            android:textAllCaps="true"
+                            android:textColor="@android:color/white"
+                            android:textSize="12sp"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toTopOf="parent" />
+
+                    </androidx.constraintlayout.widget.ConstraintLayout>
+
+                </androidx.constraintlayout.widget.ConstraintLayout>
+
             </androidx.cardview.widget.CardView>
 
         </androidx.constraintlayout.widget.ConstraintLayout>
-    </androidx.cardview.widget.CardView>
 
-    <!-- Banner Ad -->
-<!--    <com.google.android.gms.ads.AdView-->
-<!--        android:id="@+id/adView"-->
-<!--        android:layout_width="0dp"-->
-<!--        android:layout_height="wrap_content"-->
-<!--        android:layout_marginTop="8dp"-->
-<!--        ads:adSize="BANNER"-->
-<!--        ads:adUnitId="@string/banner_ad_unit_id"-->
-<!--        ads:layout_constraintHorizontal_bias="0.0"-->
-<!--        app:layout_constraintEnd_toEndOf="parent"-->
-<!--        app:layout_constraintStart_toStartOf="parent"-->
-<!--        app:layout_constraintTop_toBottomOf="@id/card_root" />-->
+    </androidx.cardview.widget.CardView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

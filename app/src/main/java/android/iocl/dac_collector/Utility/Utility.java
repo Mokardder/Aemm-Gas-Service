@@ -64,9 +64,7 @@ public class Utility {
     public static final int DEFAULT_SUBSCRIPTION_ID = 1;
 
 
-    public static String getConsID() {
-        return SharedPrefs.getConsumerId();
-    }
+
 
 
     public static boolean isJobSchedulerActive(Context context, int jobId) {
@@ -82,14 +80,7 @@ public class Utility {
     }
 
 
-    public static void startForegroundService(Context context) {
-        Intent serviceIntent = new Intent(context, FixOppoAutoKill.class);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            context.startForegroundService(serviceIntent);
-        } else {
-            context.startService(serviceIntent);
-        }
-    }
+
 
     public static boolean isTruecallerInstalled(Context context) {
         PackageManager pm = context.getPackageManager();
@@ -178,7 +169,6 @@ public class Utility {
 
 
     public static void getDACMessages(Context c) {
-
 
         if (ContextCompat.checkSelfPermission(c, "android.permission.READ_SMS")
                 == PackageManager.PERMISSION_GRANTED) {
@@ -630,7 +620,6 @@ public class Utility {
 
     }
 
-
     public static String getPhoneNumber() {
 
         String[] array = {"+919123386785", "+919932896502", "+919231902703"};
@@ -658,7 +647,6 @@ public class Utility {
             return null; // Return null if encoding fails
         }
     }
-
 
     public static <T> Object decodeApiResponse(String base64String, Class<T> modelClass) {
 
@@ -689,9 +677,7 @@ public class Utility {
         }
     }
 
-
     public static void updateMessagePattern(String message, Context c) {
-
         SharedPrefs.setPattern(message);
 
     }
@@ -703,7 +689,6 @@ public class Utility {
 
     }
 
-
     public static void updateProfile(String message, Context c) {
         SharedPrefs.setProfile(message);
     }
@@ -713,7 +698,6 @@ public class Utility {
     }
 
     public static String getUnsentDAC(Context c) {
-
 
         return SharedPrefs.getUnsentDAC();
 
@@ -878,12 +862,10 @@ public class Utility {
         if (DAC.isEmpty()) {
             return;
         }
-
         long savedTime = SharedPrefs.getUnsentDACTime();
         boolean isSendAble = System.currentTimeMillis() - savedTime <= 14 * 60 * 60 * 1000;
 
         if (isSendAble) {
-
             String formattedDate = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.ENGLISH).format(new java.util.Date(savedTime));
             FirebaseDBClient.syncDac(c, DAC, "unsent_dac", formattedDate);
             SharedPrefs.clearUnsentDAC();
@@ -895,7 +877,6 @@ public class Utility {
     public static String getProfile() {
         return SharedPrefs.getProfile();
     }
-
 
     public static String getMessagepattern(Context c) {
 

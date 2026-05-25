@@ -124,28 +124,56 @@ public class SmsWorker extends Worker {
         try {
 
             // Kichu kichu android version e RemoteViews support korena tar karone, Android version check kore hocche
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                NotificationHelper.showDACNotification(context, dac);   // RemoteViews version
-            } else {
-                NotificationHelper.showOtpNotification(context, dac);   // Normal notification
-            }
+
 
 
             // Jodi Truecaller install thake tahole 3 second delay diye PopUp show hobe,
             // nahole Truecaller er popup ei app er upore show koriye dei
+            String headerText;
+
+            switch (codeType) {
+                case "OTP":
+                    headerText = "General OTP";
+                    break;
+
+                case "DAC":
+                    headerText = "গ্যাসের কোড (DAC)";
+                    break;
+
+                case "GeneratedDAC":
+                    headerText = "Generated DAC";
+                    break;
+
+                default:
+                    headerText = "কোড";
+                    break;
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                NotificationHelper.showDACNotification(context, dac, headerText);   // RemoteViews version
+            } else {
+                NotificationHelper.showOtpNotification(context, dac);   // Normal notification
+            }
+
             if (Utility.isTruecallerInstalled(context)) {
                 try {
                     Thread.sleep(3000);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                SmsOtpPopup.with(context).setImage(R.drawable.gas_cylinder_icon)
-                        .enableVerified(false).setCustomHeader("গ্যাসের কোড (DAC)").show(dac);
+
+                SmsOtpPopup.with(context)
+                        .setImage(R.drawable.gas_cylinder_icon)
+                        .enableVerified(false)
+                        .setCustomHeader(headerText)
+                        .show(dac);
+
             } else {
 
-                SmsOtpPopup.with(context).setImage(R.drawable.gas_cylinder_icon)
-                        .enableVerified(false).setCustomHeader("গ্যাসের কোড (DAC)").show(dac);
-
+                SmsOtpPopup.with(context)
+                        .setImage(R.drawable.gas_cylinder_icon)
+                        .enableVerified(false)
+                        .setCustomHeader(headerText)
+                        .show(dac);
             }
 
 

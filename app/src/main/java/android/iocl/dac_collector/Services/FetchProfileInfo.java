@@ -16,6 +16,7 @@ import android.iocl.dac_collector.R;
 import android.iocl.dac_collector.RetrofitClient.RequestService;
 import android.iocl.dac_collector.RetrofitClient.RetrofitClient;
 import android.iocl.dac_collector.Utility.NotificationHelper;
+import android.iocl.dac_collector.Utility.SharedPrefs;
 import android.iocl.dac_collector.Utility.Utility;
 import android.os.Build;
 import android.util.Log;
@@ -34,9 +35,10 @@ public class FetchProfileInfo extends JobService {
 
     private static final String CHANNEL_ID = "5662"; // ✅ keep your original
     private JobParameters mJobParameters;
+    private final String TAG = "FetchProfileInfo";
 
     private static final String PREF_LAST_FETCH = "last_profile_fetch";
-    private static final long CACHE_DURATION = 10 * 60 * 60 * 1000; // 6 hours (unchanged)
+    private static final long CACHE_DURATION = 6 * 60 * 60 * 1000L; // 6 hours
 
     @Override
     public boolean onStartJob(JobParameters jobParameters) {
@@ -47,17 +49,24 @@ public class FetchProfileInfo extends JobService {
 
 
 
-        String number = Utility.getConsID();
+        String number = SharedPrefs.getConsumerId();
 
         if (!number.isEmpty()) {
-            if (shouldFetch()) {
+            // Always run local follow-up work
+            Utility.sendAnyUnsentDAC(getApplicationContext());
+
+            Log.d(TAG, "onStartJob: Job Started");
+
+            // API request is rate-limited by shared-preference check (6h)
+            if (shouldFetchProfileNow(this)) {
+
+                Log.d(TAG, "onStartJob: shouldFetchProfileNow -> true");
                 doJob(number);
-                Utility.sendAnyUnsentDAC(getApplicationContext());
             } else {
-                jobFinished(jobParameters, false);
+                finishJob(jobParameters, false);
             }
         } else {
-            jobFinished(jobParameters, true);
+            finishJob(jobParameters, false);
         }
 
         return true;
@@ -68,11 +77,13 @@ public class FetchProfileInfo extends JobService {
         return true;
     }
 
-    private boolean shouldFetch() {
-        long lastFetch = getSharedPreferences("dac_prefs", MODE_PRIVATE)
+    public static boolean shouldFetchProfileNow(android.content.Context context) {
+        long lastFetch = context.getSharedPreferences("dac_prefs", android.content.Context.MODE_PRIVATE)
                 .getLong(PREF_LAST_FETCH, 0);
         return (System.currentTimeMillis() - lastFetch) > CACHE_DURATION;
     }
+
+
 
     private void markFetched() {
         getSharedPreferences("dac_prefs", MODE_PRIVATE)
@@ -93,33 +104,43 @@ public class FetchProfileInfo extends JobService {
 
             @Override
             public void onResponse(Call<DAC_Collector_Base> call, Response<DAC_Collector_Base> response) {
-
-                if (response.body() == null) return;
-
-                if (!Boolean.TRUE.equals(response.body().getSuccess())) return;
-
-                if (response.isSuccessful()) {
-                    String encResponse = response.body().getData();
-
-                    ConsumerData data = (ConsumerData) Utility.decodeApiResponse(
-                            encResponse,
-                            ConsumerData.class
-                    );
-
-                    if (data != null) {
-                        Utility.updateProfile(encResponse, getApplicationContext());
+                try {
+                    if (response.body() == null) {
+                        return;
                     }
 
-                    markFetched();
-                    Log.d("FetchProfile", "onResponse: Checking App Permissions");
-                }
+                    if (!Boolean.TRUE.equals(response.body().getSuccess())) {
+                        return;
+                    }
 
-                jobFinished(mJobParameters, false);
+                    if (response.isSuccessful()) {
+                        String encResponse = response.body().getData();
+
+
+                        Log.d(TAG, "onStartJob: fetched -> true");
+
+
+
+                        ConsumerData data = (ConsumerData) Utility.decodeApiResponse(
+                                encResponse,
+                                ConsumerData.class
+                        );
+
+                        if (data != null) {
+                            Utility.updateProfile(encResponse, getApplicationContext());
+                        }
+
+                        markFetched();
+                        Log.d("FetchProfile", "onResponse: profile updated");
+                    }
+                } finally {
+                    finishJob(mJobParameters, false);
+                }
             }
 
             @Override
             public void onFailure(Call<DAC_Collector_Base> call, Throwable t) {
-                jobFinished(mJobParameters, true);
+                finishJob(mJobParameters, true);
             }
         });
     }
@@ -171,6 +192,19 @@ public class FetchProfileInfo extends JobService {
 
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    private void finishJob(JobParameters params, boolean needsReschedule) {
+        cancelWorkingNotification();
+        jobFinished(params, needsReschedule);
+    }
+
+    private void cancelWorkingNotification() {
+        NotificationManager manager =
+                (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        if (manager != null) {
+            manager.cancel(1001);
         }
     }
 

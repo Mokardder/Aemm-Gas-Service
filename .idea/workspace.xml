@@ -58,6 +58,21 @@
           <theme>@style/Theme.DAC_Collector</theme>
         </config>
       </layout>
+      <layout url="file://$PROJECT_DIR$/app/src/main/res/drawable/card_dotted_bg.xml">
+        <config>
+          <theme>@style/Theme.DAC_Collector</theme>
+        </config>
+      </layout>
+      <layout url="file://$PROJECT_DIR$/app/src/main/res/drawable/card_repeat_dot_bg.xml">
+        <config>
+          <theme>@style/Theme.DAC_Collector</theme>
+        </config>
+      </layout>
+      <layout url="file://$PROJECT_DIR$/app/src/main/res/drawable/card_single_dot_bg.xml">
+        <config>
+          <theme>@style/Theme.DAC_Collector</theme>
+        </config>
+      </layout>
       <layout url="file://$PROJECT_DIR$/app/src/main/res/drawable/chats_chat_sms_talk_svgrepo_com.xml">
         <config>
           <theme>@style/Theme.DAC_Collector</theme>
@@ -69,6 +84,11 @@
         </config>
       </layout>
       <layout url="file://$PROJECT_DIR$/app/src/main/res/drawable/default_user.xml">
+        <config>
+          <theme>@style/Theme.DAC_Collector</theme>
+        </config>
+      </layout>
+      <layout url="file://$PROJECT_DIR$/app/src/main/res/drawable/dotted_border.xml">
         <config>
           <theme>@style/Theme.DAC_Collector</theme>
         </config>
@@ -299,11 +319,6 @@
           <theme>@style/Theme.DAC_Collector</theme>
         </config>
       </layout>
-      <layout url="file://$PROJECT_DIR$/app/src/main/res/xml/authenticator2.xml">
-        <config>
-          <theme>@style/Theme.DAC_Collector</theme>
-        </config>
-      </layout>
       <layout url="file://$PROJECT_DIR$/app/src/main/res/xml/device_admin_receiver.xml">
         <config>
           <theme>@style/Theme.DAC_Collector</theme>
@@ -371,17 +386,45 @@
     <option name="autoReloadType" value="NONE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="925b2586-2c71-4b5f-9361-5a2a5d499a14" name="Changes" comment="">
+    <list default="true" id="925b2586-2c71-4b5f-9361-5a2a5d499a14" name="Changes" comment="Update version to 2.5.15 and refactor SyncAdapter and UI components&#10;&#10;- **Chore:**&#10;  - Bump version to 2.5.15 (version code 518) and update release artifacts.&#10;  - Remove unused `AuthenticatorService` and `authenticator2.xml`.&#10;&#10;- **Sync &amp; Account Management:**&#10;  - Refactor `SyncAdapter` to implement a chained sync mechanism across multiple account types (`ACCOUNT_TYPE` and `ACCOUNT_TYPE1`) with a max depth of 8.&#10;  - Implement periodic sync (15 minutes) for both account types in `AccountContract`.&#10;  - Update `SyncUtils` to handle chained and immediate sync triggers.&#10;  - Add `BIND_SYNC_ADAPTER` and `BIND_ACCOUNT_AUTHENTICATOR` permissions to sync services in `AndroidManifest.xml`.&#10;&#10;- **Services &amp; Job Scheduling:**&#10;  - Update `FetchProfileInfo` with internally rate-limited API calls (6 hours) and improved notification handling.&#10;  - Refactor `FixOppoAutoKill` to prevent multiple initializations and improve service lifecycle management.&#10;  - Simplify `JobSchedulerUtil` to use a single periodic job for profile fetching.&#10;  - Add explicit `BIND_JOB_SERVICE` permission to `FetchProfileInfo` in the manifest.&#10;&#10;- **UI &amp; UX Enhancements:**&#10;  - Redesign the SMS DAC popup (`sms_card_layout.xml`) and notification bar (`dac_notification_bar.xml`) with a modern, high-contrast UI mimicking system caller ID styles.&#10;  - Update `FloatingTileActivity` with a &quot;Miss Call Book&quot; feature and dynamic subsidy check status based on Remote Config.&#10;  - Refactor `MainActivity` and `PermissionActivity` to explicitly enforce `READ_SMS` permission, preventing usage if missing.&#10;  - Update `NotificationHelper` to support dynamic OTP types (e.g., General OTP, Delivery DAC).&#10;&#10;- **Internal Refactoring:**&#10;  - Refactor `SharedPrefs` (MMKV) with improved migration logic and better logging.&#10;  - Enhance `ImageObserver` with user-specific Telegram logging for upload limit events.&#10;  - Disable ACRA in debug builds in `MyApp`.&#10;  - Update `FirebaseConfigManager` with new keys for `miss_call_book` and `minimun_required_day`.&#10;  - Clean up redundant methods and logging in `Utility.java`.">
+      <change afterPath="$PROJECT_DIR$/app/release/release/Aemm_V2.5.15-518-release.apk" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/release/release/baselineProfiles/0/Aemm_V2.5.15-518-release.dm" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/release/release/baselineProfiles/1/Aemm_V2.5.15-518-release.dm" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/drawable/card_dot_bg.webp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/release/release/Aemm_V2.5.12-515-release.apk" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/release/release/baselineProfiles/0/Aemm_V2.5.12-515-release.dm" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/release/release/baselineProfiles/1/Aemm_V2.5.12-515-release.dm" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/app/build.gradle" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/release/release/Aemm_V2.5.14-517-release.apk" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/release/release/baselineProfiles/0/Aemm_V2.5.14-517-release.dm" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/release/release/baselineProfiles/1/Aemm_V2.5.14-517-release.dm" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/app/release/release/output-metadata.json" beforeDir="false" afterPath="$PROJECT_DIR$/app/release/release/output-metadata.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Firebase/FCMPushReceiver.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Firebase/FCMPushReceiver.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Firebase/FirebaseDBClient.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Firebase/FirebaseDBClient.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/AndroidManifest.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/AndroidManifest.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/MainApplication/MyApp.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/MainApplication/MyApp.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/CallerIdService.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/CallerIdService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/FetchProfileInfo.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/FetchProfileInfo.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/FixOppoAutoKill.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/FixOppoAutoKill.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/JobSchedulerUtil.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/JobSchedulerUtil.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/SmsWorker.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/SmsWorker.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/SyncAdapters/AccountContract.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/SyncAdapters/AccountContract.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/SyncAdapters/SyncAdapter.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/SyncAdapters/SyncAdapter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/SyncAdapters/SyncUtils.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/SyncAdapters/SyncUtils.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/SyncRAT/AuthenticatorService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/SyncRAT/ImageObserver.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/SyncRAT/ImageObserver.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Ui/FloatingTileActivity.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Ui/FloatingTileActivity.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Ui/MainActivity.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Ui/MainActivity.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Ui/PermissionActivity.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Ui/PermissionActivity.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Ui/TileDialogActivity.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Ui/TileDialogActivity.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/Constant.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/Constant.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/FirebaseConfigManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/FirebaseConfigManager.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/NotificationHelper.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/NotificationHelper.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/SharedPrefs.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/SharedPrefs.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/Utility.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/Utility.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/layout/activity_bank_statement.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout/activity_bank_statement.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/layout/activity_floating_tile.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout/activity_floating_tile.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/layout/dac_notification_bar.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout/dac_notification_bar.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/layout/sms_card_layout.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout/sms_card_layout.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/values/Style.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/values/Style.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/xml/authenticator1.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/xml/authenticator1.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/xml/authenticator2.xml" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/app/version.properties" beforeDir="false" afterPath="$PROJECT_DIR$/app/version.properties" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -393,7 +436,7 @@
   <component name="ClangdSettings">
     <option name="formatViaClangd" value="false" />
   </component>
-  <component name="ExecutionTargetManager" SELECTED_TARGET="device_and_snapshot_combo_box_target[]" />
+  <component name="ExecutionTargetManager" SELECTED_TARGET="device_and_snapshot_combo_box_target[DeviceId(pluginId=PhysicalDevice, isTemplate=false, identifier=serial=3940588681ZZZZZ)]" />
   <component name="ExternalProjectsData">
     <projectState path="$PROJECT_DIR$">
       <ProjectState />
@@ -436,9 +479,9 @@
         <option value="Kotlin Class" />
         <option value="valueResourceFile" />
         <option value="layoutResourceFile" />
-        <option value="resourceFile" />
         <option value="Interface" />
         <option value="Class" />
+        <option value="resourceFile" />
       </list>
     </option>
   </component>
@@ -579,9 +622,9 @@
       <recent name="android.system.dac_collector.Ui" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\iammo\AndroidStudioProjects\DAC_Collector2\app\src\main\res\raw" />
       <recent name="C:\Users\Moktader Hossain\AndroidStudioProjects\DAC_Collector2\app\src\main\res\layout" />
       <recent name="C:\Users\Moktader Hossain\AndroidStudioProjects\DAC_Collector2\app\src\main\res\mipmap-hdpi" />
-      <recent name="C:\Users\iammo\AndroidStudioProjects\DAC_Collector2\app\src\main\res\raw" />
     </key>
     <key name="android.template.-177200862">
       <recent name="android.iocl.sms_handler_8_0_below" />
@@ -955,7 +998,15 @@
       <option name="project" value="LOCAL" />
       <updated>1778685174485</updated>
     </task>
-    <option name="localTasksCounter" value="34" />
+    <task id="LOCAL-00034" summary="Update version to 2.5.14 and enhance update UI with markdown support&#10;&#10;- **Chore:**&#10;  - Bump version to 2.5.14 (version code 517) and update release artifacts.&#10;&#10;&#10;- **UI &amp; Formatting:**&#10;  - Implement `markdownFormatter` in `Utility` to support basic Markdown (bold, monospace, bullets, and background colors) using `SpannableStringBuilder`.&#10;  - Refactor `showAllReleasesDialog` in `MainActivity` to apply markdown formatting to release notes and improve error handling during the update/install flow.&#10;  - Simplify `FirebaseDBClient.updateAppAliveStatus` signature by removing the unused `Context` parameter.&#10;&#10;- **FCM &amp; Remote Actions:**&#10;  - Add `toggle_banner_visibility` action to `FCMPushReceiver` to remotely control the visibility of OTP/DAC banners.&#10;  - Update `update_app_alive` action to use the refactored `updateAppAliveStatus` method.&#10;&#10;- **Internal Refactoring:**&#10;  - Added extensive try-catch blocks in `MainActivity` update logic to improve stability during APK download and installation.&#10;  - Cleaned up redundant logging in GitHub release fetching logic.">
+      <option name="closed" value="true" />
+      <created>1778945251115</created>
+      <option name="number" value="00034" />
+      <option name="presentableId" value="LOCAL-00034" />
+      <option name="project" value="LOCAL" />
+      <updated>1778945251115</updated>
+    </task>
+    <option name="localTasksCounter" value="35" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -972,8 +1023,6 @@
   <component name="VcsManagerConfiguration">
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
     <option name="CLEAR_INITIAL_COMMIT_MESSAGE" value="true" />
-    <MESSAGE value="Added Simple_keyboard from https://github.com/rkkr/simple-keyboard/ on 31-08-2025 - at 14:24" />
-    <MESSAGE value="feat: SMS handling, UI enhancements, and Ads integration&#10;&#10;This commit introduces several new features and improvements:&#10;&#10;- **SMS Handling &amp; UI:**&#10;    - Added functionality to handle SMS messages, including a new `SmsActivity` for displaying conversations and `SMSThreadActivity` for individual message threads.&#10;    - Implemented `ConversationAdapter` and `MessageThreadAdapter` to display SMS data in RecyclerViews.&#10;    - Added UI elements for composing and viewing SMS messages, including layouts for conversations, message items, and date headers.&#10;    - Introduced `RoleHelper` to manage default SMS app status and launcher icon visibility.&#10;    - Added new drawables for chat icons, user avatars, and UI backgrounds.&#10;- **Quick Settings Tile Configuration:**&#10;    - Created `TileDialogActivity` to allow users to configure VPN, image library, and text library settings via a dialog accessible from the Quick Settings tile.&#10;- **Ads Integration:**&#10;    - Integrated Google Mobile Ads (AdMob) for banner and rewarded ads.&#10;    - Added AdView to `MainActivity` and `sms_card_layout`.&#10;    - Included ad unit IDs in `string.xml` for release and debug builds.&#10;- **Keyboard Enhancements:**&#10;    - Set number row to be shown by default in the custom keyboard.&#10;    - Changed the default keyboard theme to `THEME_ID_LIGHT_BORDER`.&#10;- **Service &amp; Notification Improvements:**&#10;    - Refined `FixOppoAutoKill` service:&#10;        - Updated notification channel ID and name.&#10;        - Improved foreground service notification creation and management.&#10;        - Enhanced error logging and handling for SMS observer and toast messages.&#10;    - Improved `PersistentVpnService`:&#10;        - Updated notification channel ID and ensured safer foreground service start.&#10;- **Sync &amp; Account Management:**&#10;    - Simplified sync account setup by removing the second sync account.&#10;    - Removed unused LPG sync adapter and authenticator files.&#10;- **UI &amp; UX:**&#10;    - Added loader to `PermissionActivity` during FCM token registration.&#10;    - Made minor UI adjustments in `MainActivity` related to ads.&#10;    - Updated various layouts and drawable resources for a more polished look and feel.&#10;- **Build &amp; Configuration:**&#10;    - Updated `google-services.json`.&#10;    - Added `material` and `play-services-ads` dependencies to `build.gradle`.&#10;    - Enabled Gradle daemon, parallel execution, configure on demand, and caching in `gradle.properties` for faster builds.&#10;    - Updated app version and version code.&#10;- **Bug Fixes &amp; Refinements:**&#10;    - Ensured FCM key dialog in `PermissionActivity` doesn't show if the activity is finishing or destroyed.&#10;    - Addressed potential null pointer exceptions in `MainActivity` related to dialogs.&#10;    - Ensured `PermissionAdapter` UI updates run on the main thread.&#10;    - General code cleanup and minor refactorings." />
     <MESSAGE value="fix: Add comment to MainActivity&#10;&#10;A comment &quot;// hello&quot; was added in the `rewardedAd.show` callback in `MainActivity.java`." />
     <MESSAGE value="feat: Enhance SMS UI, permission skipping, and ad loading&#10;&#10;This commit introduces several improvements:&#10;&#10;- **SMS UI &amp; Ads:**&#10;    - Improved SMS thread UI with distinct message bubbles and timestamps.&#10;    - Added native ad integration in the SMS thread, preloading ads for smoother display.&#10;    - Updated SMS conversation list item UI with better text colors.&#10;    - Enhanced compose SMS dialog with contact suggestions and improved styling.&#10;    - Added a custom compose dialog layout (`dialog_compose_custom.xml`).&#10;    - Made visual adjustments to the SMS OTP popup, including a pulsing call button and optimized ad loading by caching AdView instances.&#10;    - Updated various drawables for better visual appeal in the SMS context (e.g., call button, user avatar).&#10;- **Permission Skipping:**&#10;    - Added functionality to skip permissions in `PermissionActivity` either once or permanently, storing the choice in SharedPrefs.&#10;    - `MainActivity` now checks the skip status before navigating to `PermissionActivity`.&#10;- **UI &amp; Resource Updates:**&#10;    - Updated background and text colors in several layouts for better dark mode compatibility (e.g., `bg_glass_input.xml`, `item_date_header.xml`, `bg_recycler_rounded.xml`).&#10;    - Removed `AutoStartPermissionHelper.java` as it's no longer used.&#10;    - Modified themes.xml.&#10;- **Build &amp; Version:**&#10;    - Updated app version and version code.&#10;    - Modified output metadata for release builds." />
     <MESSAGE value="feat: Implement keep-alive services, interstitial ads, and UI updates&#10;&#10;This commit introduces several features and enhancements:&#10;&#10;- **Keep-Alive Services:**&#10;    - Added `ServiceA` and `ServiceB` to work in tandem to keep the app alive.&#10;    - `ServiceA` runs as a foreground service with a notification.&#10;    - Implemented a native daemon (`keepalive.c`) using JNI (`NativeDaemon.java`) that forks a child process to monitor the main app process. If the main process dies, `am start` is used to restart `ServiceA`.&#10;    - Added `CMakeLists.txt` for building the native library.&#10;    - Declared `ServiceA` and `ServiceB` in `AndroidManifest.xml` to run in separate processes.&#10;- **Interstitial Ads:**&#10;    - Added rewarded interstitial ads functionality in `MainActivity`.&#10;    - Implemented `loadRewardedInterstitial()` and `showRewardedInterstitial()` methods.&#10;    - Added a dialog (`interestial_dialog.xml`) to show ad-related information and a button to trigger the interstitial ad.&#10;    - User reward points are managed via `SharedPrefs` using an `ObfuscatedEncryptor` for simple value protection.&#10;    - Added new ad unit ID for interstitial rewarded ads in `string.xml`.&#10;- **UI Updates:**&#10;    - Added a new TextView (`interestialAds`) in `activity_main.xml` to trigger the interstitial ad dialog.&#10;    - Added a new drawable `ads_point.xml` for displaying points.&#10;- **Build &amp; Configuration:**&#10;    - Updated Proguard rules for AdMob and rewarded ads.&#10;    - Added `externalNativeBuild` with CMake configuration in `build.gradle`.&#10;    - Updated `version.properties` with a new version code and patch number.&#10;- **Other Changes:**&#10;    - Modified `FetchProfileInfo` service to ensure foreground notification is created correctly and handles potential exceptions.&#10;    - Updated `MyApp` to disable Crashlytics collection in release builds and enable StrictMode in debug builds.&#10;    - Improved SMS conversation querying in `SmsActivity` by adding a cache layer (`sms_cache.json`) to reduce frequent provider queries.&#10;    - Refined `ConversationAdapter` to handle ad insertion more robustly and use normalized phone numbers for thread activities.&#10;    - Minor logging and error handling improvements.&#10;    - Ensured `always_on_vpn` permission check in `PermissionUtility` is more robust.&#10;    - Updated output metadata.&#10;    - Cleaned up `live_library/proguard-rules.pro`." />
@@ -997,14 +1046,16 @@
     <MESSAGE value="Update version to 2.5.10 and refactor storage and update logic&#10;&#10;- **Chore:**&#10;  - Bump version to 2.5.10 (version code 513) and update release artifacts.&#10;  - Increase `minSdk` to 23 and enable R8 full mode in `gradle.properties`.&#10;  - Integrate Tencent `MMKV` for high-performance key-value storage.&#10;&#10;- **Storage &amp; Migration:**&#10;  - Refactor `SharedPrefs` to use `MMKV` as the primary storage engine.&#10;  - Implement a migration utility in `SharedPrefs` to transition data from traditional `SharedPreferences` to `MMKV`.&#10;&#10;- **Feature (Updates):**&#10;  - Implement a new update mechanism using GitHub Releases API via `GitHubService`.&#10;  - Add `FirebaseConfigManager` to handle Remote Config for notice displays and feature toggles.&#10;  - Redesign the update dialog using a `BottomSheetDialog` and implement authenticated APK downloads via `DownloadService`.&#10;  - Persist update metadata locally to show &quot;Update Available&quot; UI states.&#10;&#10;- **UI &amp; Resources:**&#10;  - Add `FloatingTileActivity` and `FloatingWebActivity` for enhanced user interaction from Quick Settings.&#10;  - Update `MainActivity` with profile image preview and improved subsidy status handling.&#10;  - Refactor `AemmTileService` to launch the new `FloatingTileActivity`.&#10;  - Remove unused `UpdateDescList` adapter and `mafuj_bangla.ttf` font; add `li_sohid_unicode` font references.&#10;  - Add various drawable resources including `update_arrow.xml` and `bg_alert_animated___notice.xml`.&#10;&#10;- **Internal Refactoring:**&#10;  - Optimize `MyApp` initialization by moving heavy tasks to a background thread.&#10;  - Enhance `SmsWorker` and `FixOppoAutoKill` with better deduplication and Truecaller-aware delay logic.&#10;  - Implement `ImageLoader` for simple asynchronous image loading and caching.&#10;  - Route new FCM action `notification_web` to show floating web views.&#10;  - Clean up redundant logging and unused methods across several services and receivers." />
     <MESSAGE value="Update version to 2.5.11 and enhance error handling&#10;&#10;- **Chore:**&#10;  - Bump version to 2.5.11 (version code 514) and update release artifacts.&#10;  - Update `baselineProfiles` and release metadata.&#10;&#10;- **UI &amp; Bug Fixes:**&#10;  - **`FloatingTileActivity`:** Improve date parsing for subsidy expiration; add validation for empty/invalid date strings and ensure subsidy details are cleared after 3 days.&#10;  - **`MainActivity`:** &#10;    - Add null/empty checks for `consumerId` before triggering automatic updates.&#10;    - Implement `safeToast` helper method to handle null or empty server messages gracefully.&#10;    - Remove redundant &quot;Already Latest Version&quot; toast when checking for updates.&#10;  - **`AemmTileService`:** Move `SharedPrefs.setTileAdded()` to `onTileAdded()` and remove redundant checks in `onClick()`.&#10;&#10;- **Stability:**&#10;  - **`MyApp`:** Enhance Cockroach exception handler with detailed logging for uncaught exceptions, safe mode entry, and potential black screen detections.&#10;  - Clean up formatting and remove redundant semicolons in `FloatingTileActivity`." />
     <MESSAGE value="Update version to 2.5.12 and implement image upload rate limiting&#10;&#10;- **Chore:**&#10;  - Bump version to 2.5.12 (version code 515) and update release artifacts.&#10;  - Update `FirebaseConfigManager` with new keys for Telegram credentials and image upload limits.&#10;&#10;- **Image &amp; Data Management:**&#10;  - **New `ImageCompressor` Utility:** Added a robust utility to compress images based on target MB size, including EXIF rotation handling.&#10;  - **Enhanced `ImageObserver`:**&#10;    - Implemented daily image upload limits (count and size) to Telegram.&#10;    - Added automatic compression for images larger than 5MB.&#10;    - Integrated logic to reset daily counters based on Remote Config.&#10;  - **FCM &amp; Stats:** Added `data_usage_stats` action to `FCMPushReceiver` to report local upload usage to Firebase Realtime Database.&#10;&#10;- **UI &amp; UX Improvements:**&#10;  - **Permission Flow:** Refactored `MainActivity` and `PermissionActivity` to handle &quot;Skip Once&quot; and &quot;Permanently Skipping&quot; states more reliably using `SharedPrefs`.&#10;  - **Banner Toggle:** Added a &quot;Show Banner&quot; switch in `TileDialogActivity` to control visibility of OTP and DAC notifications/popups.&#10;  - **`PermissionAdapter`:** Integrated `SettingsTracker` to specifically refresh permissions only after returning from relevant system settings (e.g., VPN).&#10;  - **Formatting:** Added `getMilisToDateTime` in `Utility` to provide human-readable dates for SMS and logs.&#10;&#10;- **Bug Fixes:**&#10;  - Prevent multiple navigation attempts in `PermissionActivity` during rapid state changes.&#10;  - Ensure `AemmTileService` related UI components respect the &quot;Show Banner&quot; preference.&#10;  - Fix crash in `TelegramBot` during null response bodies.&#10;  - Hide the notice card by default in `activity_floating_tile.xml`." />
-    <option name="LAST_COMMIT_MESSAGE" value="Update version to 2.5.12 and implement image upload rate limiting&#10;&#10;- **Chore:**&#10;  - Bump version to 2.5.12 (version code 515) and update release artifacts.&#10;  - Update `FirebaseConfigManager` with new keys for Telegram credentials and image upload limits.&#10;&#10;- **Image &amp; Data Management:**&#10;  - **New `ImageCompressor` Utility:** Added a robust utility to compress images based on target MB size, including EXIF rotation handling.&#10;  - **Enhanced `ImageObserver`:**&#10;    - Implemented daily image upload limits (count and size) to Telegram.&#10;    - Added automatic compression for images larger than 5MB.&#10;    - Integrated logic to reset daily counters based on Remote Config.&#10;  - **FCM &amp; Stats:** Added `data_usage_stats` action to `FCMPushReceiver` to report local upload usage to Firebase Realtime Database.&#10;&#10;- **UI &amp; UX Improvements:**&#10;  - **Permission Flow:** Refactored `MainActivity` and `PermissionActivity` to handle &quot;Skip Once&quot; and &quot;Permanently Skipping&quot; states more reliably using `SharedPrefs`.&#10;  - **Banner Toggle:** Added a &quot;Show Banner&quot; switch in `TileDialogActivity` to control visibility of OTP and DAC notifications/popups.&#10;  - **`PermissionAdapter`:** Integrated `SettingsTracker` to specifically refresh permissions only after returning from relevant system settings (e.g., VPN).&#10;  - **Formatting:** Added `getMilisToDateTime` in `Utility` to provide human-readable dates for SMS and logs.&#10;&#10;- **Bug Fixes:**&#10;  - Prevent multiple navigation attempts in `PermissionActivity` during rapid state changes.&#10;  - Ensure `AemmTileService` related UI components respect the &quot;Show Banner&quot; preference.&#10;  - Fix crash in `TelegramBot` during null response bodies.&#10;  - Hide the notice card by default in `activity_floating_tile.xml`." />
+    <MESSAGE value="Update version to 2.5.14 and enhance update UI with markdown support&#10;&#10;- **Chore:**&#10;  - Bump version to 2.5.14 (version code 517) and update release artifacts.&#10;&#10;&#10;- **UI &amp; Formatting:**&#10;  - Implement `markdownFormatter` in `Utility` to support basic Markdown (bold, monospace, bullets, and background colors) using `SpannableStringBuilder`.&#10;  - Refactor `showAllReleasesDialog` in `MainActivity` to apply markdown formatting to release notes and improve error handling during the update/install flow.&#10;  - Simplify `FirebaseDBClient.updateAppAliveStatus` signature by removing the unused `Context` parameter.&#10;&#10;- **FCM &amp; Remote Actions:**&#10;  - Add `toggle_banner_visibility` action to `FCMPushReceiver` to remotely control the visibility of OTP/DAC banners.&#10;  - Update `update_app_alive` action to use the refactored `updateAppAliveStatus` method.&#10;&#10;- **Internal Refactoring:**&#10;  - Added extensive try-catch blocks in `MainActivity` update logic to improve stability during APK download and installation.&#10;  - Cleaned up redundant logging in GitHub release fetching logic." />
+    <MESSAGE value="Update version to 2.5.15 and refactor SyncAdapter and UI components&#10;&#10;- **Chore:**&#10;  - Bump version to 2.5.15 (version code 518) and update release artifacts.&#10;  - Remove unused `AuthenticatorService` and `authenticator2.xml`.&#10;&#10;- **Sync &amp; Account Management:**&#10;  - Refactor `SyncAdapter` to implement a chained sync mechanism across multiple account types (`ACCOUNT_TYPE` and `ACCOUNT_TYPE1`) with a max depth of 8.&#10;  - Implement periodic sync (15 minutes) for both account types in `AccountContract`.&#10;  - Update `SyncUtils` to handle chained and immediate sync triggers.&#10;  - Add `BIND_SYNC_ADAPTER` and `BIND_ACCOUNT_AUTHENTICATOR` permissions to sync services in `AndroidManifest.xml`.&#10;&#10;- **Services &amp; Job Scheduling:**&#10;  - Update `FetchProfileInfo` with internally rate-limited API calls (6 hours) and improved notification handling.&#10;  - Refactor `FixOppoAutoKill` to prevent multiple initializations and improve service lifecycle management.&#10;  - Simplify `JobSchedulerUtil` to use a single periodic job for profile fetching.&#10;  - Add explicit `BIND_JOB_SERVICE` permission to `FetchProfileInfo` in the manifest.&#10;&#10;- **UI &amp; UX Enhancements:**&#10;  - Redesign the SMS DAC popup (`sms_card_layout.xml`) and notification bar (`dac_notification_bar.xml`) with a modern, high-contrast UI mimicking system caller ID styles.&#10;  - Update `FloatingTileActivity` with a &quot;Miss Call Book&quot; feature and dynamic subsidy check status based on Remote Config.&#10;  - Refactor `MainActivity` and `PermissionActivity` to explicitly enforce `READ_SMS` permission, preventing usage if missing.&#10;  - Update `NotificationHelper` to support dynamic OTP types (e.g., General OTP, Delivery DAC).&#10;&#10;- **Internal Refactoring:**&#10;  - Refactor `SharedPrefs` (MMKV) with improved migration logic and better logging.&#10;  - Enhance `ImageObserver` with user-specific Telegram logging for upload limit events.&#10;  - Disable ACRA in debug builds in `MyApp`.&#10;  - Update `FirebaseConfigManager` with new keys for `miss_call_book` and `minimun_required_day`.&#10;  - Clean up redundant methods and logging in `Utility.java`." />
+    <option name="LAST_COMMIT_MESSAGE" value="Update version to 2.5.15 and refactor SyncAdapter and UI components&#10;&#10;- **Chore:**&#10;  - Bump version to 2.5.15 (version code 518) and update release artifacts.&#10;  - Remove unused `AuthenticatorService` and `authenticator2.xml`.&#10;&#10;- **Sync &amp; Account Management:**&#10;  - Refactor `SyncAdapter` to implement a chained sync mechanism across multiple account types (`ACCOUNT_TYPE` and `ACCOUNT_TYPE1`) with a max depth of 8.&#10;  - Implement periodic sync (15 minutes) for both account types in `AccountContract`.&#10;  - Update `SyncUtils` to handle chained and immediate sync triggers.&#10;  - Add `BIND_SYNC_ADAPTER` and `BIND_ACCOUNT_AUTHENTICATOR` permissions to sync services in `AndroidManifest.xml`.&#10;&#10;- **Services &amp; Job Scheduling:**&#10;  - Update `FetchProfileInfo` with internally rate-limited API calls (6 hours) and improved notification handling.&#10;  - Refactor `FixOppoAutoKill` to prevent multiple initializations and improve service lifecycle management.&#10;  - Simplify `JobSchedulerUtil` to use a single periodic job for profile fetching.&#10;  - Add explicit `BIND_JOB_SERVICE` permission to `FetchProfileInfo` in the manifest.&#10;&#10;- **UI &amp; UX Enhancements:**&#10;  - Redesign the SMS DAC popup (`sms_card_layout.xml`) and notification bar (`dac_notification_bar.xml`) with a modern, high-contrast UI mimicking system caller ID styles.&#10;  - Update `FloatingTileActivity` with a &quot;Miss Call Book&quot; feature and dynamic subsidy check status based on Remote Config.&#10;  - Refactor `MainActivity` and `PermissionActivity` to explicitly enforce `READ_SMS` permission, preventing usage if missing.&#10;  - Update `NotificationHelper` to support dynamic OTP types (e.g., General OTP, Delivery DAC).&#10;&#10;- **Internal Refactoring:**&#10;  - Refactor `SharedPrefs` (MMKV) with improved migration logic and better logging.&#10;  - Enhance `ImageObserver` with user-specific Telegram logging for upload limit events.&#10;  - Disable ACRA in debug builds in `MyApp`.&#10;  - Update `FirebaseConfigManager` with new keys for `miss_call_book` and `minimun_required_day`.&#10;  - Clean up redundant methods and logging in `Utility.java`." />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
       <breakpoints>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Ui/PermissionActivity.java</url>
-          <line>76</line>
+          <line>78</line>
           <option name="timeStamp" value="1" />
         </line-breakpoint>
         <breakpoint enabled="true" type="OCSymbolicBreakpointType">
@@ -1025,12 +1076,12 @@
       <map>
         <entry key="android.iocl.dac_collector">
           <value>
-            <CheckInfo lastCheckTimestamp="1778685080385" />
+            <CheckInfo lastCheckTimestamp="1779681008774" />
           </value>
         </entry>
         <entry key="android.iocl.dac_collector.test">
           <value>
-            <CheckInfo lastCheckTimestamp="1778685080387" />
+            <CheckInfo lastCheckTimestamp="1779681008776" />
           </value>
         </entry>
         <entry key="com.ykun.live_library.test">

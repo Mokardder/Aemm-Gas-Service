@@ -20,6 +20,7 @@ import android.iocl.dac_collector.Utility.FirebaseConfigManager;
 import android.iocl.dac_collector.Utility.ImageLoader;
 import android.iocl.dac_collector.Utility.SharedPrefs;
 import android.iocl.dac_collector.Utility.Utility;
+import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -55,6 +56,7 @@ public class FloatingTileActivity extends AppCompatActivity {
 
 
         ConstraintLayout layoutOpenApp = findViewById(R.id.layoutOpenApp);
+        ConstraintLayout layoutCallBook = findViewById(R.id.layoutCallBook);
 
 
         layoutOpenApp.setOnClickListener(v -> {
@@ -65,6 +67,22 @@ public class FloatingTileActivity extends AppCompatActivity {
 
             startActivity(intent);
             finish(); // 🔥 close tile activity
+        });
+
+        layoutCallBook.setOnClickListener(view -> {
+
+           try {
+                // Getting instance of Intent with action as ACTION_CALL
+                Intent phone_intent = new Intent(Intent.ACTION_CALL);
+
+                // Set data of Intent through Uri by parsing phone number
+                phone_intent.setData(Uri.parse("tel:" + FirebaseConfigManager.getMissCallBookNo()));
+                // start Intent
+                startActivity(phone_intent);
+            } catch (Exception e) {
+               Toast.makeText(this, "Booking No Undefined", Toast.LENGTH_SHORT).show();
+           }
+
         });
 
 
@@ -206,7 +224,7 @@ public class FloatingTileActivity extends AppCompatActivity {
         }
 
 
-        if (days >= 3) {
+        if (days >= Constant.REQUIRE_DAY_REQ_SUBSIDY) {
             SharedPrefs.clearSubsidyDetails();
         }
 
@@ -266,6 +284,8 @@ public class FloatingTileActivity extends AppCompatActivity {
         subsidyStatustxt.setText("গ্যাসের সাবসিডি চেক করুন");
 
         actionCard.setOnClickListener(view -> {
+            view.setEnabled(false);
+            view.setClickable(false);
             String FCM_Key = SharedPrefs.getFCMKey();
             requestSubsidyDetails(actionCard, subsidyStatustxt, FCM_Key);
         });
@@ -275,9 +295,9 @@ public class FloatingTileActivity extends AppCompatActivity {
             String version = getPackageManager()
                     .getPackageInfo(getPackageName(), 0).versionName;
 
-            tvVersion.setText("V" + version + " | Prod: Padmalavpur");
+            tvVersion.setText("V" + version + " | Made with ❤ in Padmalavpur");
         } catch (Exception e) {
-            tvVersion.setText("V-");
+            tvVersion.setText("V-NotFound | Made with ❤ in Padmalavpur");
         }
 
 
@@ -314,7 +334,7 @@ public class FloatingTileActivity extends AppCompatActivity {
                     actionCard.setEnabled(false);
                     actionCard.setClickable(false);
                     actionCard.setAlpha(0.5f);
-                    subsidyStatustxt.setText("আপনার Request অলরেডি processed হয়েছে");
+                    subsidyStatustxt.setText("আপনার Request processed হয়েছে");
 
 //                    dialog.dismiss();
                 } else {

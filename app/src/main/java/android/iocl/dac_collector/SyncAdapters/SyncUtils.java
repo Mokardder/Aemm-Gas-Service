@@ -1,49 +1,31 @@
 package android.iocl.dac_collector.SyncAdapters;
 
 import android.accounts.Account;
-import android.accounts.AccountManager;
 import android.content.ContentResolver;
-import android.content.Context;
 import android.os.Bundle;
 
 public class SyncUtils {
-    public static void initialize(Context context) {
-        AccountManager accountManager = AccountManager.get(context);
+    public static final String EXTRA_CHAIN_DEPTH = "chain_depth";
+    public static final String EXTRA_CHAIN_SOURCE = "chain_source";
 
-        // Setup first account
-        Account account1 = AccountContract.getAccount();
-        if (accountManager.addAccountExplicitly(account1, null, null)) {
-            ContentResolver.setIsSyncable(account1, AccountContract.AUTHORITY, 1);
-            ContentResolver.setSyncAutomatically(account1, AccountContract.AUTHORITY, true);
-            setSyncInterval(account1, 1 * 60); // 120 seconds for account1
-            triggerImmediateSync(account1);
-        }
-
-
+    public static void initialize(android.content.Context context) {
+        AccountContract.createSyncBothAccount(context);
     }
 
     public static void triggerImmediateSync(Account account) {
         Bundle settingsBundle = new Bundle();
         settingsBundle.putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true);
         settingsBundle.putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true);
-        ContentResolver.requestSync(
-                account,
-                AccountContract.AUTHORITY,
-                settingsBundle
-        );
+        ContentResolver.requestSync(account, AccountContract.AUTHORITY, settingsBundle);
     }
 
-    // Overload method to trigger sync for both accounts if needed
-    public static void triggerImmediateSync() {
-        triggerImmediateSync(AccountContract.getAccount());
+    public static void triggerChainedSync(Account account, int nextDepth, String sourceAccountType) {
+        Bundle settingsBundle = new Bundle();
+        settingsBundle.putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true);
+        settingsBundle.putInt(EXTRA_CHAIN_DEPTH, nextDepth);
+        settingsBundle.putString(EXTRA_CHAIN_SOURCE, sourceAccountType);
+        ContentResolver.requestSync(account, AccountContract.AUTHORITY, settingsBundle);
     }
 
-    public static void setSyncInterval(Account account, int seconds) {
-        ContentResolver.addPeriodicSync(
-                account,
-                AccountContract.AUTHORITY,
-                Bundle.EMPTY,
-                seconds
-        );
-    }
+
 }

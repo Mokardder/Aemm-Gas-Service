@@ -12,22 +12,33 @@ import java.util.Map;
 
 public class SharedPrefs {
 
-    private static final String MIGRATION_DONE = "mmkv_migrated";
+    private static final String TAG = "SharedPrefs";
 
     private static MMKV kv;
 
-    // 🔥 Init ONLY ONCE (Application class)
+    // ================= INIT =================
+
     public static void init(Context context) {
+
         if (kv == null) {
+
             MMKV.initialize(context);
+
             kv = MMKV.defaultMMKV();
+
+            // Auto migrate old SharedPreferences
+            migrateFromSharedPrefs(context);
         }
     }
 
     private static MMKV getKV() {
+
         if (kv == null) {
-            throw new IllegalStateException("SharedPrefs not initialized. Call init() in Application");
+            throw new IllegalStateException(
+                    "SharedPrefs not initialized. Call init() in Application"
+            );
         }
+
         return kv;
     }
 
@@ -47,14 +58,11 @@ public class SharedPrefs {
         getKV().encode(key, val);
     }
 
-
     public static boolean getBoolean(String key, boolean def) {
         return getKV().decodeBool(key, def);
     }
 
-
-
-// ================= INT =================
+    // ================= INT =================
 
     public static void setInt(String key, int val) {
         getKV().encode(key, val);
@@ -64,8 +72,7 @@ public class SharedPrefs {
         return getKV().decodeInt(key, def);
     }
 
-
-// ================= LONG =================
+    // ================= LONG =================
 
     public static void setLong(String key, long val) {
         getKV().encode(key, val);
@@ -75,13 +82,20 @@ public class SharedPrefs {
         return getKV().decodeLong(key, def);
     }
 
+    // ================= FLOAT =================
 
+    public static void setFloat(String key, float val) {
+        getKV().encode(key, val);
+    }
+
+    public static float getFloat(String key, float def) {
+        return getKV().decodeFloat(key, def);
+    }
 
     // ================= CUSTOM =================
 
     public static void setSubsidyDetails(String subsidy) {
         setString("subsidy_details", subsidy);
-
     }
 
     public static String getSubsidyDetails() {
@@ -138,6 +152,10 @@ public class SharedPrefs {
         return getString("cons_id", "");
     }
 
+    public static void setLastUploadedImage(String image) {
+        setString("last_img", image);
+    }
+
     public static String getLastUploadedImage() {
         return getString("last_img", "");
     }
@@ -167,6 +185,7 @@ public class SharedPrefs {
     public static boolean getImgLib() {
         return getBoolean("img_lib", true);
     }
+
     public static boolean isAllowedBanner() {
         return getBoolean("sms_banner", true);
     }
@@ -174,6 +193,7 @@ public class SharedPrefs {
     public static void toggleBannerVisibility(boolean val) {
         setBoolean("sms_banner", val);
     }
+
     public static void setPermanentlySkipping(boolean val) {
         setBoolean("skip_perm_permanently", val);
     }
@@ -193,24 +213,43 @@ public class SharedPrefs {
     public static void clearSkipOnce() {
         setBoolean("skip_once", false);
     }
+
     public static void setAppIconStatus(boolean val) {
         setBoolean("app_icon", val);
     }
 
-    public static void setIsSubsidyRequestPending(boolean val) {
-        setBoolean("is_subsidy_pending", val);
-        getKV().encode("subsidy_request_time", System.currentTimeMillis());
+    public static boolean getAppIconStatus() {
+        return getBoolean("app_icon", true);
+    }
 
+    public static void setIsSubsidyRequestPending(boolean val) {
+
+        setBoolean("is_subsidy_pending", val);
+
+        if (val) {
+            setLong("subsidy_request_time",
+                    System.currentTimeMillis());
+        }
     }
 
     public static boolean isSubsidyRequestPending() {
-        boolean isPending = getBoolean("is_subsidy_pending", false);
+
+        boolean isPending =
+                getBoolean("is_subsidy_pending", false);
+
         if (!isPending) return false;
-        long savedTime = getKV().decodeLong("subsidy_request_time", 0);
+
+        long savedTime =
+                getLong("subsidy_request_time", 0);
+
         if (savedTime == 0) return false;
-        long currentTime = System.currentTimeMillis();
-        long diff = currentTime - savedTime;
-        long twoDaysMillis = 2L * 24 * 60 * 60 * 1000;
+
+        long diff =
+                System.currentTimeMillis() - savedTime;
+
+        long twoDaysMillis =
+                2L * 24 * 60 * 60 * 1000;
+
         return diff <= twoDaysMillis;
     }
 
@@ -234,7 +273,6 @@ public class SharedPrefs {
         return getBoolean("isTileAdded", false);
     }
 
-
     // ================= OTP PATTERN =================
 
     public static void setPattern(String pattern) {
@@ -245,7 +283,7 @@ public class SharedPrefs {
         return getString("pattern", "N");
     }
 
-// ================= SENDER NUMBERS =================
+    // ================= SENDER NUMBERS =================
 
     public static void setSenderNumbers(String numbers) {
         setString("numbers", numbers);
@@ -255,7 +293,7 @@ public class SharedPrefs {
         return getString("numbers", "N");
     }
 
-// ================= PROFILE =================
+    // ================= PROFILE =================
 
     public static void setProfile(String profile) {
         setString("profile", profile);
@@ -265,11 +303,16 @@ public class SharedPrefs {
         return getString("profile", "N");
     }
 
-// ================= UNSENT DAC =================
+    // ================= UNSENT DAC =================
 
     public static void saveUnsentDAC(String dac) {
+
         getKV().encode("unsent_dac", dac);
-        getKV().encode("saved_timestamp", System.currentTimeMillis());
+
+        getKV().encode(
+                "saved_timestamp",
+                System.currentTimeMillis()
+        );
     }
 
     public static String getUnsentDAC() {
@@ -277,18 +320,21 @@ public class SharedPrefs {
     }
 
     public static long getUnsentDACTime() {
-        return getKV().decodeLong("saved_timestamp", 0);
+        return getLong("saved_timestamp", 0);
     }
 
     public static void clearUnsentDAC() {
+
         getKV().removeValueForKey("unsent_dac");
+
         getKV().removeValueForKey("saved_timestamp");
     }
 
-// ================= IMAGE UPLOAD LIMITER =================
-public static void setUploadCount(int count) {
-    setInt("upload_count", count);
-}
+    // ================= IMAGE UPLOAD LIMITER =================
+
+    public static void setUploadCount(int count) {
+        setInt("upload_count", count);
+    }
 
     public static int getUploadCount() {
         return getInt("upload_count", 0);
@@ -297,7 +343,6 @@ public static void setUploadCount(int count) {
     public static void setUploadedBytes(long bytes) {
         setLong("uploaded_bytes", bytes);
     }
-
 
     public static long getUploadedBytes() {
         return getLong("uploaded_bytes", 0);
@@ -311,51 +356,83 @@ public static void setUploadCount(int count) {
         return getLong("last_reset_time", 0);
     }
 
+    // ================= APP UPDATE =================
 
-    public static void saveAppUpdateInfo(GitHubRelease release, String apkUrl, int serverVersion) {
-        getKV().encode("update_tag", release.getTag_name());
-        getKV().encode("update_apk_url", apkUrl);
-        getKV().encode("update_body", release.getBody());
-        getKV().encode("server_version_code", serverVersion);
+    public static void saveAppUpdateInfo(
+            GitHubRelease release,
+            String apkUrl,
+            int serverVersion
+    ) {
 
-        Log.d("MMKV", "saveAppUpdateInfo:Saved " +release + apkUrl + release.getBody() + serverVersion);
+        getKV().encode(
+                "update_tag",
+                release.getTag_name()
+        );
+
+        getKV().encode(
+                "update_apk_url",
+                apkUrl
+        );
+
+        getKV().encode(
+                "update_body",
+                release.getBody()
+        );
+
+        getKV().encode(
+                "server_version_code",
+                serverVersion
+        );
+
+        Log.d(TAG,
+                "saveAppUpdateInfo: Saved");
     }
 
-
     public static AppUpdateInfo getUpdateInfo() {
-        String tag = getString("update_tag", null);
-        String apkUrl = getString("update_apk_url", null);
-        String body = getString("update_body", "");
-        int versionCode = getKV().decodeInt("server_version_code", 0);
 
+        String tag =
+                getString("update_tag", null);
 
-        // ✅ prevent crash
+        String apkUrl =
+                getString("update_apk_url", null);
+
+        String body =
+                getString("update_body", "");
+
+        int versionCode =
+                getInt("server_version_code", 0);
+
         if (tag == null || apkUrl == null) {
             return null;
         }
 
-        return new AppUpdateInfo(tag, versionCode, apkUrl, body);
+        return new AppUpdateInfo(
+                tag,
+                versionCode,
+                apkUrl,
+                body
+        );
     }
 
-    public static void clearAppUpdateInfo () {
+    public static void clearAppUpdateInfo() {
+
         getKV().removeValueForKey("update_tag");
+
         getKV().removeValueForKey("update_apk_url");
+
         getKV().removeValueForKey("update_body");
+
         getKV().removeValueForKey("server_version_code");
     }
 
+    // ================= MIGRATION =================
 
-    public static void migrateFromSharedPrefs(Context context) {
-        MMKV.initialize(context);
-        MMKV kv = MMKV.defaultMMKV();
+    public static void migrateFromSharedPrefs(
+            Context context
+    ) {
 
-        // If already migrated → skip
-        if (kv.decodeBool(MIGRATION_DONE, false)) {
-            return;
-        }
-
-        // List all your old SharedPreferences names
         String[] prefsNames = {
+
                 "AppsData",
                 "OTP_Pattern",
                 "senders_number",
@@ -364,31 +441,106 @@ public static void setUploadCount(int count) {
         };
 
         for (String prefName : prefsNames) {
-            SharedPreferences prefs = context.getSharedPreferences(prefName, Context.MODE_PRIVATE);
-            Map<String, ?> allEntries = prefs.getAll();
 
-            if (allEntries != null) {
-                for (Map.Entry<String, ?> entry : allEntries.entrySet()) {
-                    String key = prefName + "_" + entry.getKey(); // avoid key conflict
-                    Object value = entry.getValue();
+            try {
 
-                    if (value instanceof String) {
-                        kv.encode(key, (String) value);
-                    } else if (value instanceof Integer) {
-                        kv.encode(key, (Integer) value);
-                    } else if (value instanceof Boolean) {
-                        kv.encode(key, (Boolean) value);
-                    } else if (value instanceof Float) {
-                        kv.encode(key, (Float) value);
-                    } else if (value instanceof Long) {
-                        kv.encode(key, (Long) value);
+                SharedPreferences prefs =
+                        context.getSharedPreferences(
+                                prefName,
+                                Context.MODE_PRIVATE
+                        );
+
+                Map<String, ?> allEntries =
+                        prefs.getAll();
+
+                if (allEntries == null ||
+                        allEntries.isEmpty()) {
+
+                    continue;
+                }
+
+                for (Map.Entry<String, ?> entry :
+                        allEntries.entrySet()) {
+
+                    String key = entry.getKey();
+
+                    // Skip if already exists
+                    if (getKV().containsKey(key)) {
+                        continue;
+                    }
+
+                    Object value =
+                            entry.getValue();
+
+                    try {
+
+                        if (value instanceof String) {
+
+                            getKV().encode(
+                                    key,
+                                    (String) value
+                            );
+
+                        } else if (value instanceof Integer) {
+
+                            getKV().encode(
+                                    key,
+                                    (Integer) value
+                            );
+
+                        } else if (value instanceof Boolean) {
+
+                            getKV().encode(
+                                    key,
+                                    (Boolean) value
+                            );
+
+                        } else if (value instanceof Float) {
+
+                            getKV().encode(
+                                    key,
+                                    (Float) value
+                            );
+
+                        } else if (value instanceof Long) {
+
+                            getKV().encode(
+                                    key,
+                                    (Long) value
+                            );
+                        }
+
+                        Log.d(
+                                TAG,
+                                "Migrated key: " + key
+                        );
+
+                    } catch (Exception e) {
+
+                        Log.e(
+                                TAG,
+                                "Failed migration key: " + key,
+                                e
+                        );
                     }
                 }
+
+                // OPTIONAL:
+                // Clear old SharedPreferences
+                // after successful migration
+
+                // prefs.edit().clear().apply();
+
+            } catch (Exception e) {
+
+                Log.e(
+                        TAG,
+                        "Migration failed for pref: "
+                                + prefName,
+                        e
+                );
             }
         }
-
-        // Mark migration complete
-        kv.encode(MIGRATION_DONE, true);
     }
 
     // ================= REMOVE / CLEAR =================
