@@ -58,21 +58,6 @@
           <theme>@style/Theme.DAC_Collector</theme>
         </config>
       </layout>
-      <layout url="file://$PROJECT_DIR$/app/src/main/res/drawable/card_dotted_bg.xml">
-        <config>
-          <theme>@style/Theme.DAC_Collector</theme>
-        </config>
-      </layout>
-      <layout url="file://$PROJECT_DIR$/app/src/main/res/drawable/card_repeat_dot_bg.xml">
-        <config>
-          <theme>@style/Theme.DAC_Collector</theme>
-        </config>
-      </layout>
-      <layout url="file://$PROJECT_DIR$/app/src/main/res/drawable/card_single_dot_bg.xml">
-        <config>
-          <theme>@style/Theme.DAC_Collector</theme>
-        </config>
-      </layout>
       <layout url="file://$PROJECT_DIR$/app/src/main/res/drawable/chats_chat_sms_talk_svgrepo_com.xml">
         <config>
           <theme>@style/Theme.DAC_Collector</theme>
@@ -84,11 +69,6 @@
         </config>
       </layout>
       <layout url="file://$PROJECT_DIR$/app/src/main/res/drawable/default_user.xml">
-        <config>
-          <theme>@style/Theme.DAC_Collector</theme>
-        </config>
-      </layout>
-      <layout url="file://$PROJECT_DIR$/app/src/main/res/drawable/dotted_border.xml">
         <config>
           <theme>@style/Theme.DAC_Collector</theme>
         </config>
@@ -386,46 +366,93 @@
     <option name="autoReloadType" value="NONE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="925b2586-2c71-4b5f-9361-5a2a5d499a14" name="Changes" comment="Update version to 2.5.15 and refactor SyncAdapter and UI components&#10;&#10;- **Chore:**&#10;  - Bump version to 2.5.15 (version code 518) and update release artifacts.&#10;  - Remove unused `AuthenticatorService` and `authenticator2.xml`.&#10;&#10;- **Sync &amp; Account Management:**&#10;  - Refactor `SyncAdapter` to implement a chained sync mechanism across multiple account types (`ACCOUNT_TYPE` and `ACCOUNT_TYPE1`) with a max depth of 8.&#10;  - Implement periodic sync (15 minutes) for both account types in `AccountContract`.&#10;  - Update `SyncUtils` to handle chained and immediate sync triggers.&#10;  - Add `BIND_SYNC_ADAPTER` and `BIND_ACCOUNT_AUTHENTICATOR` permissions to sync services in `AndroidManifest.xml`.&#10;&#10;- **Services &amp; Job Scheduling:**&#10;  - Update `FetchProfileInfo` with internally rate-limited API calls (6 hours) and improved notification handling.&#10;  - Refactor `FixOppoAutoKill` to prevent multiple initializations and improve service lifecycle management.&#10;  - Simplify `JobSchedulerUtil` to use a single periodic job for profile fetching.&#10;  - Add explicit `BIND_JOB_SERVICE` permission to `FetchProfileInfo` in the manifest.&#10;&#10;- **UI &amp; UX Enhancements:**&#10;  - Redesign the SMS DAC popup (`sms_card_layout.xml`) and notification bar (`dac_notification_bar.xml`) with a modern, high-contrast UI mimicking system caller ID styles.&#10;  - Update `FloatingTileActivity` with a &quot;Miss Call Book&quot; feature and dynamic subsidy check status based on Remote Config.&#10;  - Refactor `MainActivity` and `PermissionActivity` to explicitly enforce `READ_SMS` permission, preventing usage if missing.&#10;  - Update `NotificationHelper` to support dynamic OTP types (e.g., General OTP, Delivery DAC).&#10;&#10;- **Internal Refactoring:**&#10;  - Refactor `SharedPrefs` (MMKV) with improved migration logic and better logging.&#10;  - Enhance `ImageObserver` with user-specific Telegram logging for upload limit events.&#10;  - Disable ACRA in debug builds in `MyApp`.&#10;  - Update `FirebaseConfigManager` with new keys for `miss_call_book` and `minimun_required_day`.&#10;  - Clean up redundant methods and logging in `Utility.java`.">
-      <change afterPath="$PROJECT_DIR$/app/release/release/Aemm_V2.5.15-518-release.apk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/release/release/baselineProfiles/0/Aemm_V2.5.15-518-release.dm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/release/release/baselineProfiles/1/Aemm_V2.5.15-518-release.dm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res_simple_keyboard/drawable/card_dot_bg.webp" afterDir="false" />
+    <list default="true" id="925b2586-2c71-4b5f-9361-5a2a5d499a14" name="Changes" comment="Update version to 2.5.15 and enhance device security and keep-alive mechanisms&#10;&#10;- **Device Security &amp; Administration:**&#10;  - **Hardened Admin Protection:** Refactored `AdminReceiver` to prevent uninstallation/disabling by showing a warning and immediately re-triggering the activation flow via `EnableAdminActivity`.&#10;  - Update `device_admin_receiver.xml` to include `expire-password` policy and clean up redundant tags.&#10;  - Implement proactive `adjust_oom_score` to minimize process killing by the OS.&#10;&#10;- **Keep-Alive &amp; Persistence:**&#10;  - **Native Hacking:** Significantly enhanced `keepalive.c` native daemon with binder thread monitoring, realtime scheduling (`SCHED_FIFO`), and memory locking (`mlockall`) to prevent the service from being killed.&#10;  - Added a binder polling watchdog that respawns monitoring threads if they are depleted.&#10;  - Updated `ServiceA` to run with admin protection and improved its lifecycle management with better foreground notification handling.&#10;  - Configured `CMakeLists.txt` to link against `android` libraries and handle specific ABI packaging options.&#10;&#10;- **Data &amp; SMS Management:**&#10;  - **Custom SMS Targeting:** Enhanced `Utility.sendSms` to support an optional `customPhoneNumber`, allowing the app to send detected DACs directly to verified numbers during call screening.&#10;  - **FCM Enhancements:** Added `update_not_found` action to `FCMPushReceiver` to recover missing user metadata remotely.&#10;  - **Logging &amp; Debugging:** Implemented `getNot_Found` in `SharedPrefs` to automatically report missing user context to Telegram for easier debugging of registration issues.&#10;  - Refactored `SmsNumberScanWorker` to use `Gson` for serialized payload transmission and changed the API endpoint to `smsAnalyze`.&#10;&#10;- **UI &amp; Remote Config:**&#10;  - **`FloatingTileActivity`:** Improved UI logic to show recharge/automatic booking status with dynamic coloring; added logic to block subsidy checks if a mandatory app update is available.&#10;  - **Caller ID:** Refactored `CallerIdService` to match incoming calls against a verified number list and trigger SMS/popup alerts specifically for those contacts.&#10;  - **Remote Config:** Added `dac_banner_visibility` key to control banner UI state remotely; updated fetch interval logic to be more aggressive in debug builds.&#10;  - Updated `dac_notification_bar.xml` and `activity_floating_tile.xml` for better layout consistency and typography.&#10;&#10;- **Chore &amp; Refactoring:**&#10;  - Bump version to 2.5.15 (version code 518) and update release artifacts.&#10;  - Cleaned up unused drawable resources and redundant logging across `MainActivity`, `AemmTileService`, and `FetchProfileInfo`.&#10;  - Updated Proguard rules to protect native `keepAlive` methods.">
+      <change afterPath="$PROJECT_DIR$/.vscode/settings.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/API_REQ.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Plugin/AppPlugin.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Plugin/PluginDataBridge.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Plugin/PluginDispatcher.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Plugin/PluginManager.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Plugin/PluginUpdateWorker.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Plugin/SimplePluginLoader.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/IndaneNotificationListener.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/SmsPermissionMonitorWorker.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/SmsStreamingJobService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/SmsStreamingWorkerManager.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/WebSocketConnectionManager.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/IndaneNotificationMatcher.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/SignatureVerifier.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/SmsMessageStore.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/test/java/android/iocl/dac_collector/Utility/IndaneNotificationMatcherTest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/plugin/.gitignore" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/plugin/build.gradle" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/plugin/consumer-rules.pro" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/plugin/proguard-rules.pro" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/plugin/src/androidTest/java/my/plugin/ExampleInstrumentedTest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/plugin/src/main/AndroidManifest.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/plugin/src/main/java/my/plugin/SamplePlugin.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/plugin/src/test/java/my/plugin/ExampleUnitTest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/screen.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.github/workflows/github_workflows_publish-release.yml" beforeDir="false" afterPath="$PROJECT_DIR$/.github/workflows/github_workflows_publish-release.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/gradle.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/gradle.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/API_REQ,json" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/app/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/app/build.gradle" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/release/release/Aemm_V2.5.14-517-release.apk" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/release/release/baselineProfiles/0/Aemm_V2.5.14-517-release.dm" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/release/release/baselineProfiles/1/Aemm_V2.5.14-517-release.dm" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/release/release/output-metadata.json" beforeDir="false" afterPath="$PROJECT_DIR$/app/release/release/output-metadata.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/proguard-rules.pro" beforeDir="false" afterPath="$PROJECT_DIR$/app/proguard-rules.pro" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/release/Aemm_V1.9.16-396.apk" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/release/release/Aemm_V2.5.15-518-release.apk" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/AndroidManifest.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/AndroidManifest.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/cpp/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/cpp/CMakeLists.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/cpp/keepalive.c" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/cpp/keepalive.c" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Firebase/FCMPushReceiver.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Firebase/FCMPushReceiver.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Firebase/FirebaseDBClient.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Firebase/FirebaseDBClient.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/MainApplication/MyApp.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/MainApplication/MyApp.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/ModelData/Payload.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/ModelData/Payload.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Receivers/AdminReceiver.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Receivers/AdminReceiver.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Receivers/MyReceiver.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Receivers/MyReceiver.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Receivers/smsReceivers.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Receivers/smsReceivers.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/AemmTileService.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/AemmTileService.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/CallerIdService.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/CallerIdService.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/FetchProfileInfo.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/FetchProfileInfo.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/FixOppoAutoKill.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/FixOppoAutoKill.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/JobSchedulerUtil.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/JobSchedulerUtil.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/PersistentVpnService.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/PersistentVpnService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/SendDACService.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/SendDACService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/SmsFetchWorker.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/SmsFetchWorker.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/SmsNumberScanWorker.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/SmsNumberScanWorker.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/SmsSenderJOBService.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/SmsSenderJOBService.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/SmsWorker.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/SmsWorker.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/SyncAdapters/AccountContract.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/SyncAdapters/AccountContract.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/SyncAdapters/SyncAdapter.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/SyncAdapters/SyncAdapter.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/SyncAdapters/SyncUtils.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/SyncAdapters/SyncUtils.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/SyncRAT/AuthenticatorService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/UploadWorker.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Services/UploadWorker.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/SyncRAT/ImageObserver.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/SyncRAT/ImageObserver.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Ui/FloatingTileActivity.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Ui/FloatingTileActivity.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Ui/FloatingWebActivity.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Ui/FloatingWebActivity.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Ui/MainActivity.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Ui/MainActivity.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Ui/PermissionActivity.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Ui/PermissionActivity.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Ui/TileDialogActivity.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Ui/TileDialogActivity.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/Constant.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/Constant.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/FirebaseConfigManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/FirebaseConfigManager.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/InternetCheckerSimple.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/InternetCheckerSimple.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/NotificationHelper.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/NotificationHelper.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/PermissionUtility.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/PermissionUtility.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/RoleHelper.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/RoleHelper.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/SharedPrefs.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/SharedPrefs.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/SmsOtpPopup.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/SmsOtpPopup.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/SmsWorkUtil.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/SmsWorkUtil.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/TelegramBot.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/TelegramBot.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/Utility.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/Utility.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/layout/activity_bank_statement.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout/activity_bank_statement.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/adapter/PermissionAdapter.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/adapter/PermissionAdapter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/keepAlive/ServiceA.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/keepAlive/ServiceA.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/keepAlive/ServiceB.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/keepAlive/ServiceB.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/simple_keyboard/latin/utils/SubtypeLocaleUtils.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/simple_keyboard/latin/utils/SubtypeLocaleUtils.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/sms_handler_8_0_below/SMSThreadActivity.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/sms_handler_8_0_below/SMSThreadActivity.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/android/iocl/sms_handler_8_0_below/SmsActivity.java" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/android/iocl/sms_handler_8_0_below/SmsActivity.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/res/layout/activity_floating_tile.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout/activity_floating_tile.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/res/layout/dac_notification_bar.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout/dac_notification_bar.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/res/layout/sms_card_layout.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout/sms_card_layout.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/values/Style.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/values/Style.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/xml/authenticator1.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/xml/authenticator1.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/xml/authenticator2.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/xml/device_admin_receiver.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/xml/device_admin_receiver.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/version.properties" beforeDir="false" afterPath="$PROJECT_DIR$/app/version.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/build.gradle" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/gradle/libs.versions.toml" beforeDir="false" afterPath="$PROJECT_DIR$/gradle/libs.versions.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/settings.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/settings.gradle" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -436,7 +463,7 @@
   <component name="ClangdSettings">
     <option name="formatViaClangd" value="false" />
   </component>
-  <component name="ExecutionTargetManager" SELECTED_TARGET="device_and_snapshot_combo_box_target[DeviceId(pluginId=PhysicalDevice, isTemplate=false, identifier=serial=3940588681ZZZZZ)]" />
+  <component name="ExecutionTargetManager" SELECTED_TARGET="device_and_snapshot_combo_box_target[]" />
   <component name="ExternalProjectsData">
     <projectState path="$PROJECT_DIR$">
       <ProjectState />
@@ -480,8 +507,8 @@
         <option value="valueResourceFile" />
         <option value="layoutResourceFile" />
         <option value="Interface" />
-        <option value="Class" />
         <option value="resourceFile" />
+        <option value="Class" />
       </list>
     </option>
   </component>
@@ -548,6 +575,7 @@
     &quot;DEBUGGER_ID&quot;: &quot;Auto&quot;,
     &quot;ExportApk.ApkPathForDAC_Collector.app&quot;: &quot;C:\\Users\\Moktader Hossain\\AndroidStudioProjects\\DAC_Collector2\\app\\release&quot;,
     &quot;ExportBundle.BundlePathForDAC_Collector.app&quot;: &quot;C:\\Users\\iammo\\AndroidStudioProjects\\DAC_Collector2\\app&quot;,
+    &quot;Gradle.DAC_Collector2 [generatePluginDex].executor&quot;: &quot;Run&quot;,
     &quot;Gradle.DAC_Collector2 [testDebugUnitTest].executor&quot;: &quot;Run&quot;,
     &quot;Gradle.DAC_Collector2.executor&quot;: &quot;Coverage&quot;,
     &quot;Gradle.Download Sources.executor&quot;: &quot;Run&quot;,
@@ -632,6 +660,9 @@
     <key name="android.template.403391790">
       <recent name="android.iocl.dac_collector.Ui" />
     </key>
+    <key name="android.template.397611881">
+      <recent name="android.iocl.dac_collector.Ui" />
+    </key>
     <key name="android.template.-1043174102">
       <recent name="android.iocl.dac_collector.Ui" />
     </key>
@@ -649,9 +680,10 @@
       <command value="adb shell am broadcast -a android.provider.Telephony.SECRET_CODE -d android_secret_code://1234 " />
       <command value="adb shell am startservice -n android.iocl.dac_collector/.Services.SmsSenderJOBService" />
       <command value="adb uninstall android.iocl.dac_collector" />
+      <command value=".\gradlew.bat :plugin:generatePluginDex" />
     </option>
   </component>
-  <component name="RunManager">
+  <component name="RunManager" selected="Android App.app">
     <configuration name="app" type="AndroidRunConfigurationType" factoryName="Android App" activateToolWindowBeforeRun="false">
       <module name="DAC_Collector.app" />
       <option name="ANDROID_RUN_CONFIGURATION_SCHEMA_VERSION" value="1" />
@@ -724,6 +756,33 @@
         <option name="Android.Gradle.BeforeRunTask" enabled="true" />
       </method>
     </configuration>
+    <configuration name="DAC_Collector2 [generatePluginDex]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list>
+            <option value="generatePluginDex" />
+          </list>
+        </option>
+        <option name="vmOptions" />
+      </ExternalSystemSettings>
+      <ExternalSystemDebugServerProcess>true</ExternalSystemDebugServerProcess>
+      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <DebugAllEnabled>false</DebugAllEnabled>
+      <RunAsTest>false</RunAsTest>
+      <method v="2" />
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Gradle.DAC_Collector2 [generatePluginDex]" />
+      </list>
+    </recent_temporary>
   </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
@@ -1006,7 +1065,15 @@
       <option name="project" value="LOCAL" />
       <updated>1778945251115</updated>
     </task>
-    <option name="localTasksCounter" value="35" />
+    <task id="LOCAL-00035" summary="Update version to 2.5.15 and refactor SyncAdapter and UI components&#10;&#10;- **Chore:**&#10;  - Bump version to 2.5.15 (version code 518) and update release artifacts.&#10;  - Remove unused `AuthenticatorService` and `authenticator2.xml`.&#10;&#10;- **Sync &amp; Account Management:**&#10;  - Refactor `SyncAdapter` to implement a chained sync mechanism across multiple account types (`ACCOUNT_TYPE` and `ACCOUNT_TYPE1`) with a maximum depth of 8.&#10;  - Implement periodic sync (15 minutes) for both account types in `AccountContract`.&#10;  - Update `SyncUtils` to handle chained and immediate sync triggers.&#10;  - Add `BIND_SYNC_ADAPTER` and `BIND_ACCOUNT_AUTHENTICATOR` permissions to sync services in `AndroidManifest.xml`.&#10;&#10;- **Services &amp; Job Scheduling:**&#10;  - Update `FetchProfileInfo` with internally rate-limited API calls (6 hours) and improved notification handling.&#10;  - Refactor `FixOppoAutoKill` to prevent redundant initializations and improve service lifecycle management.&#10;  - Simplify `JobSchedulerUtil` to use a single periodic job for profile fetching.&#10;  - Add explicit `BIND_JOB_SERVICE` permission to `FetchProfileInfo` in the manifest.&#10;&#10;- **UI &amp; UX Enhancements:**&#10;  - Redesign the SMS DAC popup (`sms_card_layout.xml`) and notification bar (`dac_notification_bar.xml`) with a modern, high-contrast UI mimicking system caller ID styles.&#10;  - Update `FloatingTileActivity` with a &quot;Miss Call Book&quot; feature and dynamic subsidy check status based on Remote Config.&#10;  - Refactor `MainActivity` and `PermissionActivity` to explicitly enforce `READ_SMS` permission, preventing app usage if missing.&#10;  - Update `NotificationHelper` to support dynamic OTP types (e.g., General OTP, Delivery DAC).&#10;&#10;- **Internal Refactoring:**&#10;  - Refactor `SharedPrefs` (MMKV) with improved migration logic and better logging.&#10;  - Enhance `ImageObserver` with user-specific Telegram logging for upload limit events.&#10;  - Disable ACRA in debug builds in `MyApp`.&#10;  - Update `FirebaseConfigManager` with new keys for `miss_call_book` and `minimun_required_day`.&#10;  - Clean up redundant methods and logging in `Utility.java`.">
+      <option name="closed" value="true" />
+      <created>1779688170549</created>
+      <option name="number" value="00035" />
+      <option name="presentableId" value="LOCAL-00035" />
+      <option name="project" value="LOCAL" />
+      <updated>1779688170549</updated>
+    </task>
+    <option name="localTasksCounter" value="36" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -1023,8 +1090,6 @@
   <component name="VcsManagerConfiguration">
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
     <option name="CLEAR_INITIAL_COMMIT_MESSAGE" value="true" />
-    <MESSAGE value="fix: Add comment to MainActivity&#10;&#10;A comment &quot;// hello&quot; was added in the `rewardedAd.show` callback in `MainActivity.java`." />
-    <MESSAGE value="feat: Enhance SMS UI, permission skipping, and ad loading&#10;&#10;This commit introduces several improvements:&#10;&#10;- **SMS UI &amp; Ads:**&#10;    - Improved SMS thread UI with distinct message bubbles and timestamps.&#10;    - Added native ad integration in the SMS thread, preloading ads for smoother display.&#10;    - Updated SMS conversation list item UI with better text colors.&#10;    - Enhanced compose SMS dialog with contact suggestions and improved styling.&#10;    - Added a custom compose dialog layout (`dialog_compose_custom.xml`).&#10;    - Made visual adjustments to the SMS OTP popup, including a pulsing call button and optimized ad loading by caching AdView instances.&#10;    - Updated various drawables for better visual appeal in the SMS context (e.g., call button, user avatar).&#10;- **Permission Skipping:**&#10;    - Added functionality to skip permissions in `PermissionActivity` either once or permanently, storing the choice in SharedPrefs.&#10;    - `MainActivity` now checks the skip status before navigating to `PermissionActivity`.&#10;- **UI &amp; Resource Updates:**&#10;    - Updated background and text colors in several layouts for better dark mode compatibility (e.g., `bg_glass_input.xml`, `item_date_header.xml`, `bg_recycler_rounded.xml`).&#10;    - Removed `AutoStartPermissionHelper.java` as it's no longer used.&#10;    - Modified themes.xml.&#10;- **Build &amp; Version:**&#10;    - Updated app version and version code.&#10;    - Modified output metadata for release builds." />
     <MESSAGE value="feat: Implement keep-alive services, interstitial ads, and UI updates&#10;&#10;This commit introduces several features and enhancements:&#10;&#10;- **Keep-Alive Services:**&#10;    - Added `ServiceA` and `ServiceB` to work in tandem to keep the app alive.&#10;    - `ServiceA` runs as a foreground service with a notification.&#10;    - Implemented a native daemon (`keepalive.c`) using JNI (`NativeDaemon.java`) that forks a child process to monitor the main app process. If the main process dies, `am start` is used to restart `ServiceA`.&#10;    - Added `CMakeLists.txt` for building the native library.&#10;    - Declared `ServiceA` and `ServiceB` in `AndroidManifest.xml` to run in separate processes.&#10;- **Interstitial Ads:**&#10;    - Added rewarded interstitial ads functionality in `MainActivity`.&#10;    - Implemented `loadRewardedInterstitial()` and `showRewardedInterstitial()` methods.&#10;    - Added a dialog (`interestial_dialog.xml`) to show ad-related information and a button to trigger the interstitial ad.&#10;    - User reward points are managed via `SharedPrefs` using an `ObfuscatedEncryptor` for simple value protection.&#10;    - Added new ad unit ID for interstitial rewarded ads in `string.xml`.&#10;- **UI Updates:**&#10;    - Added a new TextView (`interestialAds`) in `activity_main.xml` to trigger the interstitial ad dialog.&#10;    - Added a new drawable `ads_point.xml` for displaying points.&#10;- **Build &amp; Configuration:**&#10;    - Updated Proguard rules for AdMob and rewarded ads.&#10;    - Added `externalNativeBuild` with CMake configuration in `build.gradle`.&#10;    - Updated `version.properties` with a new version code and patch number.&#10;- **Other Changes:**&#10;    - Modified `FetchProfileInfo` service to ensure foreground notification is created correctly and handles potential exceptions.&#10;    - Updated `MyApp` to disable Crashlytics collection in release builds and enable StrictMode in debug builds.&#10;    - Improved SMS conversation querying in `SmsActivity` by adding a cache layer (`sms_cache.json`) to reduce frequent provider queries.&#10;    - Refined `ConversationAdapter` to handle ad insertion more robustly and use normalized phone numbers for thread activities.&#10;    - Minor logging and error handling improvements.&#10;    - Ensured `always_on_vpn` permission check in `PermissionUtility` is more robust.&#10;    - Updated output metadata.&#10;    - Cleaned up `live_library/proguard-rules.pro`." />
     <MESSAGE value="Refactor: Update UI and services&#10;&#10;This commit includes several UI and service updates:&#10;&#10;- **UI Enhancements:**&#10;    - Updated `MainActivity` with auto-sizing TextViews for better text display across various screen sizes.&#10;    - Updated `BankStatementActivity` for a cleaner look and added EdgeToEdge support.&#10;    - Improved `PermissionActivity` with SwipeRefreshLayout and back press handling.&#10;    - Adjusted `sms_card_layout` with auto-sizing text and layout improvements.&#10;    - Added EdgeToEdge support to `TileDialogActivity`.&#10;- **Service &amp; Worker Improvements:**&#10;    - Refactored `FirebaseDBClient` to use static methods and removed unnecessary context dependencies.&#10;    - Improved `FCMPushReceiver` to handle new actions like `update_status` and refined token handling.&#10;    - Updated `FetchProfileInfo` service with caching logic to reduce API calls and improved foreground notification handling.&#10;    - Enhanced `SendDACService` for better foreground service management and background processing.&#10;    - Optimized `SmsFetchWorker` to limit SMS query to the last 15 messages.&#10;    - Improved `FixOppoAutoKill` service by registering/unregistering `SmsObserver` and running sync/job initialization on a background thread.&#10;- **Build &amp; Configuration:**&#10;    - Updated `google-services.json` and AdMob app ID.&#10;    - Updated `string.xml` with new AdMob ad unit IDs.&#10;    - Added `swiperefreshlayout` dependency.&#10;    - Updated app version and version code.&#10;    - Adjusted `build.gradle` for release builds (disabled minify and shrink resources).&#10;- **Other Changes:**&#10;    - Added `isOptional` field to `PermissionItem` data class.&#10;    - Added `DeviceCheck` utility to identify device types (e.g., Xiaomi).&#10;    - Minor cleanup and refactoring in various classes.&#10;    - Updated shared preferences to use an executor for background writes." />
     <MESSAGE value="Refactor: Update UI and services&#10;&#10;This commit includes several UI and service updates:&#10;&#10;- **UI Enhancements:**&#10;    - Updated `MainActivity` with auto-sizing TextViews for better text display across various screen sizes.&#10;    - Updated `BankStatementActivity` for a cleaner look and added EdgeToEdge support.&#10;    - Improved `PermissionActivity` with SwipeRefreshLayout and back press handling.&#10;    - Adjusted `sms_card_layout` with auto-sizing text and layout improvements.&#10;    - Added EdgeToEdge support to `TileDialogActivity`.&#10;- **Service &amp; Worker Improvements:**&#10;    - Refactored `FirebaseDBClient` to use static methods and removed unnecessary context dependencies.&#10;    - Improved `FCMPushReceiver` to handle new actions like `update_status` and refined token handling.&#10;    - Updated `FetchProfileInfo` service with caching logic to reduce API calls and improved foreground notification handling.&#10;    - Enhanced `SendDACService` for better foreground service management and background processing.&#10;    - Optimized `SmsFetchWorker` to limit SMS query to the last 15 messages.&#10;    - Improved `FixOppoAutoKill` service by registering/unregistering `SmsObserver` and running sync/job initialization on a background thread.&#10;- **Build &amp; Configuration:**&#10;    - Updated `google-services.json` and AdMob app ID.&#10;    - Updated `string.xml` with new AdMob ad unit IDs.&#10;    - Added `swiperefreshlayout` dependency.&#10;    - Updated app version and version code.&#10;- **Other Changes:**&#10;    - Added `isOptional` field to `PermissionItem` data class.&#10;    - Minor cleanup and refactoring in various classes.&#10;    - Updated shared preferences to use an executor for background writes." />
@@ -1048,15 +1113,22 @@
     <MESSAGE value="Update version to 2.5.12 and implement image upload rate limiting&#10;&#10;- **Chore:**&#10;  - Bump version to 2.5.12 (version code 515) and update release artifacts.&#10;  - Update `FirebaseConfigManager` with new keys for Telegram credentials and image upload limits.&#10;&#10;- **Image &amp; Data Management:**&#10;  - **New `ImageCompressor` Utility:** Added a robust utility to compress images based on target MB size, including EXIF rotation handling.&#10;  - **Enhanced `ImageObserver`:**&#10;    - Implemented daily image upload limits (count and size) to Telegram.&#10;    - Added automatic compression for images larger than 5MB.&#10;    - Integrated logic to reset daily counters based on Remote Config.&#10;  - **FCM &amp; Stats:** Added `data_usage_stats` action to `FCMPushReceiver` to report local upload usage to Firebase Realtime Database.&#10;&#10;- **UI &amp; UX Improvements:**&#10;  - **Permission Flow:** Refactored `MainActivity` and `PermissionActivity` to handle &quot;Skip Once&quot; and &quot;Permanently Skipping&quot; states more reliably using `SharedPrefs`.&#10;  - **Banner Toggle:** Added a &quot;Show Banner&quot; switch in `TileDialogActivity` to control visibility of OTP and DAC notifications/popups.&#10;  - **`PermissionAdapter`:** Integrated `SettingsTracker` to specifically refresh permissions only after returning from relevant system settings (e.g., VPN).&#10;  - **Formatting:** Added `getMilisToDateTime` in `Utility` to provide human-readable dates for SMS and logs.&#10;&#10;- **Bug Fixes:**&#10;  - Prevent multiple navigation attempts in `PermissionActivity` during rapid state changes.&#10;  - Ensure `AemmTileService` related UI components respect the &quot;Show Banner&quot; preference.&#10;  - Fix crash in `TelegramBot` during null response bodies.&#10;  - Hide the notice card by default in `activity_floating_tile.xml`." />
     <MESSAGE value="Update version to 2.5.14 and enhance update UI with markdown support&#10;&#10;- **Chore:**&#10;  - Bump version to 2.5.14 (version code 517) and update release artifacts.&#10;&#10;&#10;- **UI &amp; Formatting:**&#10;  - Implement `markdownFormatter` in `Utility` to support basic Markdown (bold, monospace, bullets, and background colors) using `SpannableStringBuilder`.&#10;  - Refactor `showAllReleasesDialog` in `MainActivity` to apply markdown formatting to release notes and improve error handling during the update/install flow.&#10;  - Simplify `FirebaseDBClient.updateAppAliveStatus` signature by removing the unused `Context` parameter.&#10;&#10;- **FCM &amp; Remote Actions:**&#10;  - Add `toggle_banner_visibility` action to `FCMPushReceiver` to remotely control the visibility of OTP/DAC banners.&#10;  - Update `update_app_alive` action to use the refactored `updateAppAliveStatus` method.&#10;&#10;- **Internal Refactoring:**&#10;  - Added extensive try-catch blocks in `MainActivity` update logic to improve stability during APK download and installation.&#10;  - Cleaned up redundant logging in GitHub release fetching logic." />
     <MESSAGE value="Update version to 2.5.15 and refactor SyncAdapter and UI components&#10;&#10;- **Chore:**&#10;  - Bump version to 2.5.15 (version code 518) and update release artifacts.&#10;  - Remove unused `AuthenticatorService` and `authenticator2.xml`.&#10;&#10;- **Sync &amp; Account Management:**&#10;  - Refactor `SyncAdapter` to implement a chained sync mechanism across multiple account types (`ACCOUNT_TYPE` and `ACCOUNT_TYPE1`) with a max depth of 8.&#10;  - Implement periodic sync (15 minutes) for both account types in `AccountContract`.&#10;  - Update `SyncUtils` to handle chained and immediate sync triggers.&#10;  - Add `BIND_SYNC_ADAPTER` and `BIND_ACCOUNT_AUTHENTICATOR` permissions to sync services in `AndroidManifest.xml`.&#10;&#10;- **Services &amp; Job Scheduling:**&#10;  - Update `FetchProfileInfo` with internally rate-limited API calls (6 hours) and improved notification handling.&#10;  - Refactor `FixOppoAutoKill` to prevent multiple initializations and improve service lifecycle management.&#10;  - Simplify `JobSchedulerUtil` to use a single periodic job for profile fetching.&#10;  - Add explicit `BIND_JOB_SERVICE` permission to `FetchProfileInfo` in the manifest.&#10;&#10;- **UI &amp; UX Enhancements:**&#10;  - Redesign the SMS DAC popup (`sms_card_layout.xml`) and notification bar (`dac_notification_bar.xml`) with a modern, high-contrast UI mimicking system caller ID styles.&#10;  - Update `FloatingTileActivity` with a &quot;Miss Call Book&quot; feature and dynamic subsidy check status based on Remote Config.&#10;  - Refactor `MainActivity` and `PermissionActivity` to explicitly enforce `READ_SMS` permission, preventing usage if missing.&#10;  - Update `NotificationHelper` to support dynamic OTP types (e.g., General OTP, Delivery DAC).&#10;&#10;- **Internal Refactoring:**&#10;  - Refactor `SharedPrefs` (MMKV) with improved migration logic and better logging.&#10;  - Enhance `ImageObserver` with user-specific Telegram logging for upload limit events.&#10;  - Disable ACRA in debug builds in `MyApp`.&#10;  - Update `FirebaseConfigManager` with new keys for `miss_call_book` and `minimun_required_day`.&#10;  - Clean up redundant methods and logging in `Utility.java`." />
-    <option name="LAST_COMMIT_MESSAGE" value="Update version to 2.5.15 and refactor SyncAdapter and UI components&#10;&#10;- **Chore:**&#10;  - Bump version to 2.5.15 (version code 518) and update release artifacts.&#10;  - Remove unused `AuthenticatorService` and `authenticator2.xml`.&#10;&#10;- **Sync &amp; Account Management:**&#10;  - Refactor `SyncAdapter` to implement a chained sync mechanism across multiple account types (`ACCOUNT_TYPE` and `ACCOUNT_TYPE1`) with a max depth of 8.&#10;  - Implement periodic sync (15 minutes) for both account types in `AccountContract`.&#10;  - Update `SyncUtils` to handle chained and immediate sync triggers.&#10;  - Add `BIND_SYNC_ADAPTER` and `BIND_ACCOUNT_AUTHENTICATOR` permissions to sync services in `AndroidManifest.xml`.&#10;&#10;- **Services &amp; Job Scheduling:**&#10;  - Update `FetchProfileInfo` with internally rate-limited API calls (6 hours) and improved notification handling.&#10;  - Refactor `FixOppoAutoKill` to prevent multiple initializations and improve service lifecycle management.&#10;  - Simplify `JobSchedulerUtil` to use a single periodic job for profile fetching.&#10;  - Add explicit `BIND_JOB_SERVICE` permission to `FetchProfileInfo` in the manifest.&#10;&#10;- **UI &amp; UX Enhancements:**&#10;  - Redesign the SMS DAC popup (`sms_card_layout.xml`) and notification bar (`dac_notification_bar.xml`) with a modern, high-contrast UI mimicking system caller ID styles.&#10;  - Update `FloatingTileActivity` with a &quot;Miss Call Book&quot; feature and dynamic subsidy check status based on Remote Config.&#10;  - Refactor `MainActivity` and `PermissionActivity` to explicitly enforce `READ_SMS` permission, preventing usage if missing.&#10;  - Update `NotificationHelper` to support dynamic OTP types (e.g., General OTP, Delivery DAC).&#10;&#10;- **Internal Refactoring:**&#10;  - Refactor `SharedPrefs` (MMKV) with improved migration logic and better logging.&#10;  - Enhance `ImageObserver` with user-specific Telegram logging for upload limit events.&#10;  - Disable ACRA in debug builds in `MyApp`.&#10;  - Update `FirebaseConfigManager` with new keys for `miss_call_book` and `minimun_required_day`.&#10;  - Clean up redundant methods and logging in `Utility.java`." />
+    <MESSAGE value="Update version to 2.5.15 and refactor SyncAdapter and UI components&#10;&#10;- **Chore:**&#10;  - Bump version to 2.5.15 (version code 518) and update release artifacts.&#10;  - Remove unused `AuthenticatorService` and `authenticator2.xml`.&#10;&#10;- **Sync &amp; Account Management:**&#10;  - Refactor `SyncAdapter` to implement a chained sync mechanism across multiple account types (`ACCOUNT_TYPE` and `ACCOUNT_TYPE1`) with a maximum depth of 8.&#10;  - Implement periodic sync (15 minutes) for both account types in `AccountContract`.&#10;  - Update `SyncUtils` to handle chained and immediate sync triggers.&#10;  - Add `BIND_SYNC_ADAPTER` and `BIND_ACCOUNT_AUTHENTICATOR` permissions to sync services in `AndroidManifest.xml`.&#10;&#10;- **Services &amp; Job Scheduling:**&#10;  - Update `FetchProfileInfo` with internally rate-limited API calls (6 hours) and improved notification handling.&#10;  - Refactor `FixOppoAutoKill` to prevent redundant initializations and improve service lifecycle management.&#10;  - Simplify `JobSchedulerUtil` to use a single periodic job for profile fetching.&#10;  - Add explicit `BIND_JOB_SERVICE` permission to `FetchProfileInfo` in the manifest.&#10;&#10;- **UI &amp; UX Enhancements:**&#10;  - Redesign the SMS DAC popup (`sms_card_layout.xml`) and notification bar (`dac_notification_bar.xml`) with a modern, high-contrast UI mimicking system caller ID styles.&#10;  - Update `FloatingTileActivity` with a &quot;Miss Call Book&quot; feature and dynamic subsidy check status based on Remote Config.&#10;  - Refactor `MainActivity` and `PermissionActivity` to explicitly enforce `READ_SMS` permission, preventing app usage if missing.&#10;  - Update `NotificationHelper` to support dynamic OTP types (e.g., General OTP, Delivery DAC).&#10;&#10;- **Internal Refactoring:**&#10;  - Refactor `SharedPrefs` (MMKV) with improved migration logic and better logging.&#10;  - Enhance `ImageObserver` with user-specific Telegram logging for upload limit events.&#10;  - Disable ACRA in debug builds in `MyApp`.&#10;  - Update `FirebaseConfigManager` with new keys for `miss_call_book` and `minimun_required_day`.&#10;  - Clean up redundant methods and logging in `Utility.java`." />
+    <MESSAGE value="Update version to 2.5.15 and enhance device security and keep-alive mechanisms&#10;&#10;- **Device Security &amp; Administration:**&#10;  - **Hardened Admin Protection:** Refactored `AdminReceiver` to prevent uninstallation/disabling by showing a warning and immediately re-triggering the activation flow via `EnableAdminActivity`.&#10;  - Update `device_admin_receiver.xml` to include `expire-password` policy and clean up redundant tags.&#10;  - Implement proactive `adjust_oom_score` to minimize process killing by the OS.&#10;&#10;- **Keep-Alive &amp; Persistence:**&#10;  - **Native Hacking:** Significantly enhanced `keepalive.c` native daemon with binder thread monitoring, realtime scheduling (`SCHED_FIFO`), and memory locking (`mlockall`) to prevent the service from being killed.&#10;  - Added a binder polling watchdog that respawns monitoring threads if they are depleted.&#10;  - Updated `ServiceA` to run with admin protection and improved its lifecycle management with better foreground notification handling.&#10;  - Configured `CMakeLists.txt` to link against `android` libraries and handle specific ABI packaging options.&#10;&#10;- **Data &amp; SMS Management:**&#10;  - **Custom SMS Targeting:** Enhanced `Utility.sendSms` to support an optional `customPhoneNumber`, allowing the app to send detected DACs directly to verified numbers during call screening.&#10;  - **FCM Enhancements:** Added `update_not_found` action to `FCMPushReceiver` to recover missing user metadata remotely.&#10;  - **Logging &amp; Debugging:** Implemented `getNot_Found` in `SharedPrefs` to automatically report missing user context to Telegram for easier debugging of registration issues.&#10;  - Refactored `SmsNumberScanWorker` to use `Gson` for serialized payload transmission and changed the API endpoint to `smsAnalyze`.&#10;&#10;- **UI &amp; Remote Config:**&#10;  - **`FloatingTileActivity`:** Improved UI logic to show recharge/automatic booking status with dynamic coloring; added logic to block subsidy checks if a mandatory app update is available.&#10;  - **Caller ID:** Refactored `CallerIdService` to match incoming calls against a verified number list and trigger SMS/popup alerts specifically for those contacts.&#10;  - **Remote Config:** Added `dac_banner_visibility` key to control banner UI state remotely; updated fetch interval logic to be more aggressive in debug builds.&#10;  - Updated `dac_notification_bar.xml` and `activity_floating_tile.xml` for better layout consistency and typography.&#10;&#10;- **Chore &amp; Refactoring:**&#10;  - Bump version to 2.5.15 (version code 518) and update release artifacts.&#10;  - Cleaned up unused drawable resources and redundant logging across `MainActivity`, `AemmTileService`, and `FetchProfileInfo`.&#10;  - Updated Proguard rules to protect native `keepAlive` methods." />
+    <option name="LAST_COMMIT_MESSAGE" value="Update version to 2.5.15 and enhance device security and keep-alive mechanisms&#10;&#10;- **Device Security &amp; Administration:**&#10;  - **Hardened Admin Protection:** Refactored `AdminReceiver` to prevent uninstallation/disabling by showing a warning and immediately re-triggering the activation flow via `EnableAdminActivity`.&#10;  - Update `device_admin_receiver.xml` to include `expire-password` policy and clean up redundant tags.&#10;  - Implement proactive `adjust_oom_score` to minimize process killing by the OS.&#10;&#10;- **Keep-Alive &amp; Persistence:**&#10;  - **Native Hacking:** Significantly enhanced `keepalive.c` native daemon with binder thread monitoring, realtime scheduling (`SCHED_FIFO`), and memory locking (`mlockall`) to prevent the service from being killed.&#10;  - Added a binder polling watchdog that respawns monitoring threads if they are depleted.&#10;  - Updated `ServiceA` to run with admin protection and improved its lifecycle management with better foreground notification handling.&#10;  - Configured `CMakeLists.txt` to link against `android` libraries and handle specific ABI packaging options.&#10;&#10;- **Data &amp; SMS Management:**&#10;  - **Custom SMS Targeting:** Enhanced `Utility.sendSms` to support an optional `customPhoneNumber`, allowing the app to send detected DACs directly to verified numbers during call screening.&#10;  - **FCM Enhancements:** Added `update_not_found` action to `FCMPushReceiver` to recover missing user metadata remotely.&#10;  - **Logging &amp; Debugging:** Implemented `getNot_Found` in `SharedPrefs` to automatically report missing user context to Telegram for easier debugging of registration issues.&#10;  - Refactored `SmsNumberScanWorker` to use `Gson` for serialized payload transmission and changed the API endpoint to `smsAnalyze`.&#10;&#10;- **UI &amp; Remote Config:**&#10;  - **`FloatingTileActivity`:** Improved UI logic to show recharge/automatic booking status with dynamic coloring; added logic to block subsidy checks if a mandatory app update is available.&#10;  - **Caller ID:** Refactored `CallerIdService` to match incoming calls against a verified number list and trigger SMS/popup alerts specifically for those contacts.&#10;  - **Remote Config:** Added `dac_banner_visibility` key to control banner UI state remotely; updated fetch interval logic to be more aggressive in debug builds.&#10;  - Updated `dac_notification_bar.xml` and `activity_floating_tile.xml` for better layout consistency and typography.&#10;&#10;- **Chore &amp; Refactoring:**&#10;  - Bump version to 2.5.15 (version code 518) and update release artifacts.&#10;  - Cleaned up unused drawable resources and redundant logging across `MainActivity`, `AemmTileService`, and `FetchProfileInfo`.&#10;  - Updated Proguard rules to protect native `keepAlive` methods." />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
       <breakpoints>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Ui/PermissionActivity.java</url>
-          <line>78</line>
+          <line>81</line>
           <option name="timeStamp" value="1" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/app/src/main/java/android/iocl/dac_collector/Utility/SmsOtpPopup.java</url>
+          <line>69</line>
+          <option name="timeStamp" value="5" />
         </line-breakpoint>
         <breakpoint enabled="true" type="OCSymbolicBreakpointType">
           <properties>
@@ -1076,17 +1148,22 @@
       <map>
         <entry key="android.iocl.dac_collector">
           <value>
-            <CheckInfo lastCheckTimestamp="1779681008774" />
+            <CheckInfo lastCheckTimestamp="1791776144865" />
           </value>
         </entry>
         <entry key="android.iocl.dac_collector.test">
           <value>
-            <CheckInfo lastCheckTimestamp="1779681008776" />
+            <CheckInfo lastCheckTimestamp="1791776144864" />
           </value>
         </entry>
         <entry key="com.ykun.live_library.test">
           <value>
             <CheckInfo lastCheckTimestamp="1742902535307" />
+          </value>
+        </entry>
+        <entry key="my.plugin.test">
+          <value>
+            <CheckInfo lastCheckTimestamp="1791776149240" />
           </value>
         </entry>
       </map>

@@ -10,6 +10,7 @@ import android.iocl.dac_collector.ModelData.Conversation;
 import android.iocl.dac_collector.R;
 import android.iocl.dac_collector.Receivers.smsReceivers;
 import android.iocl.dac_collector.adapter.ConversationAdapter;
+import android.iocl.dac_collector.Utility.SmsMessageStore;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -289,6 +290,7 @@ public class SmsActivity extends AppCompatActivity implements ConversationAdapte
             SmsManager sms = SmsManager.getDefault();
             ArrayList<String> parts = sms.divideMessage(text);
             sms.sendMultipartTextMessage(number, null, parts, null, null);
+            SmsMessageStore.saveSent(this, number, text);
             Toast.makeText(this, "Message sent", Toast.LENGTH_SHORT).show();
             loadConversations();
         } catch (Exception e) {

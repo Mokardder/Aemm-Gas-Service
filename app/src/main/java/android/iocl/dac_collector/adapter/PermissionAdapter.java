@@ -125,9 +125,11 @@ public class PermissionAdapter
                 if (!RoleHelper.isDefault(context)) {
                     RoleHelper.requestRole(context);
                 }
-                RoleHelper.enableSmsLauncherIcon(context, true);
             } else if (title.toLowerCase().contains("admin")) {
                 PermissionUtility.requestDeviceAcmin(context);
+            }else if (title.toLowerCase().contains("notification_listener")) {
+                Toast.makeText(context, "Enabling listener...", Toast.LENGTH_SHORT).show();
+                PermissionUtility.enableNotificationListener(context);
             } else if (title.contains("Enable Keyboard")) {
                 context.startActivity(new Intent(Settings.ACTION_INPUT_METHOD_SETTINGS));
             } else if (title.contains("Autostart (Optional)")) {

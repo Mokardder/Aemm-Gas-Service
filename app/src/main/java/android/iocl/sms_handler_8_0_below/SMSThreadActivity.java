@@ -9,6 +9,7 @@ import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.iocl.dac_collector.ModelData.Message;
 import android.iocl.dac_collector.R;
+import android.iocl.dac_collector.Utility.SmsMessageStore;
 import android.iocl.dac_collector.adapter.MessageThreadAdapter;
 import android.net.Uri;
 import android.os.Build;
@@ -164,6 +165,7 @@ public class SMSThreadActivity extends AppCompatActivity implements MessageThrea
             SmsManager sms = SmsManager.getDefault();
             ArrayList<String> parts = sms.divideMessage(text);
             sms.sendMultipartTextMessage(address, null, parts, null, null);
+            SmsMessageStore.saveSent(this, address, text);
 
             Message sent = new Message("local-" + System.currentTimeMillis(), address, text, System.currentTimeMillis(), Telephony.Sms.MESSAGE_TYPE_SENT);
             runOnUiThread(() -> {

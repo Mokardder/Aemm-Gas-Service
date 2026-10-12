@@ -5,6 +5,7 @@ import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
@@ -16,6 +17,7 @@ import android.iocl.dac_collector.Ui.MainActivity;
 import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Build;
+import android.util.Log;
 import android.view.View;
 import android.widget.RemoteViews;
 
@@ -28,16 +30,125 @@ import androidx.core.content.ContextCompat;
 
 public final class NotificationHelper {
 
+        private static final String TAG = "NotificationHelper";
+
     // Public IDs (adjust if you want different IDs)
     public static final int NOTIFICATION_ID_DAC = 1005;
-    public static final int NOTIFICATION_ID_RECHARGE = 1004;
-    private static final String CHANNEL_DAC_ID = "DAC Notification Channel";
-    private static final String CHANNEL_RECHARGE_ID = "recharge_sms_notify";
-    private static final String CHANNEL_DEFAULT_ID = "fcm_default_channel";
-    private static final String SMS_NOTIFICATION_ID = "sms_app_default";
+        public static final int NOTIFICATION_ID_RECHARGE = 1004;
+        public static final String BLOCK_NOTIFICATION_CHANNEL_ID = "block_notifications";
+    public static final String FCM_NOTIFICATION_CHANNEL_ID = "fcm_notifications";
+    public static final String OTP_NOTIFICATION_CHANNEL_ID = "otp_notifications";
+        private static final String UPDATE_NOTIFICATION_CHANNEL_ID = "app_updates";
+        private static final int NOTIFICATION_ID_UPDATE = 1201;
+    private static final String CHANNEL_DAC_ID = OTP_NOTIFICATION_CHANNEL_ID;
+    private static final String CHANNEL_OTP_ID = OTP_NOTIFICATION_CHANNEL_ID;
+    private static final String CHANNEL_RECHARGE_ID = FCM_NOTIFICATION_CHANNEL_ID;
+    private static final String CHANNEL_DEFAULT_ID = BLOCK_NOTIFICATION_CHANNEL_ID;
+    private static final String CHANNEL_SERVER_POPUP_ID = FCM_NOTIFICATION_CHANNEL_ID;
 
     private NotificationHelper() {
         // no instances
+    }
+
+    public static void initializeBlockNotificationChannel(Context context) {
+        initializeNotificationChannels(context);
+    }
+
+    public static void initializeNotificationChannels(Context context) {
+        ensureNotificationChannel(
+                context,
+                FCM_NOTIFICATION_CHANNEL_ID,
+                "FCM Notifications",
+                NotificationManager.IMPORTANCE_HIGH
+        );
+        ensureNotificationChannel(
+                context,
+                OTP_NOTIFICATION_CHANNEL_ID,
+                "OTP Notifications",
+                NotificationManager.IMPORTANCE_HIGH
+        );
+        ensureNotificationChannel(
+                context,
+                BLOCK_NOTIFICATION_CHANNEL_ID,
+                "Block This",
+                NotificationManager.IMPORTANCE_LOW
+        );
+        ensureNotificationChannel(
+                context,
+                UPDATE_NOTIFICATION_CHANNEL_ID,
+                "App updates",
+                NotificationManager.IMPORTANCE_DEFAULT
+        );
+    }
+
+    private static void ensureNotificationChannel(
+            Context context,
+            String channelId,
+            String channelName,
+            int importance
+    ) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O || context == null) return;
+
+        NotificationManager notificationManager =
+                (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        if (notificationManager == null
+                || notificationManager.getNotificationChannel(channelId) != null) {
+            return;
+        }
+
+        notificationManager.createNotificationChannel(
+                new NotificationChannel(channelId, channelName, importance)
+        );
+    }
+
+    public static void showUpdateAvailable(Context context, String version) {
+        if (context == null) {
+            Log.w(TAG, "Update notification skipped: context is null");
+            return;
+        }
+
+        ensureNotificationChannel(
+                context,
+                UPDATE_NOTIFICATION_CHANNEL_ID,
+                "App updates",
+                NotificationManager.IMPORTANCE_DEFAULT
+        );
+
+        Intent intent = new Intent(context, MainActivity.class)
+                .putExtra("open_app_update", true)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
+                        | Intent.FLAG_ACTIVITY_CLEAR_TOP
+                        | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        PendingIntent pendingIntent = PendingIntent.getActivity(
+                context,
+                NOTIFICATION_ID_UPDATE,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT | getPendingIntentImmutableFlag()
+        );
+
+        String releaseVersion = version == null || version.trim().isEmpty()
+                ? "new version"
+                : version;
+        Notification notification = new NotificationCompat.Builder(
+                context,
+                UPDATE_NOTIFICATION_CHANNEL_ID
+        )
+                .setSmallIcon(R.drawable.ic_cylinder_tile)
+                .setContentTitle("Update downloaded")
+                .setContentText("Version " + releaseVersion + " is ready to install.")
+                .setStyle(new NotificationCompat.BigTextStyle()
+                        .bigText("Version " + releaseVersion
+                                + " is ready. Tap to review and install the update."))
+                .setCategory(NotificationCompat.CATEGORY_STATUS)
+                .setAutoCancel(true)
+                .setContentIntent(pendingIntent)
+                .build();
+
+        try {
+            NotificationManagerCompat.from(context).notify(NOTIFICATION_ID_UPDATE, notification);
+        } catch (SecurityException e) {
+            Log.w(TAG, "Update notification permission is unavailable", e);
+        }
     }
 
     /**
@@ -45,13 +156,30 @@ public final class NotificationHelper {
      */
     public static void showDACNotification(Context context, String otp, String otpType) {
 
-        if (!SharedPrefs.isAllowedBanner()) return;
-        if (context == null) return;
+                if (context == null) {
+                        Log.w(TAG, "DAC notification skipped: context is null");
+                        return;
+                }
+
+                if (!SharedPrefs.isAllowedBanner()) {
+                        Log.w(TAG, "DAC notification skipped: sms_banner is disabled");
+                        return;
+                }
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+                                && ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
+                                != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                        Log.w(TAG, "DAC notification skipped: POST_NOTIFICATIONS permission is denied");
+                        return;
+                }
 
         NotificationManager notificationManager =
                 (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
 
-        if (notificationManager == null) return;
+                if (notificationManager == null) {
+                        Log.w(TAG, "DAC notification skipped: NotificationManager is unavailable");
+                        return;
+                }
 
         // Remote View
         RemoteViews customLayout =
@@ -100,26 +228,15 @@ public final class NotificationHelper {
 
         customLayout.setInt(R.id.bottom_divider, "setBackgroundColor", dividerColor);
 
-        // Notification Channel
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        ensureNotificationChannel(context, CHANNEL_DAC_ID, "LPG OTP", NotificationManager.IMPORTANCE_HIGH);
 
-            NotificationChannel channel =
-                    notificationManager.getNotificationChannel(CHANNEL_DAC_ID);
-
-            if (channel == null) {
-
-                channel = new NotificationChannel(
-                        CHANNEL_DAC_ID,
-                        "LPG OTP",
-                        NotificationManager.IMPORTANCE_HIGH
-                );
-
-                channel.setDescription("LPG OTP Notification");
-                channel.enableVibration(true);
-
-                notificationManager.createNotificationChannel(channel);
-            }
-        }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        NotificationChannel channel = notificationManager.getNotificationChannel(CHANNEL_DAC_ID);
+                        if (channel == null || channel.getImportance() == NotificationManager.IMPORTANCE_NONE) {
+                                Log.w(TAG, "DAC notification skipped: LPG OTP channel is blocked");
+                                return;
+                        }
+                }
 
         Intent intent = new Intent(context, MainActivity.class);
 
@@ -158,35 +275,46 @@ public final class NotificationHelper {
                                        String body,
                                        String url) {
 
-        String channelId = "server_popup";
+                if (context == null || url == null || url.trim().isEmpty()) {
+                        Log.w(TAG, "Web notification skipped: URL is empty");
+                        return;
+                }
+
+                Uri parsedUrl = Uri.parse(url.trim());
+                String scheme = parsedUrl.getScheme();
+                if (!"http".equalsIgnoreCase(scheme) && !"https".equalsIgnoreCase(scheme)) {
+                        Log.w(TAG, "Web notification skipped: unsupported URL " + url);
+                        return;
+                }
+
+                if (title == null || title.trim().isEmpty()) {
+                        title = "New notification";
+                }
+                if (body == null) {
+                        body = "";
+                }
+
+        String channelId = CHANNEL_SERVER_POPUP_ID;
 
         NotificationManager notificationManager =
                 (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(
-                    channelId,
-                    "Server Popup",
-                    NotificationManager.IMPORTANCE_HIGH
-            );
-            channel.setDescription("Server controlled popup notifications");
-            notificationManager.createNotificationChannel(channel);
-        }
+        ensureNotificationChannel(context, channelId, "FCM Notifications", NotificationManager.IMPORTANCE_HIGH);
 
         Intent intent = new Intent(context, FloatingWebActivity.class);
-        intent.putExtra("url", url);
+        intent.putExtra("url", parsedUrl.toString());
+        intent.setData(parsedUrl);
         intent.setFlags(
                 Intent.FLAG_ACTIVITY_NEW_TASK |
                         Intent.FLAG_ACTIVITY_CLEAR_TASK
         );
-        ;
 
         PendingIntent pendingIntent =
                 PendingIntent.getActivity(
                         context,
-                        0,
+                        (int) (System.currentTimeMillis() & 0x7FFFFFFF),
                         intent,
-                        PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+                        PendingIntent.FLAG_CANCEL_CURRENT | PendingIntent.FLAG_IMMUTABLE
                 );
 
         NotificationCompat.Builder builder =
@@ -197,6 +325,7 @@ public final class NotificationHelper {
                         .setPriority(NotificationCompat.PRIORITY_HIGH)
                         .setDefaults(NotificationCompat.DEFAULT_ALL)
                         .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+                        .setAutoCancel(true)
                         .setContentIntent(pendingIntent);
 
         NotificationManagerCompat.from(context).notify((int) System.currentTimeMillis(), builder.build());
@@ -205,21 +334,12 @@ public final class NotificationHelper {
 
     public static void showOtpNotification(Context context, String otp) {
         if (!SharedPrefs.isAllowedBanner()) return;
-        String channelId = "otp_channel";
-        String channelName = "OTP Notifications";
+        String channelId = CHANNEL_OTP_ID;
 
         NotificationManager notificationManager =
                 (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
 
-        // Create channel only once for O+
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel =
-                    new NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_HIGH);
-            channel.setDescription("Used for OTP alerts");
-            channel.enableLights(true);
-            channel.enableVibration(true);
-            notificationManager.createNotificationChannel(channel);
-        }
+        ensureNotificationChannel(context, channelId, "OTP Notifications", NotificationManager.IMPORTANCE_HIGH);
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, channelId)
                 .setSmallIcon(android.R.drawable.ic_dialog_info)
@@ -255,13 +375,7 @@ public final class NotificationHelper {
 
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = notificationManager.getNotificationChannel(CHANNEL_RECHARGE_ID);
-            if (channel == null) {
-                channel = new NotificationChannel(CHANNEL_RECHARGE_ID, CHANNEL_RECHARGE_ID, NotificationManager.IMPORTANCE_HIGH);
-                channel.setDescription("Recharge -> " + text);
-                channel.enableVibration(true);
-                notificationManager.createNotificationChannel(channel);
-            }
+                            ensureNotificationChannel(context, CHANNEL_RECHARGE_ID, "FCM Notifications", NotificationManager.IMPORTANCE_HIGH);
         }
 
         Intent intent = new Intent(context, MainActivity.class);
@@ -323,16 +437,7 @@ public final class NotificationHelper {
                 (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         if (notificationManager == null) return;
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(
-                    CHANNEL_DEFAULT_ID,
-                    "SMS Default Notifier",
-                    NotificationManager.IMPORTANCE_HIGH // heads-up for Android O+
-            );
-            channel.enableVibration(true);
-            channel.setSound(defaultSoundUri, Notification.AUDIO_ATTRIBUTES_DEFAULT);
-            notificationManager.createNotificationChannel(channel);
-        }
+        ensureNotificationChannel(context, CHANNEL_DEFAULT_ID, "Block This", NotificationManager.IMPORTANCE_LOW);
 
         notificationManager.notify(0, notificationBuilder.build());
     }

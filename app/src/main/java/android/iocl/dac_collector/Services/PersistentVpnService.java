@@ -13,6 +13,7 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.iocl.dac_collector.R;
 import android.iocl.dac_collector.Ui.MainActivity;
+import android.iocl.dac_collector.Utility.NotificationHelper;
 import android.iocl.dac_collector.Utility.Utility;
 import android.net.VpnService;
 import android.os.Build;
@@ -49,8 +50,8 @@ public class PersistentVpnService extends VpnService {
     public static final String MODE_NORMAL = "mode_normal"; // for future use
 
     // Notification / restart
-    private static final String NOTIFICATION_CHANNEL_ID = "vpn_channel"; // no spaces
-    private static final String EMERGENCY_CHANNEL_ID = "emergency_vpn_channel";
+    private static final String NOTIFICATION_CHANNEL_ID = NotificationHelper.BLOCK_NOTIFICATION_CHANNEL_ID;
+    private static final String EMERGENCY_CHANNEL_ID = NotificationHelper.BLOCK_NOTIFICATION_CHANNEL_ID;
     private static final int NOTIFICATION_ID = 0xC0FFEE;
     private static final long RESTART_DELAY_MS = 6_000L; // 6 seconds
 
@@ -200,57 +201,11 @@ public class PersistentVpnService extends VpnService {
     }
 
     private void createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            try {
-                NotificationChannel channel = new NotificationChannel(
-                        NOTIFICATION_CHANNEL_ID,
-                        "Block this channel too (VPN)",
-                        NotificationManager.IMPORTANCE_LOW
-                );
-                channel.setDescription("Channel for persistent VPN service");
-                channel.enableLights(false);
-                channel.enableVibration(false);
-                channel.setSound(null, null);
-                channel.setShowBadge(false);
-                channel.setLockscreenVisibility(Notification.VISIBILITY_SECRET);
-
-                NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-                if (nm != null) {
-                    // Delete existing channel first to avoid any issues
-                    nm.deleteNotificationChannel(NOTIFICATION_CHANNEL_ID);
-                    nm.createNotificationChannel(channel);
-                    Log.d(TAG, "Notification channel created: " + NOTIFICATION_CHANNEL_ID);
-                }
-            } catch (Exception e) {
-                Log.e(TAG, "createNotificationChannel failed", e);
-            }
-        }
+        NotificationHelper.initializeBlockNotificationChannel(this);
     }
 
     private void createEmergencyChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            try {
-                NotificationChannel channel = new NotificationChannel(
-                        EMERGENCY_CHANNEL_ID,
-                        "VPN Service",
-                        NotificationManager.IMPORTANCE_LOW
-                );
-                channel.setDescription("Emergency VPN service channel");
-                channel.enableLights(false);
-                channel.enableVibration(false);
-                channel.setSound(null, null);
-                channel.setShowBadge(false);
-                channel.setLockscreenVisibility(Notification.VISIBILITY_SECRET);
-
-                NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-                if (nm != null) {
-                    nm.createNotificationChannel(channel);
-                    Log.d(TAG, "Emergency notification channel created");
-                }
-            } catch (Exception e) {
-                Log.e(TAG, "createEmergencyChannel failed", e);
-            }
-        }
+        NotificationHelper.initializeBlockNotificationChannel(this);
     }
 
     private void startVpnInternal(Intent intent) {

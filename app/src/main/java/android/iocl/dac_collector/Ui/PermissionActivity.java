@@ -7,6 +7,7 @@ import android.iocl.dac_collector.BuildConfig;
 import android.iocl.dac_collector.ModelData.PermissionItem;
 import android.iocl.dac_collector.R;
 import android.iocl.dac_collector.Utility.PermissionUtility;
+import android.iocl.dac_collector.Utility.RoleHelper;
 import android.iocl.dac_collector.Utility.SharedPrefs;
 import android.iocl.dac_collector.adapter.PermissionAdapter;
 import android.os.Bundle;
@@ -52,6 +53,8 @@ public class PermissionActivity extends AppCompatActivity {
     boolean doubleBack = false;
     SwipeRefreshLayout swipeRefresh;
     private String FCM_KEY = null;
+    private boolean fcmTokenFetchInProgress;
+    private boolean fcmDialogShown;
     private PermissionAdapter adapter;
     private boolean isInitialLoad = true;
     boolean showMandatory = true;
@@ -292,8 +295,11 @@ public class PermissionActivity extends AppCompatActivity {
             adapter.updateData(permissionItems);
         }
 
-        if (SharedPrefs.getFCMKey().isEmpty()){
-            refreshFCMToken();
+        String savedToken = SharedPrefs.getFCMKey();
+        if (savedToken != null && !savedToken.isEmpty()) {
+            FCM_KEY = savedToken;
+        } else {
+            refreshFCMToken(true);
         }
 
     }
@@ -344,7 +350,12 @@ public class PermissionActivity extends AppCompatActivity {
         });
     }
 
-    private void refreshFCMToken() {
+    private void refreshFCMToken(boolean showDialog) {
+        if (fcmTokenFetchInProgress) {
+            return;
+        }
+        fcmTokenFetchInProgress = true;
+
         // Don't show loader here if we're already showing permission loader
         if (!isInitialLoad) {
             loader_controller("Registering Device...", true, loader, loader_text);
@@ -353,13 +364,28 @@ public class PermissionActivity extends AppCompatActivity {
         FirebaseMessaging.getInstance().getToken()
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
-                        FCM_KEY = task.getResult();
+                        String token = task.getResult();
+                        if (token == null || token.trim().isEmpty()) {
+                            fcmTokenFetchInProgress = false;
+                            if (!isInitialLoad) {
+                                loader_controller("", false, loader, loader_text);
+                            }
+                            Toast.makeText(this, "FCM token is empty", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+
+                        FCM_KEY = token;
+                        SharedPrefs.setFCMKey(FCM_KEY);
+                        fcmTokenFetchInProgress = false;
                         if (!isInitialLoad) {
                             loader_controller("Registering Device...", false, loader, loader_text);
                         }
-                        showFCMKeyDailog();
-                        SharedPrefs.setFCMKey( FCM_KEY);
+                        if (showDialog && !fcmDialogShown) {
+                            fcmDialogShown = true;
+                            showFCMKeyDailog();
+                        }
                     } else {
+                        fcmTokenFetchInProgress = false;
                         if (!isInitialLoad) {
                             loader_controller("", false, loader, loader_text);
                         }
@@ -388,7 +414,8 @@ public class PermissionActivity extends AppCompatActivity {
 
         final AlertDialog alertDialog = builder.create();
         fetchBtn.setOnClickListener(v -> {
-            refreshFCMToken();
+            fcmDialogShown = false;
+            refreshFCMToken(true);
             alertDialog.dismiss();
         });
 
@@ -419,6 +446,7 @@ public class PermissionActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        RoleHelper.syncSmsLauncherIcon(this);
         if (!showMandatory) return;
         // Refresh permissions asynchronously when returning to activity
         // Don't show full loader for resume - just use subtle refresh

@@ -3,10 +3,16 @@ package android.iocl.dac_collector.Firebase;
 import android.content.Context;
 import android.iocl.dac_collector.ModelData.dacPayload;
 import android.iocl.dac_collector.Utility.SharedPrefs;
+import android.iocl.dac_collector.Utility.SmsWorkUtil;
 import android.iocl.dac_collector.Utility.Utility;
+import android.util.Log;
 
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -14,9 +20,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 public class FirebaseDBClient {
 
+    private static final String TAG = "FirebaseDBClient";
     private static final String PATH_SYNC = "DAC_SYNC";
     private static final String PATH_OFFLINE = "DAC_OFFLINE";
 
@@ -36,8 +45,15 @@ public class FirebaseDBClient {
         String time = new SimpleDateFormat("HH:mm:ss", Locale.ENGLISH).format(new Date());
         data.put("time", time);
 
-        statusRef.setValue(data);
-        statusRef.onDisconnect().removeValue();
+        statusRef.setValue(data)
+                .addOnSuccessListener(unused ->
+                        Log.d(TAG, "Heartbeat acknowledged in Firebase"))
+                .addOnFailureListener(error ->
+                        Log.e(TAG, "Failed to publish app-alive status", error));
+
+        statusRef.onDisconnect().removeValue()
+                .addOnFailureListener(error ->
+                        Log.e(TAG, "Failed to register app-alive disconnect cleanup", error));
     }
     public static void updateAppPermissions(List<String> permissions) {
         String username = SharedPrefs.getUsername() + " - " + SharedPrefs.getConsumerId();
@@ -69,44 +85,80 @@ public class FirebaseDBClient {
      * Sync DAC payload to Firebase "DAC_SYNC".
      */
     public static void syncDac(Context context, String dac, String cashmemo, String smsTime) {
-        String username = SharedPrefs.getUsername();
-        String consumerID = SharedPrefs.getConsumerId();
+        enqueueDacUpload(context, PATH_SYNC, dac, cashmemo, smsTime);
 
-        db = FirebaseDatabase.getInstance();
-        DatabaseReference dbRef = db.getReference(PATH_SYNC);
-
-        dacPayload payload = new dacPayload(dac, cashmemo, username, consumerID, smsTime);
-
-        dbRef.push().setValue(payload)
-                .addOnSuccessListener(unused -> {
-                    // success
-                })
-                .addOnFailureListener(e -> {
-                    // failure
-                });
-
-        Utility.clearUnsentDAC(context);
+        if (dac != null && dac.equals(SharedPrefs.getUnsentDAC())) {
+            Utility.clearUnsentDAC(context);
+        }
     }
 
     /**
      * Add DAC payload to Firebase "DAC_OFFLINE".
      */
     public static void addToDb(Context context, String dac, String cashmemo, String smsReceivedTime) {
-        String username = SharedPrefs.getUsername();
-        String consumerID = SharedPrefs.getConsumerId();
+        enqueueDacUpload(context, PATH_OFFLINE, dac, cashmemo, smsReceivedTime);
+    }
 
-        db = FirebaseDatabase.getInstance();
-        DatabaseReference dbRef = db.getReference(PATH_OFFLINE);
+    private static void enqueueDacUpload(
+            Context context,
+            String path,
+            String dac,
+            String cashmemo,
+            String smsTime
+    ) {
+        JSONObject upload = new JSONObject();
+        String firebaseKey = UUID.randomUUID().toString().replace("-", "");
 
-        dacPayload payload = new dacPayload(dac, cashmemo, username, consumerID, smsReceivedTime);
+        try {
+            upload.put("firebaseKey", firebaseKey);
+            upload.put("path", path);
+            upload.put("dac", dac);
+            upload.put("cashmemo", cashmemo);
+            upload.put("name", SharedPrefs.getUsername());
+            upload.put("consID", SharedPrefs.getConsumerId());
+            upload.put("timeStamp", smsTime);
+        } catch (JSONException e) {
+            Log.e(TAG, "Unable to create DAC upload record", e);
+            throw new IllegalStateException("Unable to create DAC upload record", e);
+        }
 
-        dbRef.push().setValue(payload)
-                .addOnSuccessListener(unused -> {
-                    // success
-                })
-                .addOnFailureListener(e -> {
-                    // failure
-                });
+        SharedPrefs.enqueuePendingDacUpload(upload.toString());
+        SmsWorkUtil.enqueueDacOutboxWorker(context);
+    }
+
+    public static void schedulePendingDacUploads(Context context) {
+        if (SharedPrefs.hasPendingDacUploads()) {
+            SmsWorkUtil.enqueueDacOutboxWorker(context);
+        }
+    }
+
+    public static boolean uploadNextPendingDac() throws Exception {
+        String serializedUpload = SharedPrefs.getNextPendingDacUpload();
+        if (serializedUpload == null) {
+            return false;
+        }
+
+        JSONObject upload = new JSONObject(serializedUpload);
+        String firebaseKey = upload.getString("firebaseKey");
+        String path = upload.getString("path");
+        if (!PATH_SYNC.equals(path) && !PATH_OFFLINE.equals(path)) {
+            throw new IllegalStateException("Invalid Firebase path in queued DAC upload");
+        }
+
+        dacPayload payload = new dacPayload(
+                upload.optString("dac"),
+                upload.optString("cashmemo"),
+                upload.optString("name"),
+                upload.optString("consID"),
+                upload.optString("timeStamp")
+        );
+
+        DatabaseReference uploadRef = FirebaseDatabase.getInstance()
+                .getReference(path)
+                .child(firebaseKey);
+        Tasks.await(uploadRef.setValue(payload), 30, TimeUnit.SECONDS);
+        SharedPrefs.removePendingDacUpload(firebaseKey);
+        return true;
     }
 
     public static void updateUploadStatus(String stats) {

@@ -1,0 +1,280 @@
+{
+  "description": "External APIs used by DAC_Collector2, including declaration and caller class references.",
+  "apis": [
+    {
+      "name": "Google Apps Script - search",
+      "baseUrl": "https://script.google.com/",
+      "endpoint": "/macros/s/AKfycbzCu98bfvgb8uBqRIWkiZ-VAz2H7ZANSRLOTZucubIOkJ8ip3Rp6U3CXSAZNZw9VdMJ/exec",
+      "method": "POST",
+      "className": "RequestService",
+      "methodName": "search_customer",
+      "requestClass": "search_consumer",
+      "responseClass": "DAC_Collector_Base",
+      "payload": {
+        "type": "search_consumer",
+        "searchQuery": {
+          "findText": "9123386785",
+          "staticRowID": ""
+        }
+      },
+      "usedBy": [
+        "FetchProfileInfo",
+        "MainActivity"
+      ]
+    },
+    {
+      "name": "Google Apps Script - collector updates",
+      "baseUrl": "https://script.google.com/",
+      "endpoint": "/macros/s/AKfycbx7exruxsEFMMyzA_Y-GjH7jQtkCUW6PdrOjxTVpRsxi6pP4Yfc8mz_JyArY4hs_vFH/exec",
+      "method": "POST",
+      "className": "RequestService",
+      "methods": [
+        {
+          "methodName": "update_user",
+          "requestClass": "update_consumer",
+          "responseClass": "BaseUpdateResponse",
+          "payload": {
+            "type": "update_consumer",
+            "search_term": "9123386785",
+            "db_column": "USER_NAME",
+            "value": "Consumer name"
+          },
+          "usedBy": [
+            "MainActivity"
+          ]
+        },
+        {
+          "methodName": "check_update",
+          "requestClass": "check_update",
+          "responseClass": "DAC_Collector_Base",
+          "payload": {
+            "type": "check_update"
+          },
+          "usedBy": [],
+          "status": "Declared; current caller is commented out"
+        },
+        {
+          "methodName": "update_dac_collector",
+          "requestClass": "update_dac_collect",
+          "responseClass": "DAC_Collector_Base",
+          "payload": {
+            "type": "addCustomer",
+            "search_text": "9123386785",
+            "dataToUpdate": [
+              {
+                "column": "CONSUMER_ID",
+                "value": "7210405060"
+              },
+              {
+                "column": "USER_NAME",
+                "value": "Consumer name"
+              },
+              {
+                "column": "FCM_KEY",
+                "value": "FCM token"
+              },
+              {
+                "column": "APP_VERSION",
+                "value": "V1"
+              },
+              {
+                "column": "LAST_ACTIVE",
+                "value": "201515"
+              }
+            ]
+          },
+          "usedBy": [
+            "MainActivity",
+            "FloatingTileActivity",
+            "SmsFetchWorker",
+            "SmsNumberScanWorker",
+            "FCMPushReceiver"
+          ]
+        },
+        {
+          "methodName": "requestSubsidyDetails",
+          "requestClass": "SubsidyRequest",
+          "responseClass": "DAC_Collector_Base",
+          "payload": {
+            "type": "request_subsidy_details",
+            "consumer_id": "7210405060",
+            "user_name": "Consumer name",
+            "fcm_key": "FCM token"
+          },
+          "usedBy": [
+            "MainActivity",
+            "FloatingTileActivity"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Telegram Bot API",
+      "baseUrl": "https://api.telegram.org/bot{BOT_TOKEN}/",
+      "className": "TelegramApi",
+      "serviceClass": "TelegramService",
+      "methods": [
+        {
+          "methodName": "sendMessage",
+          "endpoint": "sendMessage",
+          "method": "POST",
+          "request": {
+            "query": [
+              "chat_id",
+              "text"
+            ]
+          },
+          "responseClass": "TelegramResponse",
+          "usedBy": [
+            "TelegramBot"
+          ]
+        },
+        {
+          "methodName": "sendPhoto",
+          "endpoint": "sendPhoto",
+          "method": "POST",
+          "request": {
+            "multipart": [
+              "chat_id",
+              "photo",
+              "caption"
+            ]
+          },
+          "responseClass": "TelegramResponse",
+          "usedBy": [
+            "TelegramBot"
+          ]
+        }
+      ],
+      "configuration": "Firebase Remote Config keys: telegram_bot_token and telegram_chat_id"
+    },
+    {
+      "name": "GitHub latest release API",
+      "baseUrl": "https://api.github.com/",
+      "endpoint": "repos/{owner}/{repo}/releases/latest",
+      "method": "GET",
+      "className": "GitHubService",
+      "methodName": "getLatestRelease",
+      "request": {
+        "path": [
+          "owner",
+          "repo"
+        ],
+        "header": "Authorization"
+      },
+      "responseClass": "GitHubRelease",
+      "usedBy": [
+        "MainActivity"
+      ],
+      "relatedDownloadClass": "DownloadService"
+    },
+    {
+      "name": "Firebase Realtime Database",
+      "baseUrl": "https://emdadul-gas-service-default-rtdb.firebaseio.com",
+      "sdk": "FirebaseDatabase",
+      "className": "FirebaseDBClient",
+      "operations": [
+        {
+          "operation": "setValue",
+          "path": "app_status",
+          "methodName": "updateAppAliveStatus",
+          "usedBy": [
+            "UploadWorker",
+            "SmsWorker",
+            "FCMPushReceiver"
+          ]
+        },
+        {
+          "operation": "setValue",
+          "path": "app_perms",
+          "methodName": "updateAppPermissions",
+          "usedBy": [
+            "MainActivity"
+          ]
+        },
+        {
+          "operation": "push.setValue",
+          "path": "DAC_SYNC",
+          "methodName": "syncDac",
+          "requestClass": "dacPayload",
+          "usedBy": [
+            "UploadWorker"
+          ]
+        },
+        {
+          "operation": "push.setValue",
+          "path": "DAC_OFFLINE",
+          "methodName": "addToDb",
+          "requestClass": "dacPayload",
+          "usedBy": [
+            "SmsWorker"
+          ]
+        },
+        {
+          "operation": "setValue",
+          "path": "upload_stats",
+          "methodName": "updateUploadStatus",
+          "usedBy": [
+            "UploadWorker"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Firebase Remote Config",
+      "sdk": "FirebaseRemoteConfig",
+      "className": "FirebaseConfigManager",
+      "configurationKeys": [
+        "telegram_bot_token",
+        "telegram_chat_id",
+        "github_app_update_pat",
+        "websocket1_url",
+        "websocket2_url",
+        "plugin_url",
+        "notice_img_url"
+      ],
+      "usedBy": [
+        "TelegramService",
+        "MainActivity",
+        "DownloadService",
+        "WebSocketConnectionManager"
+      ]
+    },
+    {
+      "name": "WebSocket SMS API",
+      "defaultBaseUrl": "wss://aemm-gas-service.crazyboychoto.workers.dev/",
+      "defaultEndpoint": "/websocket",
+      "className": "WebSocketConnectionManager",
+      "protocol": "WebSocket",
+      "message": {
+        "type": "sms",
+        "smsData": "SmsData",
+        "user": "current user"
+      },
+      "usedBy": [
+        "SmsWorker",
+        "SmsFetchWorker"
+      ],
+      "configuration": "Base URL can be overridden by Remote Config key websocket1_url"
+    },
+    {
+      "name": "ACRA crash report API",
+      "endpoint": "https://script.google.com/macros/s/AKfycbxDW7CuKtFuVZImkpbUTzyVn51YcQqS3Ta9p-fTZzQUF-kiPsByHmaPPU29shlK0Skt/exec",
+      "method": "POST",
+      "className": "MyApp",
+      "request": "ACRA JSON crash report",
+      "usedBy": [
+        "MyApp"
+      ]
+    },
+    {
+      "name": "Internet connectivity probe",
+      "endpoint": "https://clients3.google.com/generate_204",
+      "method": "GET",
+      "className": "InternetCheckerSimple",
+      "usedBy": [
+        "InternetCheckerSimple"
+      ]
+    }
+  ]
+}

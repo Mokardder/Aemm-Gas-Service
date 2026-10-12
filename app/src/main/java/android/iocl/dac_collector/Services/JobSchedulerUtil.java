@@ -6,12 +6,40 @@ import android.app.job.JobInfo;
 import android.app.job.JobScheduler;
 import android.content.ComponentName;
 import android.content.Context;
+import android.util.Log;
+
 import java.util.concurrent.TimeUnit;
 
 public class JobSchedulerUtil {
 
-    private static int SMS_CALL_ID = 0;
-    private static int FETCH_PROFILE_PERIODIC = 1956;
+    private static final String TAG = "JobSchedulerUtil";
+    public static final int SMS_CALL_ID = 0;
+    public static final int FETCH_PROFILE_PERIODIC = 1956;
+
+    public static void ensureBackgroundJobsScheduled(Context context) {
+        if (!isJobScheduled(context, SMS_CALL_ID)) {
+            Sms_and_Call_sender(context);
+        }
+        if (!isJobScheduled(context, FETCH_PROFILE_PERIODIC)) {
+            fetch_profile_info(context);
+        }
+    }
+
+    private static boolean isJobScheduled(Context context, int jobId) {
+        JobScheduler scheduler =
+                (JobScheduler) context.getSystemService(JOB_SCHEDULER_SERVICE);
+        if (scheduler == null) {
+            Log.w(TAG, "JobScheduler unavailable; cannot check job " + jobId);
+            return false;
+        }
+
+        for (JobInfo jobInfo : scheduler.getAllPendingJobs()) {
+            if (jobInfo.getId() == jobId) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     public static void Sms_and_Call_sender(Context c) {
         ComponentName comp = new ComponentName(c, SmsSenderJOBService.class);

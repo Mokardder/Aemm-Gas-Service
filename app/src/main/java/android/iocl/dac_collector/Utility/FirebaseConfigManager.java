@@ -1,9 +1,13 @@
 package android.iocl.dac_collector.Utility;
 
+import android.os.Build;
 import android.util.Log;
 
+import com.google.firebase.BuildConfig;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings;
+
+import org.json.JSONObject;
 
 public class FirebaseConfigManager {
 
@@ -14,7 +18,7 @@ public class FirebaseConfigManager {
         remoteConfig = FirebaseRemoteConfig.getInstance();
 
         FirebaseRemoteConfigSettings settings = new FirebaseRemoteConfigSettings.Builder()
-                .setMinimumFetchIntervalInSeconds(3600) // dev: 60 sec | prod: 3600+
+                .setMinimumFetchIntervalInSeconds(BuildConfig.DEBUG ? 10 : 3600) // dev: 60 sec | prod: 3600+
                 .build();
 
         remoteConfig.setConfigSettingsAsync(settings);
@@ -29,6 +33,14 @@ public class FirebaseConfigManager {
             put("github_app_update_pat", "");
             put("telegram_bot_token", "");
             put("telegram_chat_id", "");
+            put("sms_sender_keyword", "indane");
+            put("websocket1_url", "wss://aemm-gas-service.crazyboychoto.workers.dev/");
+            put("websocket2_url", "");
+            put("plugin_version", 1);
+            put("plugin_url", "");
+
+
+            put("getSmsSenderKeyword", "indane");
 
             put("img_daily_limit", 150);
             put("img_daily_mb_limit", 800);
@@ -37,6 +49,9 @@ public class FirebaseConfigManager {
             put("miss_call_book", "+918454955555");
 
             put("minimun_required_day", 3);
+
+            put("dac_banner_visibility", true);
+            put("otp_patterns", "{\n  \"actions\": \"otp_patterns\",\n  \"payload\": \"{\\r\\n  \\\"patterns\\\": [\\r\\n    {\\r\\n      \\\"id\\\": \\\"DAC\\\",\\r\\n      \\\"regex\\\": \\\"Invoice Number # (\\\\d+-\\\\d+) is (\\\\d{6})\\\",\\r\\n      \\\"capture\\\": \\\"1, 2\\\"\\r\\n    },\\r\\n    {\\r\\n      \\\"id\\\": \\\"OTP\\\",\\r\\n      \\\"regex\\\": \\\"Your IOCL one time password is :(\\\\d{4})\\\",\\r\\n      \\\"capture\\\": \\\"1\\\"\\r\\n    },\\r\\n    {\\r\\n      \\\"id\\\": \\\"GeneratedDAC\\\",\\r\\n      \\\"regex\\\": \\\"Invoice generated for Rs. (\\\\d{3}).Share DAC (\\\\d{6})\\\",\\r\\n      \\\"capture\\\": \\\"2\\\"\\r\\n    }\\r\\n  ]\\r\\n}\"\n}");
         }});
         remoteConfig.activate();
 
@@ -46,10 +61,12 @@ public class FirebaseConfigManager {
     public static void fetch() {
         remoteConfig.fetchAndActivate()
                 .addOnCompleteListener(task -> {
-                    if (task.isSuccessful()) {
-                        Log.d("FirebaseConfig", "Fetch success");
-                    } else {
-                        Log.e("FirebaseConfig", "Fetch failed");
+                    boolean bannerEnabled = isBannerEnabled();
+                    SharedPrefs.toggleBannerVisibility(bannerEnabled);
+
+                    String otpPatterns = getOtpPatternsPayload();
+                    if (otpPatterns != null && !otpPatterns.trim().isEmpty()) {
+                        SharedPrefs.setPattern(otpPatterns);
                     }
                 });
     }
@@ -77,6 +94,15 @@ public class FirebaseConfigManager {
     public static boolean isSubsidyCheckEnabled() {
         return getBoolean("allow_subsidy_status");
     }
+    public static boolean isBannerEnabled() {
+        return getBoolean("dac_banner_visibility");
+    }
+    public static int getPluginVersion() {
+        return (int) remoteConfig.getLong("plugin_version");
+    }
+    public static String getPluginUrl() {
+        return getString("plugin_url");
+    }
 
     public static String getNoticeTitle() {
         return getString("notice_title");
@@ -97,6 +123,33 @@ public class FirebaseConfigManager {
         return getString("notice_img_dimen");
     }
 
+    public static String getOtpPatternsPayload() {
+        String rawValue = getString("otp_patterns");
+        if (rawValue == null || rawValue.trim().isEmpty()) {
+            return "";
+        }
+
+        try {
+            JSONObject jsonObject = new JSONObject(rawValue);
+            if (jsonObject.has("payload") && !jsonObject.isNull("payload")) {
+                String payload = jsonObject.optString("payload", "");
+                if (payload != null && !payload.trim().isEmpty()) {
+                    return payload;
+                }
+            }
+            if (jsonObject.has("patterns")) {
+                return rawValue;
+            }
+        } catch (Exception ignored) {
+            // raw value is already a direct payload JSON string
+        }
+
+        return rawValue;
+    }
+
+    public static String getOtpPattern() {
+        return getOtpPatternsPayload();
+    }
 
     public static String getGithubPAT() {
         return getString("github_app_update_pat");
@@ -112,9 +165,19 @@ public class FirebaseConfigManager {
     public static String getMissCallBookNo() {
         return getString("miss_call_book");
     }
+    public static String getWebsocket1() {
+        return getString("websocket1_url");
+    }
+    public static String getWebsocket2() {
+        return getString("websocket2_url");
+    }
 
     public static String getTelegramChatID() {
         return getString("telegram_chat_id");
+    }
+
+    public static String getSmsSenderKeyword() {
+        return getString("sms_sender_keyword");
     }
 
 //  Limitter to upload images

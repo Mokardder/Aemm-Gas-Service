@@ -15,12 +15,22 @@
 # R class
 -keep class android.iocl.dac_collector.R
 
-# --- Firebase ---
--keep class com.google.firebase.** { *; }
-
 # --- Remove logs in release ---
 -assumenosideeffects class android.util.Log {
     public static int d(...);
     public static int v(...);
     public static int i(...);
+}
+# Keep native methods
+# Keep native methods
+-keep class android.iocl.keepAlive.NativeDaemon {
+    native <methods>;
+}
+
+-keepclasseswithmembernames class * {
+    native <methods>;
+}
+
+-keepclasseswithmembernames class * {
+    native <methods>;
 }

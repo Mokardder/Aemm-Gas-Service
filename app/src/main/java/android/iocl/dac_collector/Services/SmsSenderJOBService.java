@@ -28,7 +28,7 @@ public class SmsSenderJOBService extends JobService {
     private void doTheThing(JobParameters jobParameters) {
         if (!jobCancelled) {
 
-            Log.d(TAG, "doTheThing: Running  The JOB");
+
 
             Utility.getDACMessages(getApplicationContext());
 
@@ -41,7 +41,6 @@ public class SmsSenderJOBService extends JobService {
     public boolean onStopJob(JobParameters jobParameters) {
         jobCancelled = true;
 
-        Sms_and_Call_sender(getApplicationContext());
         return false;
     }
 

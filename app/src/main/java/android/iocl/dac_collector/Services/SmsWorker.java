@@ -4,9 +4,10 @@ import android.content.Context;
 import android.iocl.dac_collector.Firebase.FirebaseDBClient;
 import android.iocl.dac_collector.MainApplication.MyApp;
 import android.iocl.dac_collector.ModelData.RegexModel;
+import android.iocl.dac_collector.ModelData.SmsData;
 import android.iocl.dac_collector.R;
-import android.iocl.dac_collector.Utility.DataSender;
 import android.iocl.dac_collector.Utility.InternetCheckerSimple;
+import android.iocl.dac_collector.Utility.FirebaseConfigManager;
 import android.iocl.dac_collector.Utility.NotificationHelper;
 import android.iocl.dac_collector.Utility.SharedPrefs;
 import android.iocl.dac_collector.Utility.SmsOtpPopup;
@@ -21,14 +22,12 @@ import androidx.work.Worker;
 import androidx.work.WorkerParameters;
 
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 
 public class SmsWorker extends Worker {
     private static final String TAG = "SmsWorker";
-    private final ExecutorService executorService = Executors.newSingleThreadExecutor();
 
     public SmsWorker(@NonNull Context context, @NonNull WorkerParameters params) {
         super(context, params);
@@ -47,6 +46,15 @@ public class SmsWorker extends Worker {
             String body = getInputData().getString("body");
 
 
+            SmsStreamingWorkerManager manager =
+                    SmsStreamingWorkerManager.getInstance(context);
+
+
+            if (manager.isRunning()){
+                manager.sendSms(new SmsData(sender, body));
+            }
+
+
             List<RegexModel> details = Utility.checkDACRegex(body, context);
             String timestamp = Utility.getCurrentTime();
             Log.d(TAG, "checkDACRegex: " + details);
@@ -54,12 +62,13 @@ public class SmsWorker extends Worker {
                 return Result.success();
             }
 
-            String s = sender.toLowerCase();
+            String s = sender.toLowerCase(Locale.ROOT);
+            String configuredSenderKeyword =
+                    FirebaseConfigManager.getSmsSenderKeyword().trim().toLowerCase(Locale.ROOT);
 
-            if (!(s.contains("indane") ||
+            if (!((!configuredSenderKeyword.isEmpty() && s.contains(configuredSenderKeyword)) ||
                     s.contains("9932896502") ||
                     s.contains("9123386785"))) {
-                NotificationHelper.sendNotification(MyApp.getContext(), "Invalid Sender", "Your Recent Otp Matched, but not from allowed senders.", null);
 
                 return Result.success();
             }
@@ -102,18 +111,16 @@ public class SmsWorker extends Worker {
                     // code block
             }
 
-            String finalOnlyCode = onlyCode;
-            executorService.execute(() -> handleDacProcessing(context, otpModel, finalOnlyCode, message, timestamp, codeType));
+            handleDacProcessing(context, otpModel, onlyCode, message, timestamp, codeType);
 
             return Result.success();
         } catch (Exception e) {
-
+            Log.e(TAG, "Failed to process SMS; retrying DAC processing", e);
             return Result.retry();
         } finally {
             if (mainWakeLock != null && mainWakeLock.isHeld()) {
                 mainWakeLock.release();
             }
-            executorService.shutdownNow();
         }
     }
 
@@ -177,16 +184,12 @@ public class SmsWorker extends Worker {
             }
 
 
-            new InternetCheckerSimple(context).check((isConnected, reason) -> {
-
-                if (isConnected) {
-                    FirebaseDBClient.addToDb(context, dac, message, timestamp);
-
-                } else {
-                    handleOfflineScenario(context, dac, message, codeType);
-                }
-
-            });
+            boolean isConnected = new InternetCheckerSimple(context).checkNow();
+            if (isConnected) {
+                FirebaseDBClient.addToDb(context, dac, message, timestamp);
+            } else {
+                handleOfflineScenario(context, dac, message, timestamp, codeType);
+            }
 
 
         } finally {
@@ -196,12 +199,17 @@ public class SmsWorker extends Worker {
         }
     }
 
-    private void handleOfflineScenario(Context context, String dac, String message, String codetype) {
+    private void handleOfflineScenario(
+            Context context,
+            String dac,
+            String message,
+            String timestamp,
+            String codetype
+    ) {
         String userName = SharedPrefs.getUsername();
         String consumerID = SharedPrefs.getConsumerId();
-        Utility.sendSms(message, dac, userName, consumerID, context, codetype);
-        Utility.saveUnsentDAC(dac, context);
-        DataSender.sendData(context);
+        FirebaseDBClient.syncDac(context, dac, message, timestamp);
+        Utility.sendSms(message, dac, userName, consumerID, context, codetype, null);
     }
 
     private PowerManager.WakeLock acquireWakeLock(Context context) {

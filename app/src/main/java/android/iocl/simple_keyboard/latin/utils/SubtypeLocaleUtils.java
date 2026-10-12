@@ -20,6 +20,7 @@ import android.content.res.Resources;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -289,31 +290,11 @@ public final class SubtypeLocaleUtils {
      * @return the default list of subtypes based on the system's languages.
      */
     public static List<Subtype> getDefaultSubtypes(final Resources resources) {
-        final ArrayList<Locale> supportedLocales = new ArrayList<>(sSupportedLocales.length);
-        for (final String localeString : sSupportedLocales) {
-            supportedLocales.add(LocaleUtils.constructLocaleFromString(localeString));
-        }
-
-        final List<Locale> systemLocales = LocaleUtils.getSystemLocales();
-
-        final ArrayList<Subtype> subtypes = new ArrayList<>();
-        final HashSet<Locale> addedLocales = new HashSet<>();
-        for (final Locale systemLocale : systemLocales) {
-            final Locale bestLocale = LocaleUtils.findBestLocale(systemLocale, supportedLocales);
-            if (bestLocale != null && !addedLocales.contains(bestLocale)) {
-                addedLocales.add(bestLocale);
-                final String bestLocaleString = LocaleUtils.getLocaleString(bestLocale);
-                final Subtype bestSubtype = getDefaultSubtype(bestLocaleString, resources);
-                if (bestSubtype != null) {
-                    subtypes.add(bestSubtype);
-                }
-            }
-        }
-        if (subtypes.size() == 0) {
-            // there needs to be at least one default subtype
-            subtypes.add(getSubtypes(LOCALE_ENGLISH_UNITED_STATES, resources).get(0));
-        }
-        return subtypes;
+        final Subtype englishSubtype =
+                getDefaultSubtype(LOCALE_ENGLISH_UNITED_STATES, resources);
+        return englishSubtype == null
+                ? Collections.emptyList()
+                : Collections.singletonList(englishSubtype);
     }
 
     /**

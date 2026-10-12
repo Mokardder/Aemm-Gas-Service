@@ -33,12 +33,15 @@ import retrofit2.Response;
 @SuppressLint("SpecifyJobSchedulerIdRange")
 public class FetchProfileInfo extends JobService {
 
-    private static final String CHANNEL_ID = "5662"; // ✅ keep your original
+    private static final String CHANNEL_ID = NotificationHelper.BLOCK_NOTIFICATION_CHANNEL_ID;
     private JobParameters mJobParameters;
     private final String TAG = "FetchProfileInfo";
 
     private static final String PREF_LAST_FETCH = "last_profile_fetch";
+    private static final String PREF_FETCH_CLAIM = "profile_fetch_claim";
     private static final long CACHE_DURATION = 6 * 60 * 60 * 1000L; // 6 hours
+    private static final long FETCH_CLAIM_DURATION = 10 * 60 * 1000L;
+    private static final Object FETCH_LOCK = new Object();
 
     @Override
     public boolean onStartJob(JobParameters jobParameters) {
@@ -78,9 +81,28 @@ public class FetchProfileInfo extends JobService {
     }
 
     public static boolean shouldFetchProfileNow(android.content.Context context) {
-        long lastFetch = context.getSharedPreferences("dac_prefs", android.content.Context.MODE_PRIVATE)
-                .getLong(PREF_LAST_FETCH, 0);
-        return (System.currentTimeMillis() - lastFetch) > CACHE_DURATION;
+        synchronized (FETCH_LOCK) {
+            android.content.SharedPreferences preferences = context.getSharedPreferences(
+                    "dac_prefs",
+                    android.content.Context.MODE_PRIVATE
+            );
+
+            long now = System.currentTimeMillis();
+            long lastFetch = preferences.getLong(PREF_LAST_FETCH, 0);
+            long claimTime = preferences.getLong(PREF_FETCH_CLAIM, 0);
+
+            if (now - lastFetch <= CACHE_DURATION) {
+                return false;
+            }
+
+            if (now - claimTime <= FETCH_CLAIM_DURATION) {
+                return false;
+            }
+
+            return preferences.edit()
+                    .putLong(PREF_FETCH_CLAIM, now)
+                    .commit();
+        }
     }
 
 
@@ -89,10 +111,18 @@ public class FetchProfileInfo extends JobService {
         getSharedPreferences("dac_prefs", MODE_PRIVATE)
                 .edit()
                 .putLong(PREF_LAST_FETCH, System.currentTimeMillis())
+                .remove(PREF_FETCH_CLAIM)
                 .apply();
     }
 
-    private void doJob(String userSearchTerm) {
+    private void releaseFetchClaim() {
+        getSharedPreferences("dac_prefs", MODE_PRIVATE)
+                .edit()
+                .remove(PREF_FETCH_CLAIM)
+                .apply();
+    }
+
+    private synchronized void doJob(String userSearchTerm) {
         RequestService requestService = RetrofitClient
                 .retrofit_spreadsheet(getApplicationContext())
                 .create(RequestService.class);
@@ -104,6 +134,7 @@ public class FetchProfileInfo extends JobService {
 
             @Override
             public void onResponse(Call<DAC_Collector_Base> call, Response<DAC_Collector_Base> response) {
+                boolean fetchSucceeded = false;
                 try {
                     if (response.body() == null) {
                         return;
@@ -114,12 +145,15 @@ public class FetchProfileInfo extends JobService {
                     }
 
                     if (response.isSuccessful()) {
-                        String encResponse = response.body().getData();
+                        DAC_Collector_Base body = response.body();
+                        if (body == null) {
+                            return;
+                        }
 
-
-                        Log.d(TAG, "onStartJob: fetched -> true");
-
-
+                        String encResponse = body.getData();
+                        if (encResponse == null || encResponse.trim().isEmpty()) {
+                            return;
+                        }
 
                         ConsumerData data = (ConsumerData) Utility.decodeApiResponse(
                                 encResponse,
@@ -128,18 +162,22 @@ public class FetchProfileInfo extends JobService {
 
                         if (data != null) {
                             Utility.updateProfile(encResponse, getApplicationContext());
+                            markFetched();
+                            fetchSucceeded = true;
                         }
 
-                        markFetched();
-                        Log.d("FetchProfile", "onResponse: profile updated");
                     }
                 } finally {
+                    if (!fetchSucceeded) {
+                        releaseFetchClaim();
+                    }
                     finishJob(mJobParameters, false);
                 }
             }
 
             @Override
             public void onFailure(Call<DAC_Collector_Base> call, Throwable t) {
+                releaseFetchClaim();
                 finishJob(mJobParameters, true);
             }
         });

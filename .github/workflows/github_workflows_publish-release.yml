@@ -1,35 +1,108 @@
-name: Publish Release
+name: Publish Android Release
 
 on:
   push:
     branches:
-      - main
+      - master
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-release-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
-  create-release:
-    name: Create GitHub Release
+  publish-release:
+    name: Build and publish release APK
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Check out commit
+        uses: actions/checkout@v4
 
-    - name: Get latest commit message
-      run: |
-        echo "commit_message=$(git log -1 --pretty=format:'%s')" >> $GITHUB_ENV
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
 
-    - name: Create a new release
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        curl -X POST \
-          -H "Authorization: Bearer $GITHUB_TOKEN" \
-          -H "Accept: application/vnd.github+json" \
-          https://api.github.com/repos/${{ github.repository }}/releases \
-          -d '{
-            "tag_name": "v${{ github.run_number }}",
-            "name": "Release ${{ github.run_number }}",
-            "body": "${{ env.commit_message }}",
-            "draft": false,
-            "prerelease": false
-          }'
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install native build tools
+        run: sdkmanager "cmake;3.22.1" "ndk;26.1.10909125"
+
+      - name: Configure Android signing
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$ANDROID_KEYSTORE_BASE64" || -z "$ANDROID_KEYSTORE_PASSWORD" || -z "$ANDROID_KEY_ALIAS" || -z "$ANDROID_KEY_PASSWORD" ]]; then
+            echo "Android signing secrets are not configured." >&2
+            exit 1
+          fi
+
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > app/release-signing.jks
+
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+
+          def escape_property(value):
+              return (value.replace("\\", "\\\\")
+                      .replace("\n", "\\n")
+                      .replace("\r", "\\r")
+                      .replace("=", "\\=")
+                      .replace(":", "\\:"))
+
+          properties = {
+              "storeFile": "release-signing.jks",
+              "storePassword": os.environ["ANDROID_KEYSTORE_PASSWORD"],
+              "keyAlias": os.environ["ANDROID_KEY_ALIAS"],
+              "keyPassword": os.environ["ANDROID_KEY_PASSWORD"],
+          }
+          Path("app/keystore.properties").write_text(
+              "".join(f"{key}={escape_property(value)}\n" for key, value in properties.items()),
+              encoding="utf-8",
+          )
+          PY
+
+      - name: Save triggering commit message
+        run: git log -1 --format=%B > "$RUNNER_TEMP/release-notes.md"
+
+      - name: Build release APK
+        run: ./gradlew --no-daemon :app:assembleRelease
+
+      - name: Find APK and release tag
+        id: apk
+        shell: bash
+        run: |
+          set -euo pipefail
+          apk="$(find app/build/outputs/apk/release -maxdepth 1 -type f -name '*.apk' -print -quit)"
+          if [[ -z "$apk" ]]; then
+            echo "Release APK was not produced." >&2
+            exit 1
+          fi
+
+          apk_name="${apk##*/}"
+          if [[ ! "$apk_name" =~ ^Aemm_V([0-9]+\.[0-9]+\.[0-9]+-[0-9]+)-release\.apk$ ]]; then
+            echo "Unexpected release APK filename: $apk_name" >&2
+            exit 1
+          fi
+
+          echo "path=$apk" >> "$GITHUB_OUTPUT"
+          echo "tag=v${BASH_REMATCH[1]}" >> "$GITHUB_OUTPUT"
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          APK_PATH: ${{ steps.apk.outputs.path }}
+          RELEASE_TAG: ${{ steps.apk.outputs.tag }}
+        run: |
+          gh release create "$RELEASE_TAG" "$APK_PATH" \
+            --title "$RELEASE_TAG" \
+            --notes-file "$RUNNER_TEMP/release-notes.md"

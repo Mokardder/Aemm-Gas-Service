@@ -1,6 +1,7 @@
 package android.iocl.dac_collector.Services;
 
 import android.app.ActivityManager;
+import android.app.PendingIntent;
 import android.content.Intent;
 import android.iocl.dac_collector.Ui.FloatingTileActivity;
 import android.iocl.dac_collector.Ui.PermissionActivity;
@@ -20,7 +21,6 @@ public class AemmTileService extends TileService {
     public void onTileAdded() {
         super.onTileAdded();
         SharedPrefs.setTileAdded();
-
     }
 
     @Override
@@ -28,31 +28,37 @@ public class AemmTileService extends TileService {
         super.onStartListening();
         if (getQsTile() == null) return;
 
-
     }
 
     @Override
     public void onClick() {
-        super.onClick();
-
-
         try {
+            super.onClick();
 
+            boolean firstTime = SharedPrefs.isFirstTime();
+            Class<?> targetActivity = firstTime
+                    ? PermissionActivity.class
+                    : FloatingTileActivity.class;
 
-            if (SharedPrefs.isFirstTime()){
-                Intent intent = new Intent(this, PermissionActivity.class);
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                startActivityAndCollapse(intent);
-            }else {
-                Intent intent = new Intent(getApplicationContext(), FloatingTileActivity.class);
-                intent.setFlags(
-                        Intent.FLAG_ACTIVITY_NEW_TASK |
-                                Intent.FLAG_ACTIVITY_CLEAR_TASK
-                );;
-                startActivityAndCollapse(intent);
+            Intent intent = new Intent(this, targetActivity)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+
+            if (!firstTime) {
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
             }
 
-
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                PendingIntent pendingIntent = PendingIntent.getActivity(
+                        this,
+                        1001,
+                        intent,
+                        PendingIntent.FLAG_UPDATE_CURRENT
+                                | PendingIntent.FLAG_IMMUTABLE
+                );
+                startActivityAndCollapse(pendingIntent);
+            }else {
+                startActivityAndCollapse(intent);
+            }
 
         } catch (Exception e) {
             Log.e(TAG, "onClick error", e);

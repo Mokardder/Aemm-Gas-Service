@@ -39,66 +39,74 @@ public class InternetCheckerSimple {
      */
     public void check(final Callback cb) {
         new Thread(() -> {
-            // --- Network presence check ---
-            try {
-                ConnectivityManager cm = (ConnectivityManager) app.getSystemService(Context.CONNECTIVITY_SERVICE);
-                if (cm != null) {
-                    boolean hasInternet = false;
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                        Network n = cm.getActiveNetwork();
-                        if (n == null) {
-                            post(cb, false, "No active network");
-                            return;
-                        }
-                        NetworkCapabilities caps = cm.getNetworkCapabilities(n);
-                        hasInternet = caps != null && caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET);
-                    } else {
-                        // For legacy devices (API < 23)
-                        NetworkInfo ni = cm.getActiveNetworkInfo();
-                        hasInternet = ni != null && ni.isConnected();
-                    }
-                    if (!hasInternet) {
-                        post(cb, false, "Network reported no internet capability");
-                        return;
-                    }
-                }
-            } catch (Throwable ignored) {}
-
-            // --- Primary HTTP probe ---
-            String httpFailureReason = null;
-            try {
-                URL url = new URL("https://clients3.google.com/generate_204");
-                HttpURLConnection c = (HttpURLConnection) url.openConnection();
-                try {
-                    c.setInstanceFollowRedirects(false);
-                    c.setConnectTimeout(timeoutMs);
-                    c.setReadTimeout(timeoutMs);
-                    c.setRequestMethod("GET");
-                    int code = c.getResponseCode();
-                    if (code == 204) {
-                        post(cb, true, "HTTP probe OK (204)");
-                        return;
-                    } else {
-                        httpFailureReason = "HTTP probe returned " + code;
-                    }
-                } finally {
-                    c.disconnect();
-                }
-            } catch (Exception e) {
-                httpFailureReason = "HTTP probe failed: " + e.getClass().getSimpleName();
-            }
-
-            // --- TCP fallback ---
-            try (Socket socket = new Socket()) {
-                InetSocketAddress addr = new InetSocketAddress("1.1.1.1", 443);
-                socket.connect(addr, timeoutMs);
-                post(cb, true, "TCP connect OK; HTTP probe failed (" + httpFailureReason + ")");
-                return;
-            } catch (Exception e) {
-                String tcpReason = e.getClass().getSimpleName();
-                post(cb, false, "Both probes failed: HTTP(" + httpFailureReason + ") TCP(" + tcpReason + ")");
-            }
+            ProbeResult result = probeInternet();
+            post(cb, result.isConnected, result.reason);
         }).start();
+    }
+
+    public boolean checkNow() {
+        return probeInternet().isConnected;
+    }
+
+    private ProbeResult probeInternet() {
+        try {
+            ConnectivityManager cm = (ConnectivityManager) app.getSystemService(Context.CONNECTIVITY_SERVICE);
+            if (cm != null) {
+                boolean hasInternet;
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    Network network = cm.getActiveNetwork();
+                    if (network == null) {
+                        return new ProbeResult(false, "No active network");
+                    }
+                    NetworkCapabilities capabilities = cm.getNetworkCapabilities(network);
+                    hasInternet = capabilities != null
+                            && capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET);
+                } else {
+                    NetworkInfo networkInfo = cm.getActiveNetworkInfo();
+                    hasInternet = networkInfo != null && networkInfo.isConnected();
+                }
+                if (!hasInternet) {
+                    return new ProbeResult(false, "Network reported no internet capability");
+                }
+            }
+        } catch (RuntimeException ignored) {
+        }
+
+        String httpFailureReason;
+        try {
+            URL url = new URL("https://clients3.google.com/generate_204");
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            try {
+                connection.setInstanceFollowRedirects(false);
+                connection.setConnectTimeout(timeoutMs);
+                connection.setReadTimeout(timeoutMs);
+                connection.setRequestMethod("GET");
+                int responseCode = connection.getResponseCode();
+                if (responseCode == 204) {
+                    return new ProbeResult(true, "HTTP probe OK (204)");
+                }
+                httpFailureReason = "HTTP probe returned " + responseCode;
+            } finally {
+                connection.disconnect();
+            }
+        } catch (Exception e) {
+            httpFailureReason = "HTTP probe failed: " + e.getClass().getSimpleName();
+        }
+
+        try (Socket socket = new Socket()) {
+            InetSocketAddress address = new InetSocketAddress("1.1.1.1", 443);
+            socket.connect(address, timeoutMs);
+            return new ProbeResult(
+                    true,
+                    "TCP connect OK; HTTP probe failed (" + httpFailureReason + ")"
+            );
+        } catch (Exception e) {
+            String tcpReason = e.getClass().getSimpleName();
+            return new ProbeResult(
+                    false,
+                    "Both probes failed: HTTP(" + httpFailureReason + ") TCP(" + tcpReason + ")"
+            );
+        }
     }
 
     private void post(Callback cb, boolean ok, String reason) {
@@ -107,5 +115,15 @@ public class InternetCheckerSimple {
                 cb.onResult(ok, reason);
             } catch (Exception ignored) {}
         });
+    }
+
+    private static final class ProbeResult {
+        private final boolean isConnected;
+        private final String reason;
+
+        private ProbeResult(boolean isConnected, String reason) {
+            this.isConnected = isConnected;
+            this.reason = reason;
+        }
     }
 }

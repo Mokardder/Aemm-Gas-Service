@@ -27,6 +27,7 @@ import android.widget.TextView;
 
 import androidx.annotation.DrawableRes;
 import androidx.annotation.NonNull;
+import androidx.appcompat.view.ContextThemeWrapper;
 
 import java.lang.ref.WeakReference;
 import java.text.SimpleDateFormat;
@@ -51,6 +52,15 @@ public class SmsOtpPopup {
     private boolean verified_enabled = false;
     private String header_text = "DAC CODE (GAS)";
     // put this at the top of your class
+
+
+    // Auto close after 20 seconds
+    private final Handler autoCloseHandler = new Handler(Looper.getMainLooper());
+    private static final long AUTO_CLOSE_DELAY = 20_000L;
+
+    private final Runnable autoCloseRunnable = () -> {
+        dismiss();
+    };
 
     private Uri imageUri;
 
@@ -124,12 +134,15 @@ public class SmsOtpPopup {
             // If currently showing on PopupWindow attached to an Activity
             if (popupWindow != null && popupWindow.isShowing()) {
                 Activity owner = activityRef == null ? null : activityRef.get();
-                // if we have an Activity owner and it is still valid -> just update content
+
                 if (owner != null) {
                     updateContentViews(popupWindow.getContentView());
+
+                    // Restart 20-second countdown for new OTP
+                    startAutoCloseTimer();
+
                     return;
                 } else {
-                    // Activity no longer valid -> dismiss and recreate below
                     popupWindow.dismiss();
                     popupWindow = null;
                 }
@@ -138,16 +151,21 @@ public class SmsOtpPopup {
             // If overlay is present in window manager (and attached) -> update
             if (overlayView != null && overlayView.getParent() != null) {
                 updateContentViews(overlayView);
+                startAutoCloseTimer();
                 return;
             }
 
-            // Not currently showing -> create new view and show
-            LayoutInflater inflater = LayoutInflater.from(appContext);
+                // Not currently showing -> create new view and show. Material widgets
+                // require an AppCompat/Material theme even for overlay windows.
+                Activity activity = activityRef == null ? null : activityRef.get();
+                Context inflationContext = activity != null && !activity.isFinishing()
+                    ? activity
+                    : new ContextThemeWrapper(appContext, R.style.Theme_DAC_Collector);
+                LayoutInflater inflater = LayoutInflater.from(inflationContext);
             View content = inflater.inflate(R.layout.sms_card_layout, null, false);
             bindContentTouch(content);
 
             // Prefer showing as PopupWindow if we have a valid Activity reference
-            Activity activity = activityRef == null ? null : activityRef.get();
             if (activity != null && !activity.isFinishing()) {
                 popupWindow = createPopupWindow(content);
                 View parent = activity.getWindow().getDecorView();
@@ -164,6 +182,7 @@ public class SmsOtpPopup {
                 showAsOverlay(content);
             }
         });
+        startAutoCloseTimer();
     }
 
     public SmsOtpPopup setImage(@DrawableRes int imageResId) {
@@ -206,7 +225,7 @@ public class SmsOtpPopup {
                 PixelFormat.TRANSLUCENT
         );
         params.gravity = Gravity.TOP;
-        params.y = getStatusBarHeight();
+        params.y = 0;
 
         try {
             wm.addView(overlayView, params);
@@ -360,6 +379,13 @@ public class SmsOtpPopup {
         } catch (Exception ignored) {
         }
     }
+    private void startAutoCloseTimer() {
+        // Cancel previous timer
+        autoCloseHandler.removeCallbacks(autoCloseRunnable);
+
+        // Start a fresh 20-second timer
+        autoCloseHandler.postDelayed(autoCloseRunnable, AUTO_CLOSE_DELAY);
+    }
 
     private PopupWindow createPopupWindow(View content) {
         PopupWindow pw = new PopupWindow(
@@ -387,6 +413,10 @@ public class SmsOtpPopup {
      */
     public void dismiss() {
         // dismiss popup window if present
+
+
+        // Cancel auto-close timer
+        autoCloseHandler.removeCallbacks(autoCloseRunnable);
         try {
             if (popupWindow != null && popupWindow.isShowing()) {
                 popupWindow.dismiss();
@@ -405,7 +435,9 @@ public class SmsOtpPopup {
             } catch (Exception ignored) {
             }
         });
+
     }
+
 
     private int getStatusBarHeight() {
         int resId = appContext.getResources().getIdentifier(

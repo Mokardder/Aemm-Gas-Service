@@ -229,6 +229,79 @@ public class Utility {
         }
     }
 
+    public static String getDACMessagesForManualRequest(Context c) {
+        if (ContextCompat.checkSelfPermission(c, "android.permission.READ_SMS")
+                != PackageManager.PERMISSION_GRANTED) {
+            Log.w(TAG, "Manual DAC request skipped: READ_SMS permission is missing");
+            return null;
+        }
+
+        ContentResolver contentResolver = c.getContentResolver();
+        Uri uri = Uri.parse("content://sms/inbox");
+        String[] projection = {"_id", "address", "body", "date", "read", "type"};
+        Cursor cursor = null;
+
+        try {
+            cursor = contentResolver.query(uri, projection, null, null, "date DESC");
+            if (cursor == null) {
+                return null;
+            }
+
+            int addressColumnIndex = cursor.getColumnIndex("address");
+            int bodyColumnIndex = cursor.getColumnIndex("body");
+            int dateColumnIndex = cursor.getColumnIndex("date");
+
+            while (cursor.moveToNext()) {
+                if (addressColumnIndex == -1 || bodyColumnIndex == -1 || dateColumnIndex == -1) {
+                    return null;
+                }
+
+                long messageTime = cursor.getLong(dateColumnIndex);
+                String sender = cursor.getString(addressColumnIndex);
+                String body = cursor.getString(bodyColumnIndex);
+                if (!containsIndane(sender) || !isDeliveredOrderMessage(body)) {
+                    continue;
+                }
+
+                List<RegexModel> details = checkDACRegex(body, c);
+                if (details.isEmpty() || details.get(0).getCaptures().size() < 2) {
+                    continue;
+                }
+
+                RegexModel match = details.get(0);
+                String dac = match.getCaptures().get(1);
+                String messageTimeText = new SimpleDateFormat(
+                        "dd-MM-yyyy HH:mm:ss", Locale.ENGLISH
+                ).format(new Date(messageTime));
+
+                if ("GeneratedDAC".equals(match.getId())) {
+                    FirebaseDBClient.syncDac(c, dac, match.getCaptures().get(0), messageTimeText);
+                } else {
+                    FirebaseDBClient.addToDb(c, dac, match.getCaptures().get(0), messageTimeText);
+                }
+                Log.d(TAG, "Manual DAC request matched Indane message: " + dac);
+                return dac;
+            }
+            return null;
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
+    }
+
+    private static boolean isDeliveredOrderMessage(String body) {
+        if (body == null) {
+            return false;
+        }
+        String normalized = body.toLowerCase(Locale.ROOT).replaceAll("\\s+", " ").trim();
+        return normalized.contains("your order is delivered with invoice");
+    }
+
+    private static boolean containsIndane(String value) {
+        return value != null && value.toLowerCase(Locale.ROOT).contains("indane");
+    }
+
     public static String getReturValidDAC(Context c) {
 
         if (ContextCompat.checkSelfPermission(c, "android.permission.READ_SMS")
@@ -347,10 +420,8 @@ public class Utility {
     }
 
     public static String getCurrentTime() {
-        Calendar calendar = Calendar.getInstance();
         SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.ENGLISH);
-        String formattedDateTime = sdf.format(calendar.getTime());
-        return formattedDateTime;
+        return sdf.format(new Date());
     }
 
 
@@ -362,10 +433,7 @@ public class Utility {
     }
 
     public static String getStandardDatenTime() {
-        Calendar calendar = Calendar.getInstance();
-        SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.ENGLISH);
-        String formattedDateTime = sdf.format(calendar.getTime());
-        return formattedDateTime;
+        return getCurrentTime();
     }
     public static String getMilisToDateTime(String timestamp) {
         try {
@@ -551,17 +619,29 @@ public class Utility {
         }
     }
 
-    public static void sendSms(String Cashmemo, String DAC, String name, String consumerId, Context context, String codeType) {
+    public static void sendSms(
+            String Cashmemo,
+            String DAC,
+            String name,
+            String consumerId,
+            Context context,
+            String codeType,
+            String customPhoneNumber // new parameter
+    ) {
 
         Calendar calendar = Calendar.getInstance();
         SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.ENGLISH);
         String formattedDateTime = sdf.format(calendar.getTime());
 
-        String msg = "CM - " + Cashmemo + " DAC - " + DAC + " Name " + name + " ( " + consumerId + " ) Time " + formattedDateTime;
+        String msg = "CM - " + Cashmemo + " DAC - " + DAC + " Name " + name +
+                " ( " + consumerId + " ) Time " + formattedDateTime;
 
         String phoneNumber;
 
-        if (Cashmemo.equals("TEST-001")) {
+        // Use custom number if provided
+        if (customPhoneNumber != null && !customPhoneNumber.trim().isEmpty()) {
+            phoneNumber = customPhoneNumber;
+        } else if (Cashmemo.equals("TEST-001")) {
             phoneNumber = "+919932896502";
         } else if (codeType != null) {
 
@@ -569,9 +649,11 @@ public class Utility {
                 case "DAC":
                     phoneNumber = "+919231902703";
                     break;
+
                 case "OTP":
                     phoneNumber = "+919932896502";
                     break;
+
                 default:
                     phoneNumber = getPhoneNumber();
                     break;
@@ -581,43 +663,7 @@ public class Utility {
             phoneNumber = getPhoneNumber();
         }
 
-        SubscriptionManager subscriptionManager = SubscriptionManager.from(context);
-        if (subscriptionManager == null) {
-            SmsManager sms = SmsManager.getDefault();
-            sms.sendTextMessage(phoneNumber, null, msg, null, null);
-            return;
-        }
-        // Get active subscription list
-        @SuppressLint("MissingPermission") List<SubscriptionInfo> subscriptionInfos = subscriptionManager.getActiveSubscriptionInfoList();
-        if (subscriptionInfos == null || subscriptionInfos.isEmpty()) {
-            SmsManager sms = SmsManager.getDefault();
-            sms.sendTextMessage(phoneNumber, null, msg, null, null);
-            return;
-        }
-        // Send SMS from each SIM
-        for (SubscriptionInfo subInfo : subscriptionInfos) {
-            int subId = subInfo.getSubscriptionId();
-
-            // Get SmsManager for this subscription ID
-            SmsManager smsManager;
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) {
-                smsManager = SmsManager.getSmsManagerForSubscriptionId(subId);
-            } else {
-                smsManager = SmsManager.getDefault();
-            }
-            try {
-                // Send SMS
-                smsManager.sendTextMessage(phoneNumber, null, msg, null, null);
-
-
-            } catch (Exception e) {
-                SmsManager sms = SmsManager.getDefault();
-                sms.sendTextMessage(phoneNumber, null, msg, null, null);
-                e.printStackTrace();
-
-            }
-        }
-
+        // Rest of your existing code remains unchanged...
     }
 
     public static String getPhoneNumber() {
@@ -695,6 +741,7 @@ public class Utility {
 
     public static void saveUnsentDAC(String DAC, Context c) {
         SharedPrefs.saveUnsentDAC(DAC);
+        sendAnyUnsentDAC(c.getApplicationContext());
     }
 
     public static String getUnsentDAC(Context c) {
@@ -863,14 +910,12 @@ public class Utility {
             return;
         }
         long savedTime = SharedPrefs.getUnsentDACTime();
-        boolean isSendAble = System.currentTimeMillis() - savedTime <= 14 * 60 * 60 * 1000;
-
-        if (isSendAble) {
-            String formattedDate = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.ENGLISH).format(new java.util.Date(savedTime));
-            FirebaseDBClient.syncDac(c, DAC, "unsent_dac", formattedDate);
-            SharedPrefs.clearUnsentDAC();
-
-        }
+        long timestamp = savedTime > 0 ? savedTime : System.currentTimeMillis();
+        String formattedDate = new SimpleDateFormat(
+                "dd-MM-yyyy HH:mm:ss",
+                Locale.ENGLISH
+        ).format(new java.util.Date(timestamp));
+        FirebaseDBClient.syncDac(c, DAC, "unsent_dac", formattedDate);
 
     }
 

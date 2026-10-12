@@ -113,10 +113,10 @@ data class SmsResponse(
 // Root response model
 data class DAC_Collector_Base(
     @SerializedName("success") val success: Boolean,
-    @SerializedName("data") val data: String,
-    @SerializedName("message") val message: String,
-    @SerializedName("statusCode") val statusCode: String,
-    @SerializedName("timestamp") val timestamp: String
+    @SerializedName("data") val data: String? = null,
+    @SerializedName("message") val message: String? = null,
+    @SerializedName("statusCode") val statusCode: String? = null,
+    @SerializedName("timestamp") val timestamp: String? = null
 )
 
 

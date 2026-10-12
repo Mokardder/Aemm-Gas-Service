@@ -1,6 +1,7 @@
 package android.iocl.dac_collector.Ui;
 
 import android.os.Bundle;
+import android.util.Log;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -25,19 +26,33 @@ public class FloatingWebActivity extends AppCompatActivity {
 
         webView = findViewById(R.id.webView);
 
-        String url = getIntent().getStringExtra("url");
-
         webView.getSettings().setJavaScriptEnabled(true);
         webView.setWebViewClient(new WebViewClient()); // 🔥 REQUIRED
 
-        if (url != null && !url.isEmpty()) {
-            webView.loadUrl(url);
-        }
+        loadUrl(getIntent());
 
         ImageView closeBtn = findViewById(R.id.btnClose);
 
         closeBtn.setOnClickListener(view -> {
             finish();
         });
+    }
+
+    @Override
+    protected void onNewIntent(android.content.Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        loadUrl(intent);
+    }
+
+    private void loadUrl(android.content.Intent intent) {
+        String url = intent == null ? null : intent.getStringExtra("url");
+        if (url == null || url.trim().isEmpty()) {
+            Log.e("FloatingWebActivity", "No URL supplied in notification intent");
+            return;
+        }
+
+        Log.d("FloatingWebActivity", "Loading URL: " + url);
+        webView.loadUrl(url);
     }
 }

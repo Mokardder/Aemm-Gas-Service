@@ -17,12 +17,12 @@ import android.os.Build;
 import android.os.Environment;
 import android.provider.Settings;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.inputmethod.InputMethodInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Toast;
 
 import androidx.core.app.ActivityCompat;
+import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
 
 import com.hjq.permissions.Permission;
@@ -140,7 +140,7 @@ public class PermissionUtility {
             context.startActivity(new Intent(Settings.ACTION_VPN_SETTINGS));
         }
 
-        SharedPrefs.setVPNAlways( true);
+        SharedPrefs.setVPNAlways(true);
 
     }
 
@@ -167,6 +167,12 @@ public class PermissionUtility {
      */
     public static void requestDeviceAcmin(Context activity) {
         enableDeviceAdmin(activity);
+    }
+    public static void enableNotificationListener(Context activity) {
+        Intent intent =
+                new Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS");
+
+        activity.startActivity(intent);
     }
 
     /**
@@ -207,7 +213,21 @@ public class PermissionUtility {
             e.printStackTrace();
         }
     }
+    private static boolean isNotificationListenerEnabled(Context context) {
 
+        String packageName = context.getPackageName();
+
+        for (String enabledPackage :
+                NotificationManagerCompat
+                        .getEnabledListenerPackages(context)) {
+
+            if (enabledPackage.equals(packageName)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
     public static boolean isAdmin(Context activity) {
         DevicePolicyManager dpm = (DevicePolicyManager) activity.getSystemService(Context.DEVICE_POLICY_SERVICE);
 
@@ -381,11 +401,6 @@ public class PermissionUtility {
          */
 
 
-
-
-
-
-
         // TODO: it's not todo, some permissions chnaged from Activity context to @Context
 //        Activity activity = context instanceof Activity ? (Activity) context : context;
 
@@ -425,13 +440,15 @@ public class PermissionUtility {
         if (!isAdmin(activity)) {
             missingPermissions.add("Admin");
         }
+        if (!isNotificationListenerEnabled(activity)) {
+            missingPermissions.add("Notification_listener");
+        }
         if (!isIconVisible(activity)) {
             missingPermissions.add("hidden_icon");
         }
         if (isIconVisible(activity)) {
             missingPermissions.add("hidden_icon");
         }
-
 
 
         if (XXPermissions.isGrantedPermissions(activity, Permission.POST_NOTIFICATIONS)) {
@@ -468,9 +485,6 @@ public class PermissionUtility {
             }
             return mandatoryOnly;
         }
-
-
-
 
 
         return missingPermissions;
@@ -598,6 +612,11 @@ public class PermissionUtility {
                 icon = R.drawable.profile_protection;
                 title = "Device Admin";
                 description = "Allows the app to become a device administrator.";
+                break;
+            case "notification_listener":
+                icon = R.drawable.notification_icon;
+                title = "Notification Listener";
+                description = "Allows the app to remove IndianOil Spam Sms";
                 break;
 
             case "sync_false":

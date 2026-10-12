@@ -1,13 +1,13 @@
 package android.iocl.dac_collector.Services;
 
 import android.app.Notification;
-import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
 import android.iocl.dac_collector.R;
 import android.iocl.dac_collector.Ui.MainActivity;
+import android.iocl.dac_collector.Utility.NotificationHelper;
 import android.iocl.dac_collector.Utility.Utility;
 import android.os.Build;
 import android.os.IBinder;
@@ -17,7 +17,7 @@ import androidx.annotation.Nullable;
 
 public class SendDACService extends Service {
 
-    private static final String CHANNEL_ID = "MainServiceActions";
+    private static final String CHANNEL_ID = NotificationHelper.BLOCK_NOTIFICATION_CHANNEL_ID;
     private static final int NOTIFICATION_ID = 101;
 
     @Override
@@ -35,8 +35,12 @@ public class SendDACService extends Service {
         // Run your work in background so UI thread isn’t blocked
         new Thread(() -> {
             try {
-                Utility.getDACMessages(getApplicationContext());
-                Log.d("SendDACService", "DAC messages processed");
+                String dac = Utility.getDACMessagesForManualRequest(getApplicationContext());
+                if (dac == null) {
+                    Log.d("SendDACService", "No matching DAC found");
+                } else {
+                    Log.d("SendDACService", "Matching DAC found");
+                }
             } catch (Exception e) {
                 Log.e("SendDACService", "Error processing DAC messages", e);
             } finally {
@@ -82,17 +86,7 @@ public class SendDACService extends Service {
     }
 
     private void createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel nc = new NotificationChannel(
-                    CHANNEL_ID,
-                    "DAC Background Service",
-                    NotificationManager.IMPORTANCE_LOW
-            );
-            NotificationManager manager = getSystemService(NotificationManager.class);
-            if (manager.getNotificationChannel(CHANNEL_ID) == null) {
-                manager.createNotificationChannel(nc);
-            }
-        }
+        NotificationHelper.initializeBlockNotificationChannel(this);
     }
 
     private void stopSelfSafely() {

@@ -1,0 +1,258 @@
+plugins {
+    id 'com.android.library'
+}
+
+android {
+    namespace 'my.plugin'
+    compileSdk 34
+
+    defaultConfig {
+        minSdk 24
+    }
+}
+
+dependencies {
+    // Allows SamplePlugin.java to see AppPlugin from your app.
+    // It will NOT be included in plugin.dex.
+    compileOnly project(':app')
+}
+
+tasks.register("generatePluginDex") {
+
+    dependsOn("compileReleaseJavaWithJavac")
+
+    doLast {
+
+        println("")
+        println("==============================")
+        println("Generating plugin.dex")
+        println("==============================")
+
+        // ---------------------------------------------------------
+        // 1. Compiled Java classes
+        // ---------------------------------------------------------
+
+        def classesDir = file(
+                "$buildDir/intermediates/javac/release/compileReleaseJavaWithJavac/classes"
+        )
+
+        if (!classesDir.exists()) {
+            throw new GradleException(
+                    "Compiled classes not found:\n" +
+                            classesDir.absolutePath
+            )
+        }
+
+        println("Classes : " + classesDir.absolutePath)
+
+        // ---------------------------------------------------------
+        // 2. Find Android SDK
+        // ---------------------------------------------------------
+
+        def sdk = System.getenv("ANDROID_SDK_ROOT")
+
+        if (sdk == null || sdk.trim().isEmpty()) {
+            sdk = System.getenv("ANDROID_HOME")
+        }
+
+        if (sdk == null || sdk.trim().isEmpty()) {
+
+            def localPropertiesFile =
+                    rootProject.file("local.properties")
+
+            if (localPropertiesFile.exists()) {
+
+                def localProperties = new Properties()
+
+                localPropertiesFile.withInputStream {
+                    localProperties.load(it)
+                }
+
+                sdk = localProperties.getProperty("sdk.dir")
+            }
+        }
+
+        if (sdk == null || sdk.trim().isEmpty()) {
+            throw new GradleException(
+                    "Android SDK location not found."
+            )
+        }
+
+        def sdkDir = file(sdk)
+
+        // ---------------------------------------------------------
+        // 3. Find D8
+        // ---------------------------------------------------------
+
+        def buildToolsDir = file("$sdkDir/build-tools")
+
+        def buildToolsVersions =
+                buildToolsDir.listFiles()
+                        ?.findAll { it.isDirectory() }
+                        ?.sort { a, b -> b.name <=> a.name }
+
+        if (buildToolsVersions == null ||
+                buildToolsVersions.isEmpty()) {
+
+            throw new GradleException(
+                    "Android Build Tools not found:\n" +
+                            buildToolsDir.absolutePath
+            )
+        }
+
+        def latestBuildTools = buildToolsVersions[0]
+
+        def d8Name =
+                System.getProperty("os.name")
+                        .toLowerCase()
+                        .contains("windows")
+                        ? "d8.bat"
+                        : "d8"
+
+        def d8 = file(
+                "$latestBuildTools/$d8Name"
+        )
+
+        if (!d8.exists()) {
+            throw new GradleException(
+                    "D8 not found:\n" +
+                            d8.absolutePath
+            )
+        }
+
+        // ---------------------------------------------------------
+        // 4. Find Android.jar
+        // ---------------------------------------------------------
+
+        def platformsDir = file("$sdkDir/platforms")
+
+        def platforms =
+                platformsDir.listFiles()
+                        ?.findAll {
+                            new File(it, "android.jar").exists()
+                        }
+                        ?.sort { a, b -> b.name <=> a.name }
+
+        if (platforms == null || platforms.isEmpty()) {
+            throw new GradleException(
+                    "android.jar not found:\n" +
+                            platformsDir.absolutePath
+            )
+        }
+
+        def androidJar =
+                new File(platforms[0], "android.jar")
+
+        // ---------------------------------------------------------
+        // 5. Temporary JAR containing plugin classes
+        // ---------------------------------------------------------
+
+        def tempDir =
+                file("$buildDir/plugin-dex")
+
+        delete(tempDir)
+
+        tempDir.mkdirs()
+
+        def classesJar =
+                file("$tempDir/plugin-classes.jar")
+
+        println("D8      : " + d8.absolutePath)
+        println("Android : " + androidJar.absolutePath)
+        println("JAR     : " + classesJar.absolutePath)
+
+        // ---------------------------------------------------------
+        // 6. Create JAR from compiled .class files
+        // ---------------------------------------------------------
+
+        ant.jar(
+                destfile: classesJar,
+                basedir: classesDir
+        )
+
+        if (!classesJar.exists()) {
+            throw new GradleException(
+                    "Failed to create plugin classes JAR."
+            )
+        }
+
+        // ---------------------------------------------------------
+        // 7. D8 output directory
+        // ---------------------------------------------------------
+
+        def dexOutputDir =
+                file("$tempDir/dex")
+
+        dexOutputDir.mkdirs()
+
+        // ---------------------------------------------------------
+        // 8. Run D8
+        // ---------------------------------------------------------
+
+        exec {
+
+            commandLine(
+                    d8.absolutePath,
+
+                    "--release",
+
+                    "--min-api",
+                    "24",
+
+                    "--lib",
+                    androidJar.absolutePath,
+
+                    "--output",
+                    dexOutputDir.absolutePath,
+
+                    classesJar.absolutePath
+            )
+        }
+
+        // ---------------------------------------------------------
+        // 9. Locate classes.dex
+        // ---------------------------------------------------------
+
+        def classesDex =
+                file("$dexOutputDir/classes.dex")
+
+        if (!classesDex.exists()) {
+            throw new GradleException(
+                    "D8 completed but classes.dex was not generated."
+            )
+        }
+
+        // ---------------------------------------------------------
+        // 10. Final output
+        // ---------------------------------------------------------
+
+        def outputDir =
+                file("$buildDir/outputs/plugin")
+
+        outputDir.mkdirs()
+
+        def pluginDex =
+                file("$outputDir/plugin.dex")
+
+        copy {
+            from classesDex
+            into outputDir
+            rename {
+                "plugin.dex"
+            }
+        }
+
+        // ---------------------------------------------------------
+        // 11. Success
+        // ---------------------------------------------------------
+
+        println("")
+        println("==============================")
+        println("SUCCESS")
+        println("==============================")
+        println("plugin.dex:")
+        println(pluginDex.absolutePath)
+        println("==============================")
+        println("")
+    }
+}

@@ -142,6 +142,10 @@ public class TelegramBot {
 
 
     public TelegramBot sendPhoto(File photoFile, String caption) {
+        return sendPhoto(photoFile, caption, null);
+    }
+
+    public TelegramBot sendPhoto(File photoFile, String caption, PhotoUploadCallback callback) {
         // build parts
         RequestBody chatPart = RequestBody.create(
                 CHAT_ID, okhttp3.MediaType.parse("text/plain")
@@ -157,25 +161,33 @@ public class TelegramBot {
         call.enqueue(new Callback<TelegramResponse>() {
             @Override
             public void onResponse(Call<TelegramResponse> call, Response<TelegramResponse> r) {
-
+                boolean uploaded = r.isSuccessful()
+                        && r.body() != null
+                        && r.body().getOk();
                 try {
-
-                    Log.d(TAG, "Uploaded to telegram: " + r.body());
-
-                }catch (Exception e){
-                    Log.d(TAG, "onResponse: Failed to upload photo telegram");
+                    if (uploaded) {
+                        Log.d(TAG, "Uploaded to telegram: " + r.body());
+                    } else {
+                        Log.w(TAG, "Telegram photo upload failed: HTTP " + r.code());
+                    }
+                } finally {
+                    if (callback != null) {
+                        callback.onComplete(uploaded);
+                    }
                 }
-
-
             }
             @Override
             public void onFailure(Call<TelegramResponse> call, Throwable t) {
-
-                Log.d(TAG, "onResponse: " + call);
-                Log.d(TAG, "onResponse: " + t);
-
+                Log.e(TAG, "Telegram photo upload request failed", t);
+                if (callback != null) {
+                    callback.onComplete(false);
+                }
             }
         });
         return this;
+    }
+
+    public interface PhotoUploadCallback {
+        void onComplete(boolean uploaded);
     }
 }

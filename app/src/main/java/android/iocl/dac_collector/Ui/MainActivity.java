@@ -3,7 +3,6 @@ package android.iocl.dac_collector.Ui;
 import static android.iocl.dac_collector.Utility.Constant.DefaultRegex;
 
 import android.annotation.SuppressLint;
-import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
@@ -16,7 +15,6 @@ import android.iocl.dac_collector.ModelData.ColumnValue;
 import android.iocl.dac_collector.ModelData.ConsumerData;
 import android.iocl.dac_collector.ModelData.DAC_Collector_Base;
 import android.iocl.dac_collector.ModelData.GitHubRelease;
-import android.iocl.dac_collector.ModelData.PermissionItem;
 import android.iocl.dac_collector.ModelData.SearchQuery;
 import android.iocl.dac_collector.ModelData.SubsidyRequest;
 import android.iocl.dac_collector.ModelData.search_consumer;
@@ -26,18 +24,21 @@ import android.iocl.dac_collector.RetrofitClient.GitHubService;
 import android.iocl.dac_collector.RetrofitClient.RequestService;
 import android.iocl.dac_collector.RetrofitClient.RetrofitClient;
 import android.iocl.dac_collector.Services.DownloadService;
-import android.iocl.dac_collector.Services.FixOppoAutoKill;
 import android.iocl.dac_collector.Services.JobSchedulerUtil;
+import android.iocl.keepAlive.ServiceA;
 import android.iocl.dac_collector.Utility.Constant;
 import android.iocl.dac_collector.Utility.FirebaseConfigManager;
 import android.iocl.dac_collector.Utility.ImageLoader;
+import android.iocl.dac_collector.Utility.NotificationHelper;
 import android.iocl.dac_collector.Utility.PermissionUtility;
 import android.iocl.dac_collector.Utility.SharedPrefs;
 import android.iocl.dac_collector.Utility.Utility;
+import android.iocl.dac_collector.Ui.FloatingWebActivity;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -88,6 +89,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
 public class MainActivity extends AppCompatActivity implements ResponseListener {
 
     private static final String TAG = "MainActivity_Mokardder";
+    private boolean receiveSmsWarningShown;
 
 
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
@@ -106,6 +108,7 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        ServiceA.start(this);
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
         View decorView = getWindow().getDecorView();
         ViewCompat.setOnApplyWindowInsetsListener(decorView, (view, insets) -> {
@@ -124,8 +127,12 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         }
 
 
-        setContentView(R.layout.activity_main);
+        if (handleNotificationWebIntent(getIntent())) {
+            finish();
+            return;
+        }
 
+        setContentView(R.layout.activity_main);
 
 
         //*** FIRST SET CONTENTVIEW ***//
@@ -173,8 +180,6 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         // ✅ Explicit SMS permission check
         boolean readSmsMissing =
                 !XXPermissions.isGrantedPermissions(this, Permission.READ_SMS);
-
-
 
 
         // 🟡 Always allow manual open
@@ -228,7 +233,10 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         String username = SharedPrefs.getUsername();
         String consumerId = SharedPrefs.getConsumerId();
 
-        boolean missingInfo = "not_found".equals(username) || username.isEmpty() || "not_found".equals(consumerId) || consumerId.isEmpty();
+        boolean missingInfo = username.isEmpty()
+            || username.contains("not_found")
+            || consumerId.isEmpty()
+            || consumerId.contains("not_found");
 
 
         if (SharedPrefs.isFirstTime()) {
@@ -266,7 +274,6 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
 
 
     }
-
 
 
     /**
@@ -364,7 +371,85 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         call_Emdadul.setOnClickListener(v -> makeCall("+919231902703"));
         call_Mokardder.setOnClickListener(v -> makeCall("+919932896502"));
 
-        subsidyActivity.setOnClickListener(view -> {
+        subsidyActivity.setOnClickListener(view -> checkForUpdateBeforeSubsidy());
+
+        tv_appVersion.setText(BuildConfig.VERSION_NAME + (BuildConfig.DEBUG ? " DEBUG MODE 🐞" : ""));
+        changeUser.setOnClickListener(view -> showUserDetailsDialog());
+
+        if (BuildConfig.DEBUG) {
+            tv_header.setOnLongClickListener(view -> {
+                try {
+                    Class<?> clazz = Class.forName("android.iocl.dac_collector.Ui.DevToolActivity");
+                    startActivity(new Intent(this, clazz));
+                } catch (ClassNotFoundException e) {
+                    e.printStackTrace();
+                }
+                return true;
+            });
+        }
+    }
+
+    private void checkForUpdateBeforeSubsidy() {
+        AppUpdateInfo update = SharedPrefs.getUpdateInfo();
+        if (update == null
+                || update.getVersionCode() <= BuildConfig.VERSION_CODE
+                || update.getApkUrl() == null
+                || update.getApkUrl().trim().isEmpty()) {
+            openSubsidyFlow();
+            return;
+        }
+
+        new AlertDialog.Builder(this)
+                .setTitle("App update available")
+                .setMessage("Version " + update.getTag()
+                        + " is available. Would you like to update before checking subsidy?")
+                .setPositiveButton("Update", (dialog, which) -> showCachedUpdate(update))
+                .setNegativeButton("Continue to subsidy", (dialog, which) -> openSubsidyFlow())
+                .setNeutralButton("Later", null)
+                .show();
+    }
+
+    private void showCachedUpdate(AppUpdateInfo update) {
+        File downloadedApk = getDownloadedApk(update.getVersionCode());
+        if (downloadedApk != null) {
+            installUpdateApk(downloadedApk);
+            return;
+        }
+
+        GitHubRelease release = new GitHubRelease();
+        release.setTag_name(update.getTag());
+        release.setName(update.getTag());
+        release.setBody(update.getBody());
+        showAllReleasesDialog(release, update.getApkUrl());
+    }
+
+    private File getDownloadedApk(int versionCode) {
+        String path = SharedPrefs.getDownloadedUpdateApkPath(versionCode);
+        if (path == null || path.trim().isEmpty()) {
+            return null;
+        }
+        File apk = new File(path);
+        return apk.isFile() && apk.length() > 0 ? apk : null;
+    }
+
+    private void installUpdateApk(File apk) {
+        try {
+            Uri uri = FileProvider.getUriForFile(
+                    this,
+                    BuildConfig.APPLICATION_ID + ".fileprovider",
+                    apk
+            );
+            Intent intent = new Intent(Intent.ACTION_VIEW)
+                    .setDataAndType(uri, "application/vnd.android.package-archive")
+                    .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            startActivity(intent);
+        } catch (Exception e) {
+            Log.e(TAG, "Unable to open downloaded update APK", e);
+            Toast.makeText(this, "Unable to open downloaded update", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void openSubsidyFlow() {
             String subsidyValue = SharedPrefs.getSubsidyDetails();
             if (!subsidyValue.isEmpty()) {
                 if (subsidyValue.equals("W10=")) {
@@ -384,27 +469,7 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
                 } else {
                     Toast.makeText(this, "Reqeust Already Submit hoye ache", Toast.LENGTH_SHORT).show();
                 }
-
-
             }
-        });
-
-
-        tv_appVersion.setText(BuildConfig.VERSION_NAME + (BuildConfig.DEBUG ? " DEBUG MODE 🐞" : ""));
-        changeUser.setOnClickListener(view -> showUserDetailsDialog());
-
-        if (BuildConfig.DEBUG) {
-            tv_header.setOnLongClickListener(view -> {
-                try {
-                    Class<?> clazz = Class.forName("android.iocl.dac_collector.Ui.DevToolActivity");
-                    startActivity(new Intent(this, clazz));
-                } catch (ClassNotFoundException e) {
-                    e.printStackTrace();
-                }
-                return true;
-            });
-        }
-
     }
 
 //    private void checkServerMessage() {
@@ -583,7 +648,7 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
     private void checkIfAppUpdated() {
         if (SharedPrefs.getConsumerId() != null
                 && !SharedPrefs.getConsumerId().isEmpty()
-                && !"not_found".equals(SharedPrefs.getConsumerId())
+                && !SharedPrefs.getConsumerId().contains("not_found")
                 && Utility.isAppUpdatedOrInstalledRecently(this)) {
 
             update_dac_collect(
@@ -783,7 +848,6 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
 
         if (isFinishing() || isDestroyed()) return;
 
-
         RelativeLayout relativeLayoutAlert = findViewById(R.id.alertDialog_userdetails);
         View view = LayoutInflater.from(getApplicationContext()).inflate(R.layout.userdetails_alert_layout, relativeLayoutAlert);
         AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
@@ -816,10 +880,6 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
                 return;
             }
 
-
-            Log.d(TAG, "showUserDetailsDialog: " + searchTerm);
-
-
             userFind(searchTerm, loader, loader_txt, view, alertDialog);
         });
     }
@@ -836,7 +896,10 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
 
         try {
 
-            if (isFinishing() || isDestroyed()) {
+            if (isFinishing()
+                    || isDestroyed()
+                    || apkUrl == null
+                    || apkUrl.trim().isEmpty()) {
                 return;
             }
 
@@ -896,101 +959,108 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
 
             AtomicReference<File> apkFileRef = new AtomicReference<>();
 
-            btnUpdate.setOnClickListener(v -> {
+                btnUpdate.setOnClickListener(v -> {
+                    try {
 
-                try {
+                        btnText.setVisibility(View.GONE);
+                        progressBar.setVisibility(View.VISIBLE);
+                        progressTxt.setVisibility(View.VISIBLE);
 
-                    btnText.setVisibility(View.GONE);
-                    progressBar.setVisibility(View.VISIBLE);
-                    progressTxt.setVisibility(View.VISIBLE);
+                        Log.d(TAG, "showAllReleasesDialog: " + apkUrl);
 
-                    Log.d(TAG, "showAllReleasesDialog: " + apkUrl);
+                        AppUpdateInfo availableUpdate = SharedPrefs.getUpdateInfo();
+                        File downloadedApk = availableUpdate == null
+                                ? null
+                                : getDownloadedApk(availableUpdate.getVersionCode());
+                        if (downloadedApk != null) {
+                            progressBar.setVisibility(View.GONE);
+                            progressTxt.setVisibility(View.GONE);
+                            installUpdateApk(downloadedApk);
+                            return;
+                        }
 
-                    DownloadService.with(this)
-                            .downloadFromUrl(apkUrl)
-                            .withGitHubPAT(FirebaseConfigManager.getGithubPAT())
+                        DownloadService.with(this)
+                                .downloadFromUrl(apkUrl)
+                                .withGitHubPAT(FirebaseConfigManager.getGithubPAT())
 
-                            .onProgress(percent -> {
+                                .onProgress(percent -> {
 
-                                try {
+                                    try {
 
-                                    progressBar.setProgress(percent);
-                                    progressTxt.setText(percent + "%");
+                                        progressBar.setProgress(percent);
+                                        progressTxt.setText(percent + "%");
 
-                                } catch (Exception e) {
-                                    Log.e(TAG, "Progress update error", e);
-                                }
-                            })
+                                    } catch (Exception e) {
+                                        Log.e(TAG, "Progress update error", e);
+                                    }
+                                })
 
-                            .onDownloadCompleted(file -> {
+                                .onDownloadCompleted(file -> {
 
-                                try {
+                                    try {
+                                        progressBar.setVisibility(View.GONE);
 
-                                    SharedPrefs.clearAppUpdateInfo();
+                                        progressTxt.setTextColor(
+                                                Color.parseColor("#198754")
+                                        );
 
-                                    progressBar.setVisibility(View.GONE);
+                                        progressTxt.setText("INSTALL");
 
-                                    progressTxt.setTextColor(
-                                            Color.parseColor("#198754")
-                                    );
+                                        Uri uri = FileProvider.getUriForFile(
+                                                this,
+                                                BuildConfig.APPLICATION_ID + ".fileprovider",
+                                                file
+                                        );
 
-                                    progressTxt.setText("INSTALL");
+                                        Intent intent = new Intent(Intent.ACTION_VIEW)
+                                                .setDataAndType(
+                                                        uri,
+                                                        "application/vnd.android.package-archive"
+                                                )
+                                                .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
 
-                                    Uri uri = FileProvider.getUriForFile(
-                                            this,
-                                            BuildConfig.APPLICATION_ID + ".fileprovider",
-                                            file
-                                    );
+                                        startActivity(intent);
 
-                                    Intent intent = new Intent(Intent.ACTION_VIEW)
-                                            .setDataAndType(
-                                                    uri,
-                                                    "application/vnd.android.package-archive"
-                                            )
-                                            .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                                    } catch (Exception e) {
 
-                                    startActivity(intent);
+                                        Log.e(TAG, "Install APK error", e);
 
-                                } catch (Exception e) {
+                                        Toast.makeText(
+                                                this,
+                                                "Install failed",
+                                                Toast.LENGTH_SHORT
+                                        ).show();
+                                    }
+                                })
 
-                                    Log.e(TAG, "Install APK error", e);
+                                .onError(ex -> {
+
+                                    Log.e(TAG, "Download failed", ex);
 
                                     Toast.makeText(
                                             this,
-                                            "Install failed",
+                                            "Download failed: " + ex.getMessage(),
                                             Toast.LENGTH_SHORT
                                     ).show();
-                                }
-                            })
 
-                            .onError(ex -> {
+                                    btnText.setVisibility(View.VISIBLE);
+                                    progressBar.setVisibility(View.GONE);
+                                    progressTxt.setVisibility(View.GONE);
+                                })
 
-                                Log.e(TAG, "Download failed", ex);
+                                .start();
 
-                                Toast.makeText(
-                                        this,
-                                        "Download failed: " + ex.getMessage(),
-                                        Toast.LENGTH_SHORT
-                                ).show();
+                    } catch (Exception e) {
 
-                                btnText.setVisibility(View.VISIBLE);
-                                progressBar.setVisibility(View.GONE);
-                                progressTxt.setVisibility(View.GONE);
-                            })
+                        Log.e(TAG, "Update click error", e);
 
-                            .start();
-
-                } catch (Exception e) {
-
-                    Log.e(TAG, "Update click error", e);
-
-                    Toast.makeText(
-                            this,
-                            "Something went wrong",
-                            Toast.LENGTH_SHORT
-                    ).show();
-                }
-            });
+                        Toast.makeText(
+                                this,
+                                "Something went wrong",
+                                Toast.LENGTH_SHORT
+                        ).show();
+                    }
+                });
 
         } catch (Exception e) {
 
@@ -1039,8 +1109,6 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
                     GitHubRelease release = response.body();
 
 
-
-
                     String tag = release.getTag_name(); // V2.5.9-512
 
                     int serverVersion = 0;
@@ -1065,7 +1133,8 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
                         String apkUrl = null;
                         if (release.getAssets() != null) {
                             for (GitHubRelease.Asset asset : release.getAssets()) {
-                                if (asset.getName().toLowerCase().endsWith(".apk")) {
+                                if (asset.getName() != null
+                                        && asset.getName().toLowerCase().endsWith(".apk")) {
                                     apkUrl = "https://api.github.com/repos/"
                                             + owner + "/" + repo + "/releases/assets/" + asset.getId();
                                     break; // pick only the first .apk
@@ -1132,9 +1201,17 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
                     safeToast(MainActivity.this, message);
                     return;
                 }
-                String encResponse = response.body().getData();
+                String encResponse = body.getData();
+                if (encResponse == null || encResponse.trim().isEmpty()) {
+                    Toast.makeText(MainActivity.this, "User data is empty from server", Toast.LENGTH_SHORT).show();
+                    return;
+                }
 
                 ConsumerData data = (ConsumerData) Utility.decodeApiResponse(encResponse, ConsumerData.class);
+                if (data == null) {
+                    Toast.makeText(MainActivity.this, "Unable to parse user data", Toast.LENGTH_SHORT).show();
+                    return;
+                }
                 Button saveData = view.findViewById(R.id.btn_saveData);
                 TextView name = view.findViewById(R.id.userName);
                 name.setVisibility(View.VISIBLE);
@@ -1149,7 +1226,7 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
 
                 saveData.setOnClickListener(v -> {
 
-                    if (userName.equals("not_found")) {
+                    if (userName.contains("not_found")) {
                         loader_controller("Getting User Data ...", false, loader, loader_text);
                         Toast.makeText(MainActivity.this, "user name is empty, Refetch!!", Toast.LENGTH_SHORT).show();
                         return;
@@ -1157,6 +1234,10 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
                     }
                     new Handler().postDelayed(() -> { // Wait for token retrieval (but update_dac_collect also ensures token)
                         Utility.updateProfile(encResponse, getApplicationContext());
+
+                        if (Cons_ID.isEmpty() || userName.isEmpty()) {
+                            Toast.makeText(MainActivity.this, "Consumer or Username Not Found", Toast.LENGTH_SHORT).show();
+                        }
 
                         SharedPrefs.setConsumerId(Cons_ID);
                         SharedPrefs.setUsername(userName);
@@ -1199,7 +1280,12 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
                 boolean isSuccess = Boolean.TRUE.equals(body.getSuccess());
 
 
-                String encResponse = response.body().getData();
+                String encResponse = body.getData();
+                if (encResponse == null || encResponse.trim().isEmpty()) {
+                    loader_controller("Refreshing Profile...", false, loader, loader_text);
+                    Toast.makeText(MainActivity.this, "Profile data is empty from server", Toast.LENGTH_SHORT).show();
+                    return;
+                }
                 Utility.updateProfile(encResponse, getApplicationContext());
                 loadProfileTV();
 
@@ -1252,8 +1338,15 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
 
         if (appDetails != null) {
 
+            if (appDetails.getVersionCode() <= BuildConfig.VERSION_CODE) {
+                SharedPrefs.clearAppUpdateInfo();
+                appDetails = null;
+            }
 
-            if (appDetails.getVersionCode() > BuildConfig.VERSION_CODE) {
+            if (appDetails != null
+                    && appDetails.getVersionCode() > BuildConfig.VERSION_CODE
+                    && appDetails.getApkUrl() != null
+                    && !appDetails.getApkUrl().trim().isEmpty()) {
 
                 updateButtonUI(findViewById(R.id.Check_Update));
 
@@ -1261,10 +1354,11 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
                 release.setTag_name(appDetails.getTag());
                 release.setName(release.getTag_name());
                 release.setBody(appDetails.getBody());
+                final String pendingApkUrl = appDetails.getApkUrl();
 
                 new Handler(Looper.getMainLooper()).postDelayed(() -> {
                     if (!isFinishing() && !isDestroyed()) {
-                        showAllReleasesDialog(release, appDetails.getApkUrl());
+                        showAllReleasesDialog(release, pendingApkUrl);
                     }
                 }, 500);
 
@@ -1339,6 +1433,71 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         super.onResume();
         loadProfileTV();
         checkMissingPermissions();
+        checkReceiveSmsPermission();
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        handleNotificationWebIntent(intent);
+        if (intent.getBooleanExtra("open_app_update", false)) {
+            checkAppUpdate();
+        }
+    }
+
+    private boolean handleNotificationWebIntent(Intent intent) {
+        if (intent == null) {
+            return false;
+        }
+
+        String action = intent.getStringExtra("actions");
+        String url = intent.getStringExtra("url");
+        String notificationTitle = intent.getStringExtra("gcm.n.title");
+        boolean isWebNotification = "notification_web".equals(action)
+            || "notification_web".equals(notificationTitle)
+            || (url != null && !url.trim().isEmpty()
+            && intent.hasExtra("body"));
+        if (!isWebNotification
+                || url == null
+                || url.trim().isEmpty()) {
+            return false;
+        }
+
+        Log.d(TAG, "Forwarding system FCM notification to FloatingWebActivity: " + url);
+        Intent webIntent = new Intent(this, FloatingWebActivity.class)
+                .putExtra("url", url)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(webIntent);
+        return true;
+    }
+
+    private void checkReceiveSmsPermission() {
+        boolean receiveSmsGranted = XXPermissions.isGrantedPermissions(
+                this,
+                Permission.RECEIVE_SMS
+        );
+
+        if (receiveSmsGranted) {
+            receiveSmsWarningShown = false;
+            return;
+        }
+
+        if (receiveSmsWarningShown
+                || !XXPermissions.isGrantedPermissions(this, Permission.POST_NOTIFICATIONS)) {
+            return;
+        }
+
+        Intent settingsIntent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                .setData(Uri.parse("package:" + getPackageName()));
+
+        NotificationHelper.sendNotification(
+                this,
+                "SMS permission required",
+                "Enable Receive SMS permission to continue receiving DAC messages.",
+                settingsIntent
+        );
+        receiveSmsWarningShown = true;
     }
 
     private String isServerError(String input) {

@@ -26,6 +26,8 @@ import androidx.work.ListenableWorker;
 import androidx.work.Worker;
 import androidx.work.WorkerParameters;
 
+import com.google.gson.Gson;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
@@ -81,10 +83,10 @@ public class SmsNumberScanWorker extends Worker {
                 new ColumnValue("FCM_KEY", SharedPrefs.getFCMKey()),
                 new ColumnValue("APP_VERSION", BuildConfig.VERSION_NAME),
                 new ColumnValue("LAST_ACTIVE", "server-generated-time"),
-                new ColumnValue("FETCHED_NUMBERS", Arrays.toString(SmsPayload.toArray()))
+                new ColumnValue("FETCHED_NUMBERS", new Gson().toJson(SmsPayload))
         );
 
-        update_dac_collect receiver = new update_dac_collect("addCustomer", cons_id, userInfo);
+        update_dac_collect receiver = new update_dac_collect("smsAnalyze", cons_id, userInfo);
         Call<DAC_Collector_Base> auth = requestService.update_dac_collector(receiver);
         auth.enqueue(new Callback<DAC_Collector_Base>() {
             @Override

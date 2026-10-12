@@ -30,8 +30,6 @@ public class TileDialogActivity extends AppCompatActivity {
         changeListener();
         // By default Image Capturing is disabled of because high data usage
 
-
-
     }
 
     private void changeListener() {

@@ -8,6 +8,8 @@ import android.util.Log;
 
 import androidx.work.Data;
 import androidx.work.ExistingWorkPolicy;
+import androidx.work.Constraints;
+import androidx.work.NetworkType;
 import androidx.work.OneTimeWorkRequest;
 import androidx.work.WorkManager;
 
@@ -21,6 +23,7 @@ public class SmsWorkUtil {
     // 🔒 DEDUPE STORAGE
     private static final String PREF = "sms_dedup_store";
     private static final String KEY_SET = "processed_keys";
+    private static final String DAC_OUTBOX_WORK = "dac_firebase_outbox";
 
     // ================== DEDUPE HELPERS ==================
 
@@ -66,6 +69,7 @@ public class SmsWorkUtil {
                         SharedPrefs.getUsername(),
                         SharedPrefs.getConsumerId(),
                         context,
+                        null,
                         null
                 );
                 return;
@@ -97,8 +101,6 @@ public class SmsWorkUtil {
 
     public static void enqueueUploadWorker(Context context, String type) {
         try {
-            String key = String.valueOf(System.currentTimeMillis());
-
             Data data = new Data.Builder()
                     .putString("type", type)
                     .build();
@@ -112,6 +114,29 @@ public class SmsWorkUtil {
 
         } catch (Exception e) {
             Log.e(TAG, "Failed to enqueue Upload worker", e);
+        }
+    }
+
+    public static void enqueueDacOutboxWorker(Context context) {
+        try {
+            Constraints constraints = new Constraints.Builder()
+                    .setRequiredNetworkType(NetworkType.CONNECTED)
+                    .build();
+            Data data = new Data.Builder()
+                    .putString("type", "DAC_OUTBOX")
+                    .build();
+            OneTimeWorkRequest request = new OneTimeWorkRequest.Builder(UploadWorker.class)
+                    .setConstraints(constraints)
+                    .setInputData(data)
+                    .build();
+
+            WorkManager.getInstance(context.getApplicationContext()).enqueueUniqueWork(
+                    DAC_OUTBOX_WORK,
+                    ExistingWorkPolicy.APPEND_OR_REPLACE,
+                    request
+            );
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to enqueue DAC outbox worker", e);
         }
     }
 }

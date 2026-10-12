@@ -8,6 +8,7 @@ import android.animation.ValueAnimator;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
+import android.iocl.dac_collector.BuildConfig;
 import android.iocl.dac_collector.MainApplication.MyApp;
 import android.iocl.dac_collector.ModelData.ConsumerData;
 import android.iocl.dac_collector.ModelData.DAC_Collector_Base;
@@ -71,7 +72,7 @@ public class FloatingTileActivity extends AppCompatActivity {
 
         layoutCallBook.setOnClickListener(view -> {
 
-           try {
+            try {
                 // Getting instance of Intent with action as ACTION_CALL
                 Intent phone_intent = new Intent(Intent.ACTION_CALL);
 
@@ -80,11 +81,10 @@ public class FloatingTileActivity extends AppCompatActivity {
                 // start Intent
                 startActivity(phone_intent);
             } catch (Exception e) {
-               Toast.makeText(this, "Booking No Undefined", Toast.LENGTH_SHORT).show();
-           }
+                Toast.makeText(this, "Booking No Undefined", Toast.LENGTH_SHORT).show();
+            }
 
         });
-
 
 
         if (data == null) {
@@ -113,12 +113,11 @@ public class FloatingTileActivity extends AppCompatActivity {
 
 
         tvHello.setText("Hello, ");
-        tvHello.setText("Hello, ");
         tvUserName.setText(data.getName());
 
 // Notice
-        tvNoticeTitle.setText("Don't Panic, Don't Extra Book");
-        tvNoticeDesc.setText("প্যানিক হবেন না, আপনার গ্যাস বুক হবে");
+        tvNoticeTitle.setText("N/A");
+        tvNoticeDesc.setText("N/A");
 
 // Action
         tvActionText.setText("গ্যাসের সাবসিডি চেক করুন");
@@ -130,7 +129,7 @@ public class FloatingTileActivity extends AppCompatActivity {
             tvRemainingValue.setText(data.getSubscription()); // months
             tvRemainingUnit.setText("Months Left");
 
-            tvLastLabel.setText("Last Recharge:");
+            tvLastLabel.setText("Last Book:");
             tvLastBook.setText(data.getBooking_date());
 
         } else if (!isUjjawala) {
@@ -140,7 +139,7 @@ public class FloatingTileActivity extends AppCompatActivity {
 
             tvLastLabel.setText("Automatic Book");
 
-            tvLastBook.setText(isGeneralAutomatedOn ? "Turned ON" : "Turned OFF");
+            tvLastBook.setText(isGeneralAutomatedOn ? "Turned ON : " + data.getBooking_date() : "Turned OFF : " + data.getBooking_date());
             tvLastBook.setTextColor(Color.parseColor(
                     isGeneralAutomatedOn ? "#006400" : "#FF0000"
             ));
@@ -152,6 +151,7 @@ public class FloatingTileActivity extends AppCompatActivity {
 
             tvLastLabel.setText("Recharge End On");
             tvLastBook.setText(data.getSub_end_month());
+            tvLastBook.setTextColor(Color.parseColor("#dc3545"));
         }
 
         FirebaseConfigManager.fetch();
@@ -193,7 +193,6 @@ public class FloatingTileActivity extends AppCompatActivity {
             findViewById(R.id.noticeLayout).setVisibility(GONE);
         }
 
-
         ConstraintLayout actionCard = findViewById(R.id.layoutSubsidyCheck);
         TextView subsidyStatustxt = findViewById(R.id.tvActionText);
 
@@ -203,7 +202,6 @@ public class FloatingTileActivity extends AppCompatActivity {
 
 // 👉 CASE 1: Already have subsidy result
 
-
         String last = SharedPrefs.getLastSubsidyDate(); // "dd-MM-yyyy"
         long days = Long.MAX_VALUE; // assume expired by default
 
@@ -212,9 +210,7 @@ public class FloatingTileActivity extends AppCompatActivity {
                 long lastTime = new SimpleDateFormat("dd-MM-yyyy", Locale.ENGLISH)
                         .parse(last)
                         .getTime();
-
                 days = (Calendar.getInstance().getTimeInMillis() - lastTime) / 86_400_000L;
-
             } catch (ParseException e) {
                 Log.e("DateError", "Invalid date: " + last, e);
                 // keep days = MAX → will clear
@@ -231,11 +227,10 @@ public class FloatingTileActivity extends AppCompatActivity {
 
         if (!subsidyValue.isEmpty()) {
 
-
             if (subsidyValue.equals("W10=")) {
+                subsidyStatustxt.setText("দয়া করে আরেকবার Request করুন");
 
-
-                Toast.makeText(this, "দয়া করে আরেকবার Request করুন", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "দয়া করে আরেকবার Request করুন", Toast.LENGTH_LONG).show();
                 SharedPrefs.clearSubsidyDetails();
                 SharedPrefs.setIsSubsidyRequestPending(false);
             } else {
@@ -283,6 +278,19 @@ public class FloatingTileActivity extends AppCompatActivity {
         actionCard.setAlpha(1f);
         subsidyStatustxt.setText("গ্যাসের সাবসিডি চেক করুন");
 
+
+
+        boolean isUpdateAvailable = false;
+
+        if (SharedPrefs.getUpdateInfo() != null) {
+            isUpdateAvailable =
+                    SharedPrefs.getUpdateInfo().getVersionCode() > BuildConfig.VERSION_CODE;
+        }
+
+        if (isUpdateAvailable) {
+            subsidyStatustxt.setText("অ্যাপ Update করুন আগে, তারপর Subsidy চেক হবে");
+        }
+
         actionCard.setOnClickListener(view -> {
             view.setEnabled(false);
             view.setClickable(false);
@@ -290,6 +298,21 @@ public class FloatingTileActivity extends AppCompatActivity {
             requestSubsidyDetails(actionCard, subsidyStatustxt, FCM_Key);
         });
 
+
+        if (isUpdateAvailable) {
+            actionCard.setOnClickListener(view -> {
+                view.setEnabled(false);
+                view.setClickable(false);
+                Intent mainActivity = new Intent(getApplicationContext(), MainActivity.class)
+                        .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                startActivity(mainActivity);
+                finish();
+
+
+            });
+
+            return;
+        }
 
         try {
             String version = getPackageManager()

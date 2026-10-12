@@ -38,7 +38,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class FixOppoAutoKill extends Service {
-    private static final String CHANNEL_ID = "fix_oppo_channel";
+    private static final String CHANNEL_ID = NotificationHelper.BLOCK_NOTIFICATION_CHANNEL_ID;
     private static final String CHANNEL_NAME = "Block this | FixOppoAutoKill";
     private static final String TAG = "FixOppoAutoKill";
     private static final String PREF_LAST_SMS_TIME = "last_sms_time";

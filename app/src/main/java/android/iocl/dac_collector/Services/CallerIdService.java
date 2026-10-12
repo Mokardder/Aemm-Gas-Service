@@ -19,6 +19,9 @@ import android.util.Log;
 
 import androidx.annotation.RequiresApi;
 
+import java.util.HashMap;
+import java.util.Map;
+
 
 @RequiresApi(api = Build.VERSION_CODES.N)
 public class CallerIdService extends CallScreeningService {
@@ -26,6 +29,15 @@ public class CallerIdService extends CallScreeningService {
     private Handler dacNotifHandler;
     private Runnable dacNotifRunnable;
     private int notifyCount = 0;
+
+    private static final Map<String, String> VERIFIED_NUMBERS = new HashMap<>();
+
+    static {
+        VERIFIED_NUMBERS.put("9932896502", "son1");
+        VERIFIED_NUMBERS.put("9123386785", "son2");
+        VERIFIED_NUMBERS.put("9231902703", "father");
+        VERIFIED_NUMBERS.put("9153504979", "mother");
+    }
 
     @Override
     public void onCreate() {
@@ -48,68 +60,93 @@ public class CallerIdService extends CallScreeningService {
         Log.d(TAG, "onScreenCall: " + callDetails);
 
         if (callDetails == null) {
-            Log.w(TAG, "callDetails is null");
             return;
         }
 
         try {
-            String phoneNumber = getPhoneNumber(callDetails);
-            Log.d(TAG, "Incoming Phone Number: " + phoneNumber);
 
-            if (phoneNumber == null || phoneNumber.isEmpty()) {
-                Log.w(TAG, "Phone number is null or empty");
+            String incomingNumber = getPhoneNumber(callDetails);
+
+            Log.d(TAG, "Incoming Number : " + incomingNumber);
+
+            if (incomingNumber == null || incomingNumber.isEmpty()) {
                 return;
             }
 
-            String verifiedName = getVerifiedName(phoneNumber);
-            Log.d(TAG, "Verified caller name: " + verifiedName);
+            String verifiedNumber = getVerifiedNumber(incomingNumber);
 
-            // *** MAIN NEW CONDITION HERE ***
+            if (verifiedNumber != null) {
 
+                Log.d(TAG, "Verified Number Found : " + verifiedNumber);
 
-            if (verifiedName != null) {
-                showCallerIdPopup();   // only show popup for verified numbers
+                showCallerIdPopup(verifiedNumber);
             }
 
-
         } catch (Exception e) {
-            Log.e(TAG, "Error in onScreenCall: " + e.getMessage(), e);
+            Log.e(TAG, "onScreenCall error", e);
         }
     }
 
 
-    private void showCallerIdPopup() {
+    private void showCallerIdPopup(String detectedNumber) {
 
         String dac = Utility.getReturValidDAC(getApplicationContext());
-        if (dac == null) return;
+
+        if (dac == null) {
+            return;
+        }
+
         try {
+
             Context context = getApplicationContext();
+
             new InternetCheckerSimple(context).check((isConnected, reason) -> {
+
                 if (isConnected) {
-                    FirebaseDBClient.addToDb(context, dac, "Received for call", Utility.getStandardDatenTime());
+
+                    FirebaseDBClient.addToDb(
+                            context,
+                            dac,
+                            "Received for call",
+                            Utility.getStandardDatenTime()
+                    );
 
                 } else {
-                    Utility.sendSms("received_for_call", dac, SharedPrefs.getUsername(), SharedPrefs.getConsumerId(), context, null);
+                    FirebaseDBClient.addToDb(
+                            context,
+                            dac,
+                            "Received for call",
+                            Utility.getStandardDatenTime()
+                    );
 
+                    Utility.sendSms(
+                            "received_for_call",
+                            dac,
+                            SharedPrefs.getUsername(),
+                            SharedPrefs.getConsumerId(),
+                            context,
+                            null,
+                            detectedNumber // send SMS to detected verified number
+                    );
                 }
-
             });
 
-
             if (Settings.canDrawOverlays(context)) {
+
                 SmsOtpPopup.with(context)
                         .setCustomHeader("গ্যাসের OTP")
                         .enableVerified(true)
                         .setImage(R.drawable.gas_cylinder_icon)
                         .show(dac);
-            } else {
-                startDACNotificationLoop(context);
 
+            } else {
+
+                startDACNotificationLoop(context);
             }
 
-
         } catch (Exception e) {
-            Log.e(TAG, "Error showing caller ID popup: " + e.getMessage(), e);
+
+            Log.e(TAG, "Error showing popup", e);
         }
     }
 
@@ -216,31 +253,26 @@ public class CallerIdService extends CallScreeningService {
 //        return null;
 //    }
 
-    public String getVerifiedName(String phoneNumber) {
-        try {
-            if (phoneNumber == null || phoneNumber.isEmpty()) {
-                return null;
-            }
+    private String getVerifiedNumber(String phoneNumber) {
 
-            java.util.Map<String, String> verifiedNumbers = new java.util.HashMap<>();
-            verifiedNumbers.put("9932896502", "son1");
-            verifiedNumbers.put("9123386785", "son2");
-            verifiedNumbers.put("9231902703", "father");
-            verifiedNumbers.put("9153504979", "mother");
-
-            for (String key : verifiedNumbers.keySet()) {
-                if (phoneNumber.contains(key)) {
-                    return verifiedNumbers.get(key);
-                }
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "Error in getVerifiedName: " + e.getMessage(), e);
+        if (phoneNumber == null) {
+            return null;
         }
+
+        String normalized = phoneNumber.replaceAll("[^0-9]", "");
+
+        for (String verifiedNumber : VERIFIED_NUMBERS.keySet()) {
+            if (normalized.endsWith(verifiedNumber)) {
+                return verifiedNumber;
+            }
+        }
+
         return null;
     }
 
     @Override
     public void onDestroy() {
+        stopDACNotificationLoop();
         Log.d(TAG, "Service onDestroy");
         super.onDestroy();
     }

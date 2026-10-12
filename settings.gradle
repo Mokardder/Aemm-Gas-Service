@@ -24,3 +24,4 @@ include ':app'
 rootProject.name = "DAC_Collector"
 
 
+include ':plugin'
