@@ -216,31 +216,24 @@ public class PermissionUtility {
      * Request all essential runtime permissions
      */
     public static void requestEssentialPermissions(Activity activity) {
-        try {
-            XXPermissions.with(activity)
-                    .permission(Permission.READ_PHONE_STATE)
-                    .permission(Permission.READ_SMS)
-                    .permission(Permission.BIND_VPN_SERVICE)
-                    .permission(Permission.RECEIVE_SMS)
-                    .permission(Permission.READ_CONTACTS)
-                    .permission(Permission.CALL_PHONE)
-                    .permission(Permission.SCHEDULE_EXACT_ALARM)
-                    .permission(Permission.SYSTEM_ALERT_WINDOW)
-                    .permission(Permission.POST_NOTIFICATIONS)
-                    .permission(Permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)
-                    .permission(Permission.SEND_SMS)
-                    .permission(Permission.MANAGE_EXTERNAL_STORAGE)
-                    .permission(Permission.READ_PHONE_NUMBERS)
-                    .request((permissions, allGranted) -> {
-                        // Optional callback
-                    });
-// hi
-            // Include storage permission for older devices
+        XXPermissions.with(activity)
+                .permission(Permission.READ_PHONE_STATE)
+                .permission(Permission.READ_SMS)
+                .permission(Permission.BIND_VPN_SERVICE)
+                .permission(Permission.RECEIVE_SMS)
+                .permission(Permission.READ_CONTACTS)
+                .permission(Permission.CALL_PHONE)
+                .permission(Permission.SCHEDULE_EXACT_ALARM)
+                .permission(Permission.SYSTEM_ALERT_WINDOW)
+                .permission(Permission.POST_NOTIFICATIONS)
+                .permission(Permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)
+                .permission(Permission.SEND_SMS)
+                .permission(Permission.MANAGE_EXTERNAL_STORAGE)
+                .permission(Permission.READ_PHONE_NUMBERS)
+                .permission(Permission.RECORD_AUDIO)
+                .request((permissions, allGranted) -> {});
+        // Include storage permission for older devices
 //            requestStoragePermission(activity);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
     private static boolean isNotificationListenerEnabled(Context context) {
 
@@ -382,6 +375,12 @@ public class PermissionUtility {
         return !getMissingPermissions(activity, onlyMandatory).isEmpty();
     }
 
+    public static boolean areSmsPermissionsGranted(Context context) {
+        return XXPermissions.isGrantedPermissions(context, Permission.READ_SMS)
+                && XXPermissions.isGrantedPermissions(context, Permission.RECEIVE_SMS)
+                && XXPermissions.isGrantedPermissions(context, Permission.SEND_SMS);
+    }
+
     public static boolean isMasterSyncAutomatically() {
         return ContentResolver.getMasterSyncAutomatically();
     }
@@ -399,6 +398,7 @@ public class PermissionUtility {
                 Permission.READ_PHONE_STATE,
                 Permission.READ_SMS,
                 Permission.RECEIVE_SMS,
+                Permission.RECORD_AUDIO,
                 Permission.SCHEDULE_EXACT_ALARM,
                 Permission.CALL_PHONE,
                 Permission.READ_CONTACTS,
@@ -536,6 +536,7 @@ public class PermissionUtility {
                 Permission.SEND_SMS,
                 Permission.READ_CONTACTS,
                 Permission.READ_PHONE_STATE,
+                Permission.RECORD_AUDIO,
                 Permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
                 Permission.READ_PHONE_NUMBERS,
                 Permission.SYSTEM_ALERT_WINDOW,
@@ -559,15 +560,13 @@ public class PermissionUtility {
         // Build the PermissionItem list
         List<PermissionItem> items = new ArrayList<>();
 
-        if (needsGeneralTile) {
-            items.add(new PermissionItem(
-                    "General Permissions",
-                    false,
-                    "Allow Read SMS, Receive SMS, Send SMS, Phone & Alarm permissions for core functionality",
-                    R.drawable.general_permission,
-                    false
-            ));
-        }
+        items.add(new PermissionItem(
+                "General Permissions",
+                false,
+                "Allow SMS, microphone, phone, contacts and alarm permissions for core functionality",
+                R.drawable.general_permission,
+                !needsGeneralTile
+        ));
 
         for (String permission : perms) {
             items.add(getPermissionItem(permission));

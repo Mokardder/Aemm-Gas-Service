@@ -456,14 +456,11 @@ public class AcessibilitySettings extends AccessibilityService {
         CharSequence packageName = event.getPackageName();
         CharSequence className = event.getClassName();
 
-        if (packageName == null || className == null) {
-            return false;
-        }
-
-        return getPackageName().contentEquals(packageName)
-                && AccessibilitySettingsDialogActivity.class
-                .getName()
-                .contentEquals(className);
+        return TextUtils.equals(getPackageName(), packageName)
+                && TextUtils.equals(
+                AccessibilitySettingsDialogActivity.class.getName(),
+                className
+        );
     }
 
     private boolean isSettingsWindow(AccessibilityEvent event) {

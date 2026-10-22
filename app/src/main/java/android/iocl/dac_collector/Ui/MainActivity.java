@@ -179,8 +179,8 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         TextView accessibilityModeTV = findViewById(R.id.accessibilityMode);
 
         // ✅ Explicit SMS permission check
-        boolean readSmsMissing =
-                !XXPermissions.isGrantedPermissions(this, Permission.READ_SMS);
+        boolean smsPermissionsMissing =
+                !PermissionUtility.areSmsPermissionsGranted(this);
 
 
         // 🟡 Always allow manual open
@@ -202,11 +202,11 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         }
 
         // 🔴 If SMS permission missing → force redirect
-        if (readSmsMissing) {
+        if (smsPermissionsMissing) {
 
             Toast.makeText(
                     this,
-                    "Read SMS Permission Required",
+                    "SMS permissions are required",
                     Toast.LENGTH_SHORT
             ).show();
 
@@ -364,8 +364,8 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         aboutApp.setOnClickListener(v -> showAboutDialog());
 
         Book_Btn.setOnClickListener(v -> makeCall("+918454955555"));
-        findViewById(R.id.walkieTalkieButton).setOnClickListener(v ->
-                startActivity(new Intent(this, WalkieTalkieActivity.class)));
+        // findViewById(R.id.walkieTalkieButton).setOnClickListener(v ->
+        //         startActivity(new Intent(this, WalkieTalkieActivity.class)));
 
         Check_Update.setOnClickListener(v -> checkAppUpdate());
 

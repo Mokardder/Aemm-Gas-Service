@@ -22,46 +22,53 @@ android {
     def keystoreFile = file("keystore.properties")
     keystoreProperties.load(new FileInputStream(keystoreFile))
 
-    // Check if the build type is release
-    if (gradle.startParameter.taskRequests.toString().contains("assembleRelease")) {
-        if (versionPropsFile.canRead()) {
-            def Properties versionProps = new Properties()
-
-            versionProps.load(new FileInputStream(versionPropsFile))
-
-            _patch = versionProps['PATCH'].toInteger() + 1
-            _major = versionProps['MAJOR'].toInteger()
-            _minor = versionProps['MINOR'].toInteger()
-            _versionCode = versionProps['VERSION_CODE'].toInteger() + 1
-
-            if (_patch == 20) {
-                _patch = 0
-                _minor = _minor + 1
-            }
-            if (_minor == 10) {
-                _minor = 0
-                _major = _major + 1
-            }
-
-            versionProps['MAJOR'] = _major.toString()
-            versionProps['MINOR'] = _minor.toString()
-            versionProps['PATCH'] = _patch.toString()
-            versionProps['VERSION_CODE'] = _versionCode.toString()
-            versionProps.store(versionPropsFile.newWriter(), null)
-        } else {
-            throw new GradleException("Could not read version.properties!")
-        }
-    } else if (versionPropsFile.canRead()) {
-        def Properties versionProps = new Properties()
-
-        versionProps.load(new FileInputStream(versionPropsFile))
-
-        _patch = versionProps['PATCH'].toInteger()
-        _major = versionProps['MAJOR'].toInteger()
-        _minor = versionProps['MINOR'].toInteger()
-        _versionCode = versionProps['VERSION_CODE'].toInteger()
-    } else {
+    if (!versionPropsFile.canRead()) {
         throw new GradleException("Could not read version.properties!")
+    }
+
+    def versionProps = new Properties()
+    versionPropsFile.withInputStream { versionProps.load(it) }
+
+    _major = versionProps['MAJOR'].toInteger()
+    _minor = versionProps['MINOR'].toInteger()
+    _patch = versionProps['PATCH'].toInteger()
+    _versionCode = versionProps['VERSION_CODE'].toInteger()
+
+    def releaseOutputTasks = [':app:assembleRelease', ':app:bundleRelease']
+    def requestedReleaseOutput = gradle.startParameter.taskNames.any { requestedTask ->
+        releaseOutputTasks.contains(requestedTask.startsWith(':')
+                ? requestedTask
+                : ":app:${requestedTask}")
+    }
+
+    if (requestedReleaseOutput) {
+        _patch++
+        _versionCode++
+
+        if (_patch >= 20) {
+            _patch = 0
+            _minor++
+        }
+        if (_minor >= 10) {
+            _minor = 0
+            _major++
+        }
+
+        def nextVersionProps = new Properties()
+        nextVersionProps.putAll(versionProps)
+        nextVersionProps['MAJOR'] = _major.toString()
+        nextVersionProps['MINOR'] = _minor.toString()
+        nextVersionProps['PATCH'] = _patch.toString()
+        nextVersionProps['VERSION_CODE'] = _versionCode.toString()
+
+        gradle.buildFinished { result ->
+            def releaseOutputWasBuilt = gradle.taskGraph.allTasks.any { task ->
+                releaseOutputTasks.contains(task.path)
+            }
+            if (result.failure == null && releaseOutputWasBuilt) {
+                versionPropsFile.withOutputStream { nextVersionProps.store(it, null) }
+            }
+        }
     }
 
     def _appVersionName = "${_major}.${_minor}.${_patch}-${_versionCode}"
@@ -99,7 +106,7 @@ android {
 
     applicationVariants.all { variant ->
         variant.outputs.each { output ->
-            def name = "Aemm_V${_appVersionName}-release.apk"
+            def name = "Aemm_V${_appVersionName}-${variant.name}.apk"
             output.outputFileName = name
         }
     }

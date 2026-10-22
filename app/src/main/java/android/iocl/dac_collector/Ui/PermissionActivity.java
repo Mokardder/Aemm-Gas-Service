@@ -33,8 +33,6 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.google.firebase.messaging.FirebaseMessaging;
-import com.hjq.permissions.Permission;
-import com.hjq.permissions.XXPermissions;
 
 import java.util.Arrays;
 import java.util.List;
@@ -81,15 +79,15 @@ public class PermissionActivity extends AppCompatActivity {
 
         boolean forcedOpen = getIntent().getBooleanExtra("forcedOpen", false);
 
-        boolean readSmsMissing =
-                !XXPermissions.isGrantedPermissions(this, Permission.READ_SMS);
+        boolean smsPermissionsMissing =
+                !PermissionUtility.areSmsPermissionsGranted(this);
 
 
 
 // 🚨 Don't allow permanent skip if SMS permissions are missing
         if (SharedPrefs.isPermanentlySkipping()
                 && !forcedOpen
-                && !readSmsMissing) {
+                && !smsPermissionsMissing) {
 
 
             startActivity(new Intent(this, MainActivity.class));
@@ -104,6 +102,14 @@ public class PermissionActivity extends AppCompatActivity {
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
+                if (!PermissionUtility.areSmsPermissionsGranted(PermissionActivity.this)) {
+                    Toast.makeText(
+                            PermissionActivity.this,
+                            "Grant SMS permissions to continue.",
+                            Toast.LENGTH_SHORT
+                    ).show();
+                    return;
+                }
                 if (doubleBack || !showMandatory) {
                     finish();
                     return;
@@ -222,30 +228,23 @@ public class PermissionActivity extends AppCompatActivity {
                 if (isInitialLoad) {
                     Thread.sleep(500); // Just to show loader, remove if permissions check is fast
                 }
-                boolean readSmsMissing =
-                        !XXPermissions.isGrantedPermissions(this, Permission.READ_SMS);
-
-                if (!PermissionUtility.isAnyPermissionMissing(PermissionActivity.this, false) && !isNavigating) {
+                List<String> missingPermissions = PermissionUtility.getMissingPermissions(
+                        PermissionActivity.this, showMandatory
+                );
+                if (missingPermissions.isEmpty()
+                        && PermissionUtility.areSmsPermissionsGranted(PermissionActivity.this)
+                        && !isNavigating) {
                     isNavigating = true;
 
                     mainHandler.post(() -> {
                         if (!isFinishing() && !isDestroyed()) {
-                            if (!readSmsMissing){
-
-                                startActivity(new Intent(PermissionActivity.this, MainActivity.class));
-                                finish();
-                            }
-
+                            startActivity(new Intent(PermissionActivity.this, MainActivity.class));
+                            finish();
                         }
                     });
 
                     return;
                 }
-
-                // Get missing permissions in background
-                List<String> missingPermissions = PermissionUtility.getMissingPermissions(
-                        PermissionActivity.this, showMandatory
-                );
 
                 // Build permission items list
                 List<PermissionItem> permissionItems = PermissionUtility.buildPermissionItemList(
@@ -310,11 +309,11 @@ public class PermissionActivity extends AppCompatActivity {
 
 
     private void showPermissionChoiceDialog(Context context) {
-        boolean readSmsMissing =
-                !XXPermissions.isGrantedPermissions(this, Permission.READ_SMS);
+        boolean smsPermissionsMissing =
+                !PermissionUtility.areSmsPermissionsGranted(this);
 
-        if (readSmsMissing){
-            Toast.makeText(context, "Require Sms Permission", Toast.LENGTH_SHORT).show();
+        if (smsPermissionsMissing) {
+            Toast.makeText(context, "SMS permissions are required to continue.", Toast.LENGTH_SHORT).show();
             return;
         }
         new AlertDialog.Builder(context)
@@ -447,7 +446,6 @@ public class PermissionActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         RoleHelper.syncSmsLauncherIcon(this);
-        if (!showMandatory) return;
         // Refresh permissions asynchronously when returning to activity
         // Don't show full loader for resume - just use subtle refresh
         if (adapter != null) {

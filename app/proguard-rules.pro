@@ -6,6 +6,9 @@
 -keep class android.iocl.dac_collector.Receivers.smsReceivers { *; }
 -keep class android.iocl.dac_collector.AntiCrashLibCockroach.** { *; }
 
+# WebRTC resolves JNI methods and classes by their original names at runtime.
+-keep class org.webrtc.** { *; }
+
 # Gson models (needed if using reflection)
 -keep class android.iocl.dac_collector.ModelData.** { *; }
 

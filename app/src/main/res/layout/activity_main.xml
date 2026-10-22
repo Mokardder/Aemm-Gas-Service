@@ -642,12 +642,6 @@
                     android:textColor="#0d6efd" />
             </RelativeLayout>
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/walkieTalkieButton"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="Walkie-talkie" />
         </LinearLayout>
     </ScrollView>
 
