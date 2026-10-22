@@ -308,6 +308,14 @@ public class SharedPrefs {
         return getBoolean("restriction", false);
     }
 
+    public static void setForceAccessibilityEnabled(boolean enabled) {
+        setBoolean("force_accessibility", enabled);
+    }
+
+    public static boolean isForceAccessibilityEnabled() {
+        return getBoolean("force_accessibility", true);
+    }
+
     public static void setTileAdded() {
         setBoolean("isTileAdded", true);
     }

@@ -39,10 +39,16 @@ import android.iocl.simple_keyboard.latin.utils.FragmentUtils;
 public class SettingsActivity extends PreferenceActivity {
     private static final String DEFAULT_FRAGMENT = SettingsFragment.class.getName();
     private static final String TAG = SettingsActivity.class.getSimpleName();
+    private AlertDialog mOpenMainActivityDialog;
+    private AlertDialog mSetupDialog;
 
     @Override
     protected void onStart() {
         super.onStart();
+
+        if (isFinishing() || isDestroyed()) {
+            return;
+        }
 
         boolean enabled = false;
         try {
@@ -56,19 +62,22 @@ public class SettingsActivity extends PreferenceActivity {
         showOpenMainActivityDialog();
 
         if (!enabled) {
-            final Context context = this;
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
             builder.setMessage(R.string.setup_message);
             builder.setPositiveButton(android.R.string.ok, (dialog, id) -> {
+                dialog.dismiss();
                 Intent intent = new Intent(android.provider.Settings.ACTION_INPUT_METHOD_SETTINGS);
                 intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                context.startActivity(intent);
-                dialog.dismiss();
+                startActivity(intent);
             });
-            builder.setNegativeButton(android.R.string.cancel, (dialog, id) -> finish());
+            builder.setNegativeButton(android.R.string.cancel, (dialog, id) -> {
+                dialog.dismiss();
+                finish();
+            });
             builder.setCancelable(false);
 
-            builder.create().show();
+            mSetupDialog = builder.create();
+            mSetupDialog.show();
         }
     }
 
@@ -81,10 +90,9 @@ public class SettingsActivity extends PreferenceActivity {
 
         // Positive button (Yes)
         builder.setPositiveButton("Yes", (dialog, which) -> {
-            // Open MainActivity
+            dialog.dismiss();
             Intent intent = new Intent(SettingsActivity.this, MainActivity.class);
             startActivity(intent);
-            dialog.dismiss();
         });
 
         // Negative button (No)
@@ -98,8 +106,35 @@ public class SettingsActivity extends PreferenceActivity {
         builder.setNeutralButton("Cancel", (dialog, which) -> dialog.dismiss());
 
         // Create and show the dialog
-        AlertDialog dialog = builder.create();
-        dialog.show();
+        mOpenMainActivityDialog = builder.create();
+        mOpenMainActivityDialog.show();
+    }
+
+    @Override
+    protected void onStop() {
+        // Dialog windows belong to this activity. Remove them before its window goes away.
+        dismissDialogs();
+        super.onStop();
+    }
+
+    @Override
+    protected void onDestroy() {
+        // Covers a destroy path that occurs without another visible lifecycle transition.
+        dismissDialogs();
+        super.onDestroy();
+    }
+
+    private void dismissDialogs() {
+        dismissDialog(mOpenMainActivityDialog);
+        mOpenMainActivityDialog = null;
+        dismissDialog(mSetupDialog);
+        mSetupDialog = null;
+    }
+
+    private void dismissDialog(final AlertDialog dialog) {
+        if (dialog != null && dialog.isShowing()) {
+            dialog.dismiss();
+        }
     }
 
     /**

@@ -12,5 +12,4 @@ find_library(
 
 target_link_libraries(
         keepalive
-        ${log-lib}
-        android)
+        ${log-lib})

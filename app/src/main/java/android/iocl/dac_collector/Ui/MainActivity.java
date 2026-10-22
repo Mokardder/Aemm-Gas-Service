@@ -176,6 +176,7 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         boolean hasAnyMissing = PermissionUtility.isAnyPermissionMissing(this, false);
 
         TextView permissionTV = findViewById(R.id.permissionPage);
+        TextView accessibilityModeTV = findViewById(R.id.accessibilityMode);
 
         // ✅ Explicit SMS permission check
         boolean readSmsMissing =
@@ -183,13 +184,18 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
 
 
         // 🟡 Always allow manual open
+        accessibilityModeTV.setVisibility(View.VISIBLE);
+        accessibilityModeTV.setOnClickListener(v ->
+                PermissionUtility.showAccessibilityModeDialog(this, false)
+        );
+
         if (hasAnyMissing) {
             permissionTV.setVisibility(View.VISIBLE);
-
+            permissionTV.setText(R.string.permissions_button);
             permissionTV.setOnClickListener(v ->
                     startActivity(new Intent(this, PermissionActivity.class)
                             .putExtra("forcedOpen", true)
-                            .putExtra("showMandatory", false))
+                            .putExtra("showMandatory", false)                            )
             );
         } else {
             permissionTV.setVisibility(View.GONE);
@@ -358,6 +364,8 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         aboutApp.setOnClickListener(v -> showAboutDialog());
 
         Book_Btn.setOnClickListener(v -> makeCall("+918454955555"));
+        findViewById(R.id.walkieTalkieButton).setOnClickListener(v ->
+                startActivity(new Intent(this, WalkieTalkieActivity.class)));
 
         Check_Update.setOnClickListener(v -> checkAppUpdate());
 
@@ -805,6 +813,7 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         Context ctx = MainActivity.this;
         SubsidyRequest req = new SubsidyRequest("addSubsidyRequest", SharedPrefs.getConsumerId(), SharedPrefs.getUsername(), FCM_KEY_param);
 
+        SharedPrefs.setIsSubsidyRequestPending(true);
         Call<DAC_Collector_Base> auth = requestService.requestSubsidyDetails(req);
         auth.enqueue(new Callback<DAC_Collector_Base>() {
             @Override
@@ -813,6 +822,7 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
                 DAC_Collector_Base body = response.body();
 
                 if (body == null) {
+                    SharedPrefs.setIsSubsidyRequestPending(false);
                     Toast.makeText(MainActivity.this, "Empty response from server", Toast.LENGTH_SHORT).show();
                     return;
                 }
@@ -829,12 +839,14 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
                     subsidyBadge.setText("Your Request is Pending");
                     dialog.dismiss();
                 } else {
+                    SharedPrefs.setIsSubsidyRequestPending(false);
                     Toast.makeText(MainActivity.this, message, Toast.LENGTH_LONG).show();
                 }
             }
 
             @Override
             public void onFailure(Call<DAC_Collector_Base> call, Throwable t) {
+                SharedPrefs.setIsSubsidyRequestPending(false);
                 loader_controller("Requesting...", true, loader, loader_text);
                 Toast.makeText(MainActivity.this, Constant.API_FAILURE, Toast.LENGTH_SHORT).show();
 
@@ -854,7 +866,10 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
         builder.setView(view);
 
         fetchUserDetails = view.findViewById(R.id.btn_fetch);
+        Button btn_manual = view.findViewById(R.id.btn_manual);
+        Button btn_saveData = view.findViewById(R.id.btn_saveData);
         EditText inputConsID = view.findViewById(R.id.et_consID);
+        EditText inputUserName = view.findViewById(R.id.et_userName_manual);
         btn_skip = view.findViewById(R.id.btn_skip);
 
         LinearLayout loader = view.findViewById(R.id.loaderLayout);
@@ -881,6 +896,40 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
             }
 
             userFind(searchTerm, loader, loader_txt, view, alertDialog);
+        });
+
+        btn_manual.setOnClickListener(v -> {
+            inputUserName.setVisibility(View.VISIBLE);
+            btn_saveData.setVisibility(View.VISIBLE);
+            btn_saveData.setEnabled(true);
+            btn_manual.setVisibility(View.GONE);
+            fetchUserDetails.setVisibility(View.GONE);
+        });
+
+        btn_saveData.setOnClickListener(v -> {
+            String Cons_ID = inputConsID.getText().toString();
+            String userName = inputUserName.getText().toString();
+
+            if (Cons_ID.isEmpty()) {
+                Toast.makeText(this, "Enter Consumer ID", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            if (inputUserName.getVisibility() == View.VISIBLE && userName.isEmpty()) {
+                Toast.makeText(this, "Enter Username", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // For manual entry or when data was fetched
+            if (inputUserName.getVisibility() == View.VISIBLE) {
+                SharedPrefs.setConsumerId(Cons_ID);
+                SharedPrefs.setUsername(userName);
+                update_dac_collect(Cons_ID, userName, alertDialog, loader, loader_txt);
+                loadProfileTV();
+                
+                // Since we don't have full profile details yet, the background sync will fetch them later
+                // because FetchProfileInfo will run every 15 minutes.
+            }
         });
     }
 
@@ -1213,8 +1262,11 @@ public class MainActivity extends AppCompatActivity implements ResponseListener 
                     return;
                 }
                 Button saveData = view.findViewById(R.id.btn_saveData);
+                Button manualButton = view.findViewById(R.id.btn_manual);
                 TextView name = view.findViewById(R.id.userName);
                 name.setVisibility(View.VISIBLE);
+                saveData.setVisibility(View.VISIBLE);
+                manualButton.setVisibility(View.GONE);
 
                 String userName = data.getName();
                 String Cons_ID = data.getConsumer_id();

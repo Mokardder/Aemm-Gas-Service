@@ -294,6 +294,9 @@ public class FloatingTileActivity extends AppCompatActivity {
         actionCard.setOnClickListener(view -> {
             view.setEnabled(false);
             view.setClickable(false);
+            view.setAlpha(0.5f);
+            subsidyStatustxt.setText("আপনার Request processing হচ্ছে");
+            SharedPrefs.setIsSubsidyRequestPending(true);
             String FCM_Key = SharedPrefs.getFCMKey();
             requestSubsidyDetails(actionCard, subsidyStatustxt, FCM_Key);
         });
@@ -341,6 +344,11 @@ public class FloatingTileActivity extends AppCompatActivity {
                 DAC_Collector_Base body = response.body();
 
                 if (body == null) {
+                    SharedPrefs.setIsSubsidyRequestPending(false);
+                    actionCard.setEnabled(true);
+                    actionCard.setClickable(true);
+                    actionCard.setAlpha(1f);
+                    subsidyStatustxt.setText("গ্যাসের সাবসিডি চেক করুন");
                     Toast.makeText(ctx, "Empty response from server", Toast.LENGTH_SHORT).show();
                     return;
                 }
@@ -361,6 +369,11 @@ public class FloatingTileActivity extends AppCompatActivity {
 
 //                    dialog.dismiss();
                 } else {
+                    SharedPrefs.setIsSubsidyRequestPending(false);
+                    actionCard.setEnabled(true);
+                    actionCard.setClickable(true);
+                    actionCard.setAlpha(1f);
+                    subsidyStatustxt.setText("গ্যাসের সাবসিডি চেক করুন");
                     Toast.makeText(ctx, message, Toast.LENGTH_LONG).show();
                 }
             }
@@ -368,6 +381,11 @@ public class FloatingTileActivity extends AppCompatActivity {
             @Override
             public void onFailure(Call<DAC_Collector_Base> call, Throwable t) {
 //                loader_controller("Requesting...", true, loader, loader_text);
+                SharedPrefs.setIsSubsidyRequestPending(false);
+                actionCard.setEnabled(true);
+                actionCard.setClickable(true);
+                actionCard.setAlpha(1f);
+                subsidyStatustxt.setText("গ্যাসের সাবসিডি চেক করুন");
                 Toast.makeText(ctx, Constant.API_FAILURE, Toast.LENGTH_SHORT).show();
 
             }
@@ -377,6 +395,4 @@ public class FloatingTileActivity extends AppCompatActivity {
 
 
 }
-
-
 

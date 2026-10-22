@@ -114,7 +114,7 @@ public class PermissionAdapter
                 PermissionUtility.openAccountSyncPage(context);
             } else if (title.toLowerCase().contains("accessibility")) {
                 if (PermissionUtility.isAdmin(context)) {
-                    PermissionUtility.requestAccessibility(context);
+                    PermissionUtility.showAccessibilityModeDialog(context, true);
                 } else {
                     Toast.makeText(context, "First Enable Admin", Toast.LENGTH_SHORT).show();
                 }
@@ -154,8 +154,6 @@ public class PermissionAdapter
     public int getItemCount() {
         return permissionList.size();
     }
-
-
 
     private void toggleLauncher() {
         PackageManager pm = context.getPackageManager();

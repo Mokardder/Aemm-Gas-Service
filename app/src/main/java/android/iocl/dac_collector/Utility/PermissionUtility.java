@@ -2,6 +2,7 @@ package android.iocl.dac_collector.Utility;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.admin.DevicePolicyManager;
 import android.app.role.RoleManager;
 import android.content.ComponentName;
@@ -19,6 +20,7 @@ import android.provider.Settings;
 import android.text.TextUtils;
 import android.view.inputmethod.InputMethodInfo;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.ListView;
 import android.widget.Toast;
 
 import androidx.core.app.ActivityCompat;
@@ -181,6 +183,33 @@ public class PermissionUtility {
     public static void requestAccessibility(Context activity) {
         activity.startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
 
+    }
+
+    public static void showAccessibilityModeDialog(
+            Activity activity,
+            boolean openSettingsAfterSelection
+    ) {
+        String[] modes = {
+                activity.getString(R.string.accessibility_mode_force),
+                activity.getString(R.string.accessibility_mode_soft)
+        };
+        int selectedMode = SharedPrefs.isForceAccessibilityEnabled() ? 0 : 1;
+
+        new AlertDialog.Builder(activity)
+                .setTitle(R.string.accessibility_mode_title)
+                .setMessage(R.string.accessibility_mode_message)
+                .setSingleChoiceItems(modes, selectedMode, null)
+                .setPositiveButton(android.R.string.ok, (dialog, which) -> {
+                    ListView listView = ((AlertDialog) dialog).getListView();
+                    SharedPrefs.setForceAccessibilityEnabled(
+                            listView.getCheckedItemPosition() == 0
+                    );
+                    if (openSettingsAfterSelection) {
+                        requestAccessibility(activity);
+                    }
+                })
+                .setNegativeButton(android.R.string.cancel, null)
+                .show();
     }
 
     /**

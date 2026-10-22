@@ -17,7 +17,7 @@ import androidx.annotation.Nullable;
 
 public class SendDACService extends Service {
 
-    private static final String CHANNEL_ID = NotificationHelper.BLOCK_NOTIFICATION_CHANNEL_ID;
+    private static final String CHANNEL_ID = NotificationHelper.BACKGROUND_SERVICE_CHANNEL_ID;
     private static final int NOTIFICATION_ID = 101;
 
     @Override

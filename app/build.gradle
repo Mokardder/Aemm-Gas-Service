@@ -213,6 +213,9 @@ dependencies {
     implementation("com.squareup.retrofit2:converter-gson:2.11.0")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation 'com.google.android.material:material:1.12.0'
+
+    // WebRTC
+    implementation 'io.github.webrtc-sdk:android:125.6422.07'
     // layout
     implementation 'com.google.android.flexbox:flexbox:3.0.0'
     // pulldown refresh
@@ -242,5 +245,3 @@ dependencies {
 
 
 }
-
-

@@ -1,6 +1,5 @@
 package android.iocl.dac_collector.Services;
 
-import android.app.ActivityManager;
 import android.app.PendingIntent;
 import android.content.Intent;
 import android.iocl.dac_collector.Ui.FloatingTileActivity;
@@ -44,23 +43,31 @@ public class AemmTileService extends TileService {
                     .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 
             if (!firstTime) {
-                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
-            }
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                PendingIntent pendingIntent = PendingIntent.getActivity(
-                        this,
-                        1001,
-                        intent,
-                        PendingIntent.FLAG_UPDATE_CURRENT
-                                | PendingIntent.FLAG_IMMUTABLE
+                intent.addFlags(
+                        Intent.FLAG_ACTIVITY_CLEAR_TOP
+                                | Intent.FLAG_ACTIVITY_SINGLE_TOP
                 );
-                startActivityAndCollapse(pendingIntent);
-            }else {
-                startActivityAndCollapse(intent);
             }
 
-        } catch (Exception e) {
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                    PendingIntent pendingIntent = PendingIntent.getActivity(
+                            this,
+                            1001,
+                            intent,
+                            PendingIntent.FLAG_UPDATE_CURRENT
+                                    | PendingIntent.FLAG_IMMUTABLE
+                    );
+                    startActivityAndCollapse(pendingIntent);
+                } else {
+                    startActivityAndCollapse(intent);
+                }
+            } catch (RuntimeException e) {
+                Log.e(TAG, "Could not collapse Quick Settings while opening tile screen", e);
+                startActivity(intent);
+            }
+
+        } catch (RuntimeException e) {
             Log.e(TAG, "onClick error", e);
         }
     }

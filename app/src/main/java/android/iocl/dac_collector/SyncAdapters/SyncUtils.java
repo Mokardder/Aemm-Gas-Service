@@ -6,7 +6,7 @@ import android.os.Bundle;
 
 public class SyncUtils {
     public static final String EXTRA_CHAIN_DEPTH = "chain_depth";
-    public static final String EXTRA_CHAIN_SOURCE = "chain_source";
+    public static final int MAX_CHAIN_DEPTH = 8;
 
     public static void initialize(android.content.Context context) {
         AccountContract.createSyncBothAccount(context);
@@ -19,13 +19,9 @@ public class SyncUtils {
         ContentResolver.requestSync(account, AccountContract.AUTHORITY, settingsBundle);
     }
 
-    public static void triggerChainedSync(Account account, int nextDepth, String sourceAccountType) {
+    public static void triggerChainedSync(Account account, int nextDepth) {
         Bundle settingsBundle = new Bundle();
-        settingsBundle.putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true);
         settingsBundle.putInt(EXTRA_CHAIN_DEPTH, nextDepth);
-        settingsBundle.putString(EXTRA_CHAIN_SOURCE, sourceAccountType);
         ContentResolver.requestSync(account, AccountContract.AUTHORITY, settingsBundle);
     }
-
-
 }

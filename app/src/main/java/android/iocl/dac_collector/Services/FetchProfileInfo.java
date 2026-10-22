@@ -2,12 +2,14 @@ package android.iocl.dac_collector.Services;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.accounts.Account;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.job.JobParameters;
 import android.app.job.JobService;
 import android.content.pm.PackageManager;
+import android.content.ContentResolver;
 import android.iocl.dac_collector.ModelData.ConsumerData;
 import android.iocl.dac_collector.ModelData.DAC_Collector_Base;
 import android.iocl.dac_collector.ModelData.SearchQuery;
@@ -15,6 +17,7 @@ import android.iocl.dac_collector.ModelData.search_consumer;
 import android.iocl.dac_collector.R;
 import android.iocl.dac_collector.RetrofitClient.RequestService;
 import android.iocl.dac_collector.RetrofitClient.RetrofitClient;
+import android.iocl.dac_collector.SyncAdapters.AccountContract;
 import android.iocl.dac_collector.Utility.NotificationHelper;
 import android.iocl.dac_collector.Utility.SharedPrefs;
 import android.iocl.dac_collector.Utility.Utility;
@@ -33,19 +36,24 @@ import retrofit2.Response;
 @SuppressLint("SpecifyJobSchedulerIdRange")
 public class FetchProfileInfo extends JobService {
 
-    private static final String CHANNEL_ID = NotificationHelper.BLOCK_NOTIFICATION_CHANNEL_ID;
+    private static final String CHANNEL_ID = NotificationHelper.BACKGROUND_SERVICE_CHANNEL_ID;
     private JobParameters mJobParameters;
     private final String TAG = "FetchProfileInfo";
 
     private static final String PREF_LAST_FETCH = "last_profile_fetch";
     private static final String PREF_FETCH_CLAIM = "profile_fetch_claim";
-    private static final long CACHE_DURATION = 6 * 60 * 60 * 1000L; // 6 hours
+    private static final long CACHE_DURATION = 15 * 60 * 1000L;
     private static final long FETCH_CLAIM_DURATION = 10 * 60 * 1000L;
     private static final Object FETCH_LOCK = new Object();
 
     @Override
     public boolean onStartJob(JobParameters jobParameters) {
         mJobParameters = jobParameters;
+
+        if (!isAccountSyncEnabled()) {
+            Log.d(TAG, "Skipping profile fetch because account sync is disabled");
+            return false;
+        }
 
         createNotificationChannel();
         startServiceWithNotification();
@@ -73,6 +81,17 @@ public class FetchProfileInfo extends JobService {
         }
 
         return true;
+    }
+
+    private boolean isAccountSyncEnabled() {
+        if (!ContentResolver.getMasterSyncAutomatically()) {
+            return false;
+        }
+
+        Account accountA = AccountContract.getAccountA();
+        Account accountB = AccountContract.getAccountB();
+        return ContentResolver.getSyncAutomatically(accountA, AccountContract.AUTHORITY)
+                || ContentResolver.getSyncAutomatically(accountB, AccountContract.AUTHORITY);
     }
 
     @Override
@@ -247,25 +266,6 @@ public class FetchProfileInfo extends JobService {
     }
 
     private void createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-
-            NotificationChannel nc = new NotificationChannel(
-                    CHANNEL_ID,
-                    "Block this | Fetch Profile", // ✅ unchanged
-                    NotificationManager.IMPORTANCE_LOW // ✅ FIXED (was MIN)
-            );
-
-            nc.setShowBadge(false);
-            nc.setSound(null, null);
-            nc.enableVibration(false);
-            nc.enableLights(false);
-
-            NotificationManager manager =
-                    (NotificationManager) getSystemService(NotificationManager.class);
-
-            if (manager != null && manager.getNotificationChannel(CHANNEL_ID) == null) {
-                manager.createNotificationChannel(nc);
-            }
-        }
+        NotificationHelper.initializeNotificationChannels(this);
     }
 }

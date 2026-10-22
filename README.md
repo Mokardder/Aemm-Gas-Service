@@ -13,6 +13,18 @@ DAC_Receiver_Client-For-Customer- is a specialized client application focused on
 - **Subsidy Checking:** Integrates tools for users to check their LPG subsidy status directly from the app, streamlining the process.
 - **User-Friendly Interface:** Designed for ease of use, ensuring users can manage their LPG deliveries and subsidies efficiently.
 
+## Walkie-talkie setup
+
+The app includes one-way audio from Android to the **Incoming app calls** panel in `FCM_sender.html`. The phone user must first save a valid consumer profile and grant microphone permission. The dashboard's **Request Dashboard Call** tile sends a high-priority request to the selected client, which automatically starts the call and creates a WebRTC room. If Android blocks a background microphone foreground service, the client instead shows a notification that opens the call screen for manual enablement. Keep the dashboard open and choose **Accept & transmit** to start sending audio automatically once connected. The dashboard can mute, resume, or end transmission. The phone user can also end the call from the app or its ongoing notification. Firebase Realtime Database exchanges WebRTC signaling and the dashboard's transmission commands; audio media travels directly over WebRTC.
+
+Before using the feature:
+
+1. In Firebase Authentication, enable the **Anonymous** sign-in provider for the existing Firebase project. Both Android and the dashboard sign in anonymously.
+2. In Realtime Database Rules, merge the `walkie_talkie` subtree from [`database.rules.json`](./database.rules.json) into the existing rules. Do not replace existing application rules with this subtree.
+3. Serve `FCM_sender.html` over HTTPS and leave it open to receive calls. Grant microphone permission to Android when prompted; the browser receiver only needs audio playback. Starting a call on the phone is required before the dashboard can accept and control transmission; the dashboard cannot activate the microphone while the app has not been locally enabled.
+
+WebRTC currently uses a public STUN server for peer-to-peer connection discovery. STUN-only connections may fail on some carrier, corporate, or restrictive networks. For reliable connectivity across those networks, deploy a TURN service and configure its short-lived credentials in both ICE server lists; Firebase carries signaling, not audio media. The receiver rules allow an authenticated, bounded query of the 20 most recent room records so the dashboard can detect calls. Anonymous Authentication is not a private staff identity system; use stronger Firebase Authentication and tighten the rules if signaling data must be restricted to specific operators.
+
 ## Use Cases
 
 - Customers wanting instant access to their Indane LPG DAC codes via notifications and overlays.

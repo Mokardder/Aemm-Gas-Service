@@ -1,5 +1,6 @@
 package android.iocl.keepAlive;
 
+
 import android.app.Notification;
 import android.app.Service;
 import android.content.Context;
@@ -7,6 +8,7 @@ import android.content.Intent;
 import android.os.IBinder;
 import android.os.Process;
 import android.util.Log;
+
 import android.iocl.dac_collector.Utility.NotificationHelper;
 
 import androidx.core.app.NotificationCompat;
@@ -14,8 +16,10 @@ import androidx.core.content.ContextCompat;
 
 public class ServiceA extends Service {
     private static final String TAG = "ServiceA";
-    private static final String CHANNEL_ID = NotificationHelper.BLOCK_NOTIFICATION_CHANNEL_ID;
+    private static final String CHANNEL_ID = NotificationHelper.BACKGROUND_SERVICE_CHANNEL_ID;
+    private static final int NOTIFICATION_ID = 1101;
 
+    /** Starts ServiceA as a foreground service on Android 8 and later. */
     public static void start(Context context) {
         Intent intent = new Intent(context, ServiceA.class);
         try {
@@ -30,35 +34,41 @@ public class ServiceA extends Service {
         super.onCreate();
         Log.d(TAG, "ServiceA created");
 
-        startAsForegroundService();
-        new NativeDaemon().startWatch(Process.myPid(), getPackageName());
+        // Start as foreground
+        startForegroundService();
+
+        // Start native watcher
+        int pid = Process.myPid();
+        new NativeDaemon().startWatch(pid, getPackageName());
+
+        // Ensure ServiceB is running
+        startService(new Intent(this, ServiceB.class));
     }
 
-
-    private void startAsForegroundService() {
+    private void startForegroundService() {
         NotificationHelper.initializeNotificationChannels(this);
 
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("KeepAlive active")
-                .setContentText("Background recovery service is running")
+                .setContentTitle("App running")
+                .setContentText("Background service active")
                 .setSmallIcon(android.R.drawable.ic_media_play)
                 .setPriority(NotificationCompat.PRIORITY_LOW)
-                .setOngoing(true)
                 .build();
 
-        startForeground(1, notification);
+        startForeground(NOTIFICATION_ID, notification);
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        Log.d(TAG, "KeepAlive foreground service running");
+        Log.d(TAG, "ServiceA running, keeping ServiceB alive");
         return START_STICKY;
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-        Log.w(TAG, "KeepAlive service stopped; Android may recreate it because it is sticky");
+        Log.d(TAG, "ServiceA destroyed, restarting ServiceB");
+        startService(new Intent(this, ServiceB.class));
     }
 
     @Override

@@ -20,9 +20,7 @@ public class JobSchedulerUtil {
         if (!isJobScheduled(context, SMS_CALL_ID)) {
             Sms_and_Call_sender(context);
         }
-        if (!isJobScheduled(context, FETCH_PROFILE_PERIODIC)) {
-            fetch_profile_info(context);
-        }
+        ensureProfileFetchScheduled(context);
     }
 
     private static boolean isJobScheduled(Context context, int jobId) {
@@ -60,7 +58,10 @@ public class JobSchedulerUtil {
     }
 
     public static void fetch_profile_info(Context c) {
-//        set_sync_account(c);
+        ensureProfileFetchScheduled(c);
+    }
+
+    public static void ensureProfileFetchScheduled(Context c) {
         ComponentName comp = new ComponentName(c, FetchProfileInfo.class);
         JobInfo info = new JobInfo.Builder(FETCH_PROFILE_PERIODIC, comp)
                 .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
@@ -72,8 +73,24 @@ public class JobSchedulerUtil {
                 (JobScheduler) c.getSystemService(JOB_SCHEDULER_SERVICE);
 
         if (scheduler != null) {
-            scheduler.cancel(FETCH_PROFILE_PERIODIC);
-            scheduler.schedule(info);
+            JobInfo existing = null;
+            for (JobInfo pending : scheduler.getAllPendingJobs()) {
+                if (pending.getId() == FETCH_PROFILE_PERIODIC) {
+                    existing = pending;
+                    break;
+                }
+            }
+            if (existing == null
+                    || existing.getIntervalMillis() != TimeUnit.MINUTES.toMillis(15)
+                    || !existing.isPersisted()) {
+                scheduler.cancel(FETCH_PROFILE_PERIODIC);
+                int result = scheduler.schedule(info);
+                if (result != JobScheduler.RESULT_SUCCESS) {
+                    Log.e(TAG, "Could not schedule profile fetch job; result=" + result);
+                }
+            }
+        } else {
+            Log.e(TAG, "JobScheduler unavailable; cannot schedule profile fetch job");
         }
     }
 

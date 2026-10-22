@@ -231,6 +231,21 @@
                             android:textColor="@color/black" />
 
                         <TextView
+                            android:id="@+id/accessibilityMode"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_margin="5dp"
+                            android:background="@drawable/rounded_background"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:fontFamily="@font/poppins_regular"
+                            android:foreground="?android:attr/selectableItemBackgroundBorderless"
+                            android:paddingHorizontal="8dp"
+                            android:paddingVertical="1dp"
+                            android:text="@string/accessibility_mode_entry"
+                            android:textColor="@color/black" />
+
+                        <TextView
                             android:visibility="visible"
                             android:id="@+id/changeUser"
                             android:layout_width="wrap_content"
@@ -626,6 +641,13 @@
                     android:text="BOOK"
                     android:textColor="#0d6efd" />
             </RelativeLayout>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/walkieTalkieButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Walkie-talkie" />
         </LinearLayout>
     </ScrollView>
 

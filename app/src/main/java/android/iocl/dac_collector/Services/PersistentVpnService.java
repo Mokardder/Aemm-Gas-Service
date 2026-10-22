@@ -50,8 +50,8 @@ public class PersistentVpnService extends VpnService {
     public static final String MODE_NORMAL = "mode_normal"; // for future use
 
     // Notification / restart
-    private static final String NOTIFICATION_CHANNEL_ID = NotificationHelper.BLOCK_NOTIFICATION_CHANNEL_ID;
-    private static final String EMERGENCY_CHANNEL_ID = NotificationHelper.BLOCK_NOTIFICATION_CHANNEL_ID;
+    private static final String NOTIFICATION_CHANNEL_ID = NotificationHelper.BACKGROUND_SERVICE_CHANNEL_ID;
+    private static final String EMERGENCY_CHANNEL_ID = NotificationHelper.BACKGROUND_SERVICE_CHANNEL_ID;
     private static final int NOTIFICATION_ID = 0xC0FFEE;
     private static final long RESTART_DELAY_MS = 6_000L; // 6 seconds
 

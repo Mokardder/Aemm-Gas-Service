@@ -122,6 +122,19 @@ public class WebSocketConnectionManager {
                         reconnectAttempt = 0;
                     }
                     Log.d(TAG, "WebSocket connected");
+                    try {
+                        JSONObject connectedEvent = new JSONObject();
+                        connectedEvent.put("type", "connected");
+                        connectedEvent.put("user", SharedPrefs.getConsumerId());
+
+                        if (!socket.send(connectedEvent.toString())) {
+                            Log.w(TAG, "Failed to queue WebSocket connected event");
+                        } else {
+                            Log.d(TAG, "WebSocket connected event sent");
+                        }
+                    } catch (Exception e) {
+                        Log.e(TAG, "Failed to create WebSocket connected event", e);
+                    }
                 }
 
                 @Override

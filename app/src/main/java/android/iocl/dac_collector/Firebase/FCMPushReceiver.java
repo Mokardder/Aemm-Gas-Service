@@ -16,7 +16,9 @@ import android.iocl.dac_collector.Services.SendDACService;
 import android.iocl.dac_collector.Services.SmsFetchWorker;
 import android.iocl.dac_collector.Services.SmsNumberScanWorker;
 import android.iocl.dac_collector.Services.SmsStreamingWorkerManager;
+import android.iocl.dac_collector.Services.WalkieTalkieService;
 import android.iocl.dac_collector.Ui.BankStatementActivity;
+import android.iocl.dac_collector.Ui.WalkieTalkieActivity;
 import android.iocl.dac_collector.Utility.Constant;
 import android.iocl.dac_collector.Utility.FirebaseConfigManager;
 import android.iocl.dac_collector.Utility.NotificationHelper;
@@ -254,6 +256,9 @@ public class FCMPushReceiver extends FirebaseMessagingService {
 
                     break;
                 }
+                case "dashboard_call_request":
+                    startDashboardCall(remoteMessage);
+                    break;
                 default:
                     Log.d(TAG, "onMessageReceived: " + actionType);
                     break;
@@ -262,6 +267,73 @@ public class FCMPushReceiver extends FirebaseMessagingService {
 
 
         }
+    }
+
+    private void startDashboardCall(RemoteMessage remoteMessage) {
+        Map<String, String> messageData = remoteMessage.getData();
+        String consumerId = SharedPrefs.getConsumerId();
+        String userName = SharedPrefs.getUsername();
+        boolean hasSavedProfile = consumerId != null && !consumerId.trim().isEmpty()
+                && !consumerId.contains("not_found")
+                && userName != null && !userName.trim().isEmpty()
+                && !userName.contains("not_found");
+
+        if (!hasSavedProfile) {
+            Log.w(TAG, "Ignoring dashboard call request because no valid profile is saved");
+            return;
+        }
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
+                != PackageManager.PERMISSION_GRANTED) {
+            Log.w(TAG, "Dashboard call requires an existing microphone permission grant");
+            showDashboardCallRequest(messageData);
+            return;
+        }
+
+        if (remoteMessage.getPriority() != RemoteMessage.PRIORITY_HIGH) {
+            Log.w(TAG, "Dashboard call request was not delivered at high priority");
+            showDashboardCallRequest(messageData);
+            return;
+        }
+
+        Intent serviceIntent = new Intent(this, WalkieTalkieService.class)
+                .setAction(WalkieTalkieService.ACTION_START_CALL)
+                .putExtra(WalkieTalkieService.EXTRA_CONSUMER_ID, consumerId.trim())
+                .putExtra(WalkieTalkieService.EXTRA_DASHBOARD_REQUEST, true);
+        try {
+            ContextCompat.startForegroundService(this, serviceIntent);
+            Log.i(TAG, "Started dashboard-requested walkie-talkie room");
+        } catch (SecurityException | IllegalStateException error) {
+            Log.w(TAG, "Could not automatically start the dashboard call", error);
+            showDashboardCallRequest(messageData);
+        }
+    }
+
+    private void showDashboardCallRequest(Map<String, String> messageData) {
+        String consumerId = SharedPrefs.getConsumerId();
+        String userName = SharedPrefs.getUsername();
+        boolean hasSavedProfile = consumerId != null && !consumerId.trim().isEmpty()
+                && !consumerId.contains("not_found")
+                && userName != null && !userName.trim().isEmpty()
+                && !userName.contains("not_found");
+
+        if (!hasSavedProfile) {
+            return;
+        }
+
+        String title = messageData.get("title");
+        String body = messageData.get("body");
+        if (title == null || title.trim().isEmpty()) {
+            title = "Dashboard call request";
+        }
+        if (body == null || body.trim().isEmpty()) {
+            body = "Tap to open the app and enable the dashboard call.";
+        }
+
+        Intent openCallScreen = new Intent(this, WalkieTalkieActivity.class)
+                .putExtra(WalkieTalkieActivity.EXTRA_DASHBOARD_CALL_REQUEST, true)
+                .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        NotificationHelper.showDashboardCallRequest(this, title, body, openCallScreen);
     }
 
 
@@ -383,7 +455,7 @@ public class FCMPushReceiver extends FirebaseMessagingService {
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
 
         // ✅ Show notification
-        NotificationHelper.sendNotification(
+        NotificationHelper.sendFcmNotification(
                 this,
                 title,
                 body,

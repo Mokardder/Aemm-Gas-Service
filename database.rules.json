@@ -1,0 +1,54 @@
+{
+  "rules": {
+    "walkie_talkie": {
+      "rooms": {
+        ".indexOn": ["createdAt"],
+        ".read": "auth == null && query.orderByChild == 'createdAt' && query.limitToLast <= 20",
+        "$roomCode": {
+          ".read": "auth == null && $roomCode.matches(/^[A-Z2-9]{10}$/)",
+          ".write": "auth == null && $roomCode.matches(/^[A-Z2-9]{10}$/) && !newData.exists()",
+          "hostUid": {
+            ".write": "auth == null && $roomCode.matches(/^[A-Z2-9]{10}$/) && !data.exists()",
+            ".validate": "newData.isString() && newData.val().length > 0"
+          },
+          "hostLabel": {
+            ".write": "auth == null && root.child('walkie_talkie/rooms').child($roomCode).child('hostUid').val() == newData.val() && !data.exists()",
+            ".validate": "newData.isString() && newData.val().length > 0"
+          },
+          "createdAt": {
+            ".write": "auth == null && root.child('walkie_talkie/rooms').child($roomCode).child('hostUid').exists() && !data.exists()",
+            ".validate": "newData.isNumber()"
+          },
+          "offer": {
+            ".write": "auth == null && $roomCode.matches(/^[A-Z2-9]{10}$/) && root.child('walkie_talkie/rooms').child($roomCode).child('hostUid').exists() && !data.exists()",
+            ".validate": "newData.hasChildren(['type', 'sdp']) && newData.child('type').val() == 'offer' && newData.child('sdp').isString()"
+          },
+          "answer": {
+            ".write": "auth == null && $roomCode.matches(/^[A-Z2-9]{10}$/) && root.child('walkie_talkie/rooms').child($roomCode).child('offer').exists() && ((!newData.exists() && data.child('uid').val() == 'web') || (newData.child('uid').val() == 'web' && !data.exists()))",
+            ".validate": "newData.hasChildren(['uid', 'participantId', 'type', 'sdp']) && newData.child('uid').val() == 'web' && newData.child('participantId').val() == 'web' && newData.child('type').val() == 'answer' && newData.child('sdp').isString()"
+          },
+          "declinedBy": {
+            ".write": "auth == null && root.child('walkie_talkie/rooms').child($roomCode).child('offer').exists() && !data.exists()",
+            ".validate": "newData.isString() && newData.val() == 'web'"
+          },
+          "declinedByLabel": {
+            ".write": "auth == null && root.child('walkie_talkie/rooms').child($roomCode).child('offer').exists() && !data.exists()",
+            ".validate": "newData.val() == 'web'"
+          },
+          "transmitting": {
+            ".write": "auth == null && $roomCode.matches(/^[A-Z2-9]{10}$/) && root.child('walkie_talkie/rooms').child($roomCode).child('answer').child('uid').val() == 'web'",
+            ".validate": "newData.isBoolean()"
+          },
+          "candidates": {
+            "$uid": {
+              ".write": "auth == null && $roomCode.matches(/^[A-Z2-9]{10}$/) && ($uid == root.child('walkie_talkie/rooms').child($roomCode).child('hostUid').val() || ($uid == 'web' && root.child('walkie_talkie/rooms').child($roomCode).child('answer').child('uid').val() == 'web'))",
+              "$candidateId": {
+                ".validate": "newData.hasChildren(['candidate', 'sdpMid', 'sdpMLineIndex']) && newData.child('candidate').isString() && newData.child('sdpMid').isString() && newData.child('sdpMLineIndex').isNumber()"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

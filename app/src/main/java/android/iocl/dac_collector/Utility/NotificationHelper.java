@@ -14,7 +14,6 @@ import android.graphics.Color;
 import android.iocl.dac_collector.R;
 import android.iocl.dac_collector.Ui.FloatingWebActivity;
 import android.iocl.dac_collector.Ui.MainActivity;
-import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Build;
 import android.util.Log;
@@ -35,15 +34,17 @@ public final class NotificationHelper {
     // Public IDs (adjust if you want different IDs)
     public static final int NOTIFICATION_ID_DAC = 1005;
         public static final int NOTIFICATION_ID_RECHARGE = 1004;
-        public static final String BLOCK_NOTIFICATION_CHANNEL_ID = "block_notifications";
-    public static final String FCM_NOTIFICATION_CHANNEL_ID = "fcm_notifications";
-    public static final String OTP_NOTIFICATION_CHANNEL_ID = "otp_notifications";
-        private static final String UPDATE_NOTIFICATION_CHANNEL_ID = "app_updates";
-        private static final int NOTIFICATION_ID_UPDATE = 1201;
+        public static final int NOTIFICATION_ID_DASHBOARD_CALL_REQUEST = 1302;
+        public static final String BACKGROUND_SERVICE_CHANNEL_ID = "background_services";
+        public static final String FCM_NOTIFICATION_CHANNEL_ID = "fcm_notifications";
+        public static final String OTP_NOTIFICATION_CHANNEL_ID = "otp_notifications";
+        public static final String USER_ALERTS_CHANNEL_ID = "user_alerts";
+    private static final String LEGACY_KEEP_ALIVE_CHANNEL_ID = "keepalive_channel";
+    private static final String LEGACY_KEEP_ALIVE_B_CHANNEL_ID = "ServiceBChannel";
+            private static final int NOTIFICATION_ID_UPDATE = 1201;
     private static final String CHANNEL_DAC_ID = OTP_NOTIFICATION_CHANNEL_ID;
     private static final String CHANNEL_OTP_ID = OTP_NOTIFICATION_CHANNEL_ID;
     private static final String CHANNEL_RECHARGE_ID = FCM_NOTIFICATION_CHANNEL_ID;
-    private static final String CHANNEL_DEFAULT_ID = BLOCK_NOTIFICATION_CHANNEL_ID;
     private static final String CHANNEL_SERVER_POPUP_ID = FCM_NOTIFICATION_CHANNEL_ID;
 
     private NotificationHelper() {
@@ -55,6 +56,7 @@ public final class NotificationHelper {
     }
 
     public static void initializeNotificationChannels(Context context) {
+        removeLegacyNotificationChannels(context);
         ensureNotificationChannel(
                 context,
                 FCM_NOTIFICATION_CHANNEL_ID,
@@ -69,16 +71,27 @@ public final class NotificationHelper {
         );
         ensureNotificationChannel(
                 context,
-                BLOCK_NOTIFICATION_CHANNEL_ID,
-                "Block This",
+                BACKGROUND_SERVICE_CHANNEL_ID,
+                "Background services",
                 NotificationManager.IMPORTANCE_LOW
         );
         ensureNotificationChannel(
                 context,
-                UPDATE_NOTIFICATION_CHANNEL_ID,
-                "App updates",
-                NotificationManager.IMPORTANCE_DEFAULT
+                USER_ALERTS_CHANNEL_ID,
+                "App alerts",
+                NotificationManager.IMPORTANCE_HIGH
         );
+    }
+
+    private static void removeLegacyNotificationChannels(Context context) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O || context == null) return;
+
+        NotificationManager notificationManager =
+                (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        if (notificationManager == null) return;
+
+        notificationManager.deleteNotificationChannel(LEGACY_KEEP_ALIVE_CHANNEL_ID);
+        notificationManager.deleteNotificationChannel(LEGACY_KEEP_ALIVE_B_CHANNEL_ID);
     }
 
     private static void ensureNotificationChannel(
@@ -96,9 +109,15 @@ public final class NotificationHelper {
             return;
         }
 
-        notificationManager.createNotificationChannel(
-                new NotificationChannel(channelId, channelName, importance)
-        );
+        NotificationChannel channel =
+                new NotificationChannel(channelId, channelName, importance);
+        if (BACKGROUND_SERVICE_CHANNEL_ID.equals(channelId)) {
+            channel.setShowBadge(false);
+            channel.setSound(null, null);
+            channel.enableVibration(false);
+            channel.enableLights(false);
+        }
+        notificationManager.createNotificationChannel(channel);
     }
 
     public static void showUpdateAvailable(Context context, String version) {
@@ -109,9 +128,9 @@ public final class NotificationHelper {
 
         ensureNotificationChannel(
                 context,
-                UPDATE_NOTIFICATION_CHANNEL_ID,
-                "App updates",
-                NotificationManager.IMPORTANCE_DEFAULT
+                BACKGROUND_SERVICE_CHANNEL_ID,
+                "Background services",
+                NotificationManager.IMPORTANCE_LOW
         );
 
         Intent intent = new Intent(context, MainActivity.class)
@@ -131,7 +150,7 @@ public final class NotificationHelper {
                 : version;
         Notification notification = new NotificationCompat.Builder(
                 context,
-                UPDATE_NOTIFICATION_CHANNEL_ID
+                BACKGROUND_SERVICE_CHANNEL_ID
         )
                 .setSmallIcon(R.drawable.ic_cylinder_tile)
                 .setContentTitle("Update downloaded")
@@ -404,6 +423,113 @@ public final class NotificationHelper {
             String messageBody,
             @Nullable Intent intent
     ) {
+        sendNotification(
+                context,
+                title,
+                messageBody,
+                intent,
+                USER_ALERTS_CHANNEL_ID,
+                "App alerts",
+                NotificationManager.IMPORTANCE_HIGH,
+                false
+        );
+    }
+
+    public static void sendFcmNotification(
+            Context context,
+            String title,
+            String messageBody,
+            @Nullable Intent intent
+    ) {
+        sendNotification(
+                context,
+                title,
+                messageBody,
+                intent,
+                FCM_NOTIFICATION_CHANNEL_ID,
+                "FCM Notifications",
+                NotificationManager.IMPORTANCE_HIGH,
+                false
+        );
+    }
+
+    /** Shows a dashboard request in the existing Background services channel. */
+    public static void showDashboardCallRequest(
+            Context context,
+            String title,
+            String messageBody,
+            Intent intent
+    ) {
+        if (context == null || intent == null) return;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+                && ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
+                != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            Log.w(TAG, "Dashboard call request notification skipped: POST_NOTIFICATIONS is denied");
+            return;
+        }
+
+        ensureNotificationChannel(
+                context,
+                BACKGROUND_SERVICE_CHANNEL_ID,
+                "Background services",
+                NotificationManager.IMPORTANCE_LOW
+        );
+        PendingIntent pendingIntent = PendingIntent.getActivity(
+                context,
+                NOTIFICATION_ID_DASHBOARD_CALL_REQUEST,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT | getPendingIntentImmutableFlag()
+        );
+        Notification notification = new NotificationCompat.Builder(context, BACKGROUND_SERVICE_CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_cylinder_tile)
+                .setContentTitle(title)
+                .setContentText(messageBody)
+                .setStyle(new NotificationCompat.BigTextStyle().bigText(messageBody))
+                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .setDefaults(0)
+                .setCategory(NotificationCompat.CATEGORY_SERVICE)
+                .setAutoCancel(true)
+                .setContentIntent(pendingIntent)
+                .build();
+
+        try {
+            NotificationManagerCompat.from(context).notify(
+                    NOTIFICATION_ID_DASHBOARD_CALL_REQUEST,
+                    notification
+            );
+        } catch (SecurityException error) {
+            Log.w(TAG, "Dashboard call request notification could not be shown", error);
+        }
+    }
+
+    public static void sendBackgroundNotification(
+            Context context,
+            String title,
+            String messageBody,
+            @Nullable Intent intent
+    ) {
+        sendNotification(
+                context,
+                title,
+                messageBody,
+                intent,
+                BACKGROUND_SERVICE_CHANNEL_ID,
+                "Background services",
+                NotificationManager.IMPORTANCE_LOW,
+                true
+        );
+    }
+
+    private static void sendNotification(
+            Context context,
+            String title,
+            String messageBody,
+            @Nullable Intent intent,
+            String channelId,
+            String channelName,
+            int channelImportance,
+            boolean background
+    ) {
         if (context == null) return;
 
         PendingIntent pendingIntent = null;
@@ -417,17 +543,22 @@ public final class NotificationHelper {
             );
         }
 
-        Uri defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
-
+        ensureNotificationChannel(context, channelId, channelName, channelImportance);
         NotificationCompat.Builder notificationBuilder =
-                new NotificationCompat.Builder(context, CHANNEL_DEFAULT_ID)
+                new NotificationCompat.Builder(context, channelId)
                         .setSmallIcon(R.drawable.ic_cylinder_tile)
                         .setContentTitle(title)
                         .setContentText(messageBody)
                         .setStyle(new NotificationCompat.BigTextStyle().bigText(messageBody)) // show full message
-                        .setPriority(NotificationCompat.PRIORITY_HIGH) // for heads-up
-                        .setDefaults(NotificationCompat.DEFAULT_ALL) // vibration + sound
-                        .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+                        .setPriority(background
+                                ? NotificationCompat.PRIORITY_LOW
+                                : NotificationCompat.PRIORITY_HIGH)
+                        .setDefaults(background
+                                ? 0
+                                : NotificationCompat.DEFAULT_ALL)
+                        .setCategory(background
+                                ? NotificationCompat.CATEGORY_SERVICE
+                                : NotificationCompat.CATEGORY_MESSAGE)
                         .setAutoCancel(true);
         if (pendingIntent != null) {
             notificationBuilder.setContentIntent(pendingIntent);
@@ -436,8 +567,6 @@ public final class NotificationHelper {
         NotificationManager notificationManager =
                 (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         if (notificationManager == null) return;
-
-        ensureNotificationChannel(context, CHANNEL_DEFAULT_ID, "Block This", NotificationManager.IMPORTANCE_LOW);
 
         notificationManager.notify(0, notificationBuilder.build());
     }

