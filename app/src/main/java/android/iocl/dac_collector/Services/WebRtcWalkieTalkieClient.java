@@ -2,6 +2,8 @@ package android.iocl.dac_collector.Services;
 
 import android.content.Context;
 import android.media.AudioManager;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 
 import com.google.firebase.database.DataSnapshot;
@@ -34,6 +36,7 @@ public final class WebRtcWalkieTalkieClient {
     private static final String ROOM_PATH = "walkie_talkie/rooms";
     private static final char[] ROOM_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789".toCharArray();
     private static final Object FACTORY_LOCK = new Object();
+    private static final long ICE_FAILURE_GRACE_PERIOD_MS = 15_000L;
     private static PeerConnectionFactory sharedFactory;
 
     public interface Listener {
@@ -54,6 +57,8 @@ public final class WebRtcWalkieTalkieClient {
     private final AudioManager audioManager;
     private final int previousAudioMode;
     private final boolean previousSpeakerphoneState;
+    private final Handler connectionHandler = new Handler(Looper.getMainLooper());
+    private final Runnable iceFailureTimeout = this::handleIceFailureTimeout;
 
     private PeerConnectionFactory factory;
     private PeerConnection peerConnection;
@@ -73,6 +78,13 @@ public final class WebRtcWalkieTalkieClient {
     private boolean answerPublished;
     private boolean declinedCallHandled;
     private boolean closed;
+
+    private void handleIceFailureTimeout() {
+        if (!closed && peerConnection != null
+                && peerConnection.iceConnectionState() == PeerConnection.IceConnectionState.FAILED) {
+            reportError("WebRTC connection failed. Check the network or TURN server configuration.");
+        }
+    }
 
     public WebRtcWalkieTalkieClient(
             Context context,
@@ -197,6 +209,7 @@ public final class WebRtcWalkieTalkieClient {
             return;
         }
         closed = true;
+        connectionHandler.removeCallbacks(iceFailureTimeout);
         if (audioTrack != null) {
             audioTrack.setEnabled(false);
         }
@@ -254,9 +267,7 @@ public final class WebRtcWalkieTalkieClient {
         if (closed) {
             return false;
         }
-        List<PeerConnection.IceServer> iceServers = Collections.singletonList(
-                PeerConnection.IceServer.builder("stun:stun.l.google.com:19302").createIceServer()
-        );
+        List<PeerConnection.IceServer> iceServers = defaultIceServers();
         PeerConnection.RTCConfiguration configuration =
                 new PeerConnection.RTCConfiguration(iceServers);
         peerConnection = factory.createPeerConnection(configuration, new PeerConnection.Observer() {
@@ -271,11 +282,17 @@ public final class WebRtcWalkieTalkieClient {
                 }
                 if (state == PeerConnection.IceConnectionState.CONNECTED
                         || state == PeerConnection.IceConnectionState.COMPLETED) {
+                    connectionHandler.removeCallbacks(iceFailureTimeout);
                     listener.onConnected();
                 } else if (state == PeerConnection.IceConnectionState.FAILED) {
-                    reportError("WebRTC connection failed. Check the network or configure a TURN server.");
+                    listener.onStatus("ICE connection checks failed. Waiting for TURN candidates...");
+                    connectionHandler.removeCallbacks(iceFailureTimeout);
+                    connectionHandler.postDelayed(iceFailureTimeout, ICE_FAILURE_GRACE_PERIOD_MS);
                 } else if (state == PeerConnection.IceConnectionState.DISCONNECTED) {
+                    connectionHandler.removeCallbacks(iceFailureTimeout);
                     listener.onStatus("Network interrupted. Trying to reconnect...");
+                } else if (state == PeerConnection.IceConnectionState.CHECKING) {
+                    connectionHandler.removeCallbacks(iceFailureTimeout);
                 }
             }
 
@@ -325,6 +342,33 @@ public final class WebRtcWalkieTalkieClient {
         audioTrack.setEnabled(false);
         peerConnection.addTrack(audioTrack, Collections.singletonList("walkie-room"));
         return true;
+    }
+
+    private static List<PeerConnection.IceServer> defaultIceServers() {
+        List<PeerConnection.IceServer> servers = new ArrayList<>();
+        servers.add(PeerConnection.IceServer.builder("stun:stun.l.google.com:19302")
+                .createIceServer());
+        servers.add(PeerConnection.IceServer.builder(
+                        "turn:a.relay.metered.ca:3478?transport=udp")
+                .setUsername("83eebabf8b4cce9d5dbcb649")
+                .setPassword("2D7JvfkOQtBdYW3R")
+                .createIceServer());
+        servers.add(PeerConnection.IceServer.builder(
+                        "turn:a.relay.metered.ca:3478?transport=tcp")
+                .setUsername("83eebabf8b4cce9d5dbcb649")
+                .setPassword("2D7JvfkOQtBdYW3R")
+                .createIceServer());
+        servers.add(PeerConnection.IceServer.builder(
+                        "turn:a.relay.metered.ca:443?transport=tcp")
+                .setUsername("83eebabf8b4cce9d5dbcb649")
+                .setPassword("2D7JvfkOQtBdYW3R")
+                .createIceServer());
+        servers.add(PeerConnection.IceServer.builder(
+                        "turns:a.relay.metered.ca:5349?transport=tcp")
+                .setUsername("83eebabf8b4cce9d5dbcb649")
+                .setPassword("2D7JvfkOQtBdYW3R")
+                .createIceServer());
+        return servers;
     }
 
     private void createOffer() {
