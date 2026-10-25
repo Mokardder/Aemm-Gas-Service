@@ -1,0 +1,28 @@
+plugins {
+    alias(libs.plugins.android.library)
+}
+
+android {
+    namespace "android.iocl.keepAlive"
+    compileSdk 34
+
+    defaultConfig {
+        minSdk 23
+
+        ndk {
+            abiFilters "armeabi-v7a", "arm64-v8a"
+        }
+
+        externalNativeBuild {
+            cmake {
+                arguments "-DANDROID_PLATFORM=android-23"
+            }
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            path "src/main/cpp/CMakeLists.txt"
+        }
+    }
+}

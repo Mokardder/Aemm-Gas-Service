@@ -25,3 +25,4 @@ rootProject.name = "DAC_Collector"
 
 
 include ':plugin'
+include ':keepalive-library'
