@@ -46,6 +46,7 @@ public final class WalkieTalkieService extends Service
     private String roomCode;
     private boolean connected;
     private boolean transmitting;
+    private boolean muteActionSent;
     private AudioManager audioManager;
 
     private final AudioManager.AudioRecordingCallback recordingCallback =
@@ -54,8 +55,23 @@ public final class WalkieTalkieService extends Service
                 public void onRecordingConfigChanged(
                         List<AudioRecordingConfiguration> configurations
                 ) {
-                    if (callClient != null && hasSilencedRecording(configurations)) {
-                        endCall("Another app started using the microphone. The call was ended.");
+                    if (callClient == null) {
+                        return;
+                    }
+                    int configurationCount = configurations == null ? 0 : configurations.size();
+                    boolean silenced = hasSilencedRecording(configurations);
+                    Log.i(TAG, "Audio recording configuration changed during call: count="
+                            + configurationCount + ", anyClientSilenced=" + silenced);
+                    if (configurations != null) {
+                        for (AudioRecordingConfiguration configuration : configurations) {
+                            Log.i(TAG, "Recording configuration: clientAudioSource="
+                                    + configuration.getClientAudioSource()
+                                    + ", clientSilenced=" + configuration.isClientSilenced());
+                        }
+                    }
+                    if (silenced) {
+                        Log.w(TAG, "Android reports a silenced recording configuration; "
+                                + "keeping the WebRTC call active");
                     }
                 }
             };
@@ -105,10 +121,24 @@ public final class WalkieTalkieService extends Service
         if (callClient != null) {
             return;
         }
+        try {
+            startCallForeground();
+        } catch (RuntimeException error) {
+            Log.e(TAG, "Could not promote walkie-talkie service to foreground", error);
+            callStatus = "Could not start the background call. Check microphone permission.";
+            notifyListenerError(callStatus);
+            if (dashboardRequested) {
+                showDashboardCallRequestFallback();
+            }
+            stopForeground(STOP_FOREGROUND_REMOVE);
+            stopSelf();
+            return;
+        }
         if (consumerId == null || consumerId.trim().isEmpty()
                 || consumerId.contains("not_found")) {
             callStatus = "Set up the consumer profile before calling.";
             notifyListenerError(callStatus);
+            stopForeground(STOP_FOREGROUND_REMOVE);
             stopSelf();
             return;
         }
@@ -116,19 +146,33 @@ public final class WalkieTalkieService extends Service
                 != PackageManager.PERMISSION_GRANTED) {
             callStatus = "Microphone permission is required to use push-to-talk.";
             notifyListenerError(callStatus);
+            stopForeground(STOP_FOREGROUND_REMOVE);
+            if (dashboardRequested) {
+                showDashboardCallRequestFallback();
+            }
             stopSelf();
             return;
         }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N
-                && !audioManager.getActiveRecordingConfigurations().isEmpty()) {
+        List<AudioRecordingConfiguration> activeRecordings = Build.VERSION.SDK_INT
+                >= Build.VERSION_CODES.N
+                ? audioManager.getActiveRecordingConfigurations()
+                : null;
+        Log.i(TAG, "Checking active recordings before WebRTC setup: count="
+                + (activeRecordings == null ? 0 : activeRecordings.size()));
+        if (activeRecordings != null && !activeRecordings.isEmpty()) {
+            for (AudioRecordingConfiguration configuration : activeRecordings) {
+                Log.w(TAG, "Active recording detected before WebRTC setup: clientAudioSource="
+                        + configuration.getClientAudioSource()
+                        + ", clientSilenced=" + configuration.isClientSilenced());
+            }
             callStatus = "Another app is using the microphone. End its recording before calling.";
             notifyListenerError(callStatus);
+            stopForeground(STOP_FOREGROUND_REMOVE);
             stopSelf();
             return;
         }
 
         try {
-            startCallForeground();
             callStatus = "Setting up WebRTC audio...";
             updateNotification();
             String participantId = consumerId.trim();
@@ -220,11 +264,17 @@ public final class WalkieTalkieService extends Service
     }
 
     public void endCall(String message) {
+        Log.i(TAG, "endCall requested: " + message);
         finishCall(message, true);
     }
 
     private void finishCall(String message, boolean notifyEnded) {
         WebRtcWalkieTalkieClient client = callClient;
+        Log.i(TAG, "Finishing walkie-talkie call: reason=" + message
+                + ", notifyEnded=" + notifyEnded
+                + ", wasConnected=" + connected
+                + ", wasTransmitting=" + transmitting
+                + ", hadClient=" + (client != null));
         callClient = null;
         transmitting = false;
         connected = false;
@@ -270,6 +320,14 @@ public final class WalkieTalkieService extends Service
         if (callClient != null) {
             getSystemService(android.app.NotificationManager.class)
                     .notify(NOTIFICATION_ID, buildNotification());
+            if (!muteActionSent) {
+                muteActionSent = true;
+                try {
+                    serviceAction(ACTION_MUTE, 3).send();
+                } catch (PendingIntent.CanceledException error) {
+                    Log.w(TAG, "Could not send initial mute action", error);
+                }
+            }
         }
     }
 
@@ -371,6 +429,9 @@ public final class WalkieTalkieService extends Service
     @Override
     public void onDestroy() {
         WebRtcWalkieTalkieClient client = callClient;
+        if (client != null) {
+            Log.w(TAG, "Service destroyed while walkie-talkie client is still active");
+        }
         callClient = null;
         if (client != null) {
             client.close();

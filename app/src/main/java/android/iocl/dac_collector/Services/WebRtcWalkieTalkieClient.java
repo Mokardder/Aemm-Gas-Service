@@ -20,6 +20,8 @@ import org.webrtc.IceCandidate;
 import org.webrtc.MediaConstraints;
 import org.webrtc.PeerConnection;
 import org.webrtc.PeerConnectionFactory;
+import org.webrtc.RTCStats;
+import org.webrtc.RTCStatsReport;
 import org.webrtc.SdpObserver;
 import org.webrtc.SessionDescription;
 
@@ -78,10 +80,13 @@ public final class WebRtcWalkieTalkieClient {
     private boolean answerPublished;
     private boolean declinedCallHandled;
     private boolean closed;
+    private int localCandidateCount;
+    private int remoteCandidateCount;
 
     private void handleIceFailureTimeout() {
         if (!closed && peerConnection != null
                 && peerConnection.iceConnectionState() == PeerConnection.IceConnectionState.FAILED) {
+            logPeerConnectionState("ICE failure grace period expired");
             reportError("WebRTC connection failed. Check the network or TURN server configuration.");
         }
     }
@@ -107,6 +112,7 @@ public final class WebRtcWalkieTalkieClient {
     public void createRoom() {
         host = true;
         roomCode = generateRoomCode();
+        Log.i(TAG, "Creating walkie-talkie room " + roomCode);
         roomRef = FirebaseDatabase.getInstance().getReference(ROOM_PATH).child(roomCode);
 
         roomRef.child("hostUid").setValue(localUid)
@@ -148,6 +154,7 @@ public final class WebRtcWalkieTalkieClient {
     public void joinRoom(String requestedCode) {
         host = false;
         roomCode = requestedCode;
+        Log.i(TAG, "Joining walkie-talkie room " + roomCode);
         roomRef = FirebaseDatabase.getInstance().getReference(ROOM_PATH).child(roomCode);
         roomRef.get()
                 .addOnSuccessListener(snapshot -> {
@@ -171,6 +178,7 @@ public final class WebRtcWalkieTalkieClient {
                     if (!preparePeerConnection()) {
                         return;
                     }
+                    Log.i(TAG, "Room offer loaded; preparing remote ICE candidates");
                     addRemoteCandidatesListener(hostUid);
                     listenForHostEnd();
                     SessionDescription offer = new SessionDescription(
@@ -180,6 +188,7 @@ public final class WebRtcWalkieTalkieClient {
                     peerConnection.setRemoteDescription(setDescriptionObserver(
                             () -> {
                                 remoteDescriptionSet = true;
+                                logPeerConnectionState("Remote offer applied");
                                 addQueuedRemoteCandidates();
                                 createAnswer();
                             },
@@ -208,6 +217,7 @@ public final class WebRtcWalkieTalkieClient {
         if (closed) {
             return;
         }
+        logPeerConnectionState("Closing walkie-talkie client");
         closed = true;
         connectionHandler.removeCallbacks(iceFailureTimeout);
         if (audioTrack != null) {
@@ -273,6 +283,7 @@ public final class WebRtcWalkieTalkieClient {
         peerConnection = factory.createPeerConnection(configuration, new PeerConnection.Observer() {
             @Override
             public void onSignalingChange(PeerConnection.SignalingState state) {
+                logPeerConnectionState("Signaling state changed: " + state);
             }
 
             @Override
@@ -280,15 +291,18 @@ public final class WebRtcWalkieTalkieClient {
                 if (closed) {
                     return;
                 }
+                logPeerConnectionState("ICE connection state changed: " + state);
                 if (state == PeerConnection.IceConnectionState.CONNECTED
                         || state == PeerConnection.IceConnectionState.COMPLETED) {
                     connectionHandler.removeCallbacks(iceFailureTimeout);
                     listener.onConnected();
                 } else if (state == PeerConnection.IceConnectionState.FAILED) {
+                    logConnectionStats(peerConnection, state.toString());
                     listener.onStatus("ICE connection checks failed. Waiting for TURN candidates...");
                     connectionHandler.removeCallbacks(iceFailureTimeout);
                     connectionHandler.postDelayed(iceFailureTimeout, ICE_FAILURE_GRACE_PERIOD_MS);
                 } else if (state == PeerConnection.IceConnectionState.DISCONNECTED) {
+                    logConnectionStats(peerConnection, state.toString());
                     connectionHandler.removeCallbacks(iceFailureTimeout);
                     listener.onStatus("Network interrupted. Trying to reconnect...");
                 } else if (state == PeerConnection.IceConnectionState.CHECKING) {
@@ -297,20 +311,40 @@ public final class WebRtcWalkieTalkieClient {
             }
 
             @Override
+            public void onConnectionChange(PeerConnection.PeerConnectionState state) {
+                if (!closed) {
+                    logPeerConnectionState("Peer connection state changed: " + state);
+                }
+            }
+
+            @Override
             public void onIceConnectionReceivingChange(boolean receiving) {
+                if (!closed) {
+                    Log.i(TAG, "ICE receiving changed to " + receiving + " for room " + roomCode);
+                }
             }
 
             @Override
             public void onIceGatheringChange(PeerConnection.IceGatheringState state) {
+                if (!closed) {
+                    logPeerConnectionState("ICE gathering state changed: " + state);
+                }
             }
 
             @Override
             public void onIceCandidate(IceCandidate candidate) {
+                localCandidateCount++;
+                Log.d(TAG, "Gathered local ICE candidate #" + localCandidateCount
+                        + " (mid=" + candidate.sdpMid
+                        + ", mLine=" + candidate.sdpMLineIndex
+                        + ") for room " + roomCode);
                 publishLocalCandidate(candidate);
             }
 
             @Override
             public void onIceCandidatesRemoved(IceCandidate[] candidates) {
+                Log.i(TAG, "WebRTC removed " + candidates.length
+                        + " local ICE candidate(s) for room " + roomCode);
             }
 
             @Override
@@ -337,6 +371,7 @@ public final class WebRtcWalkieTalkieClient {
             reportError("Could not create a WebRTC connection.");
             return false;
         }
+        logPeerConnectionState("Peer connection created");
         audioSource = factory.createAudioSource(new MediaConstraints());
         audioTrack = factory.createAudioTrack("walkie-audio", audioSource);
         audioTrack.setEnabled(false);
@@ -409,6 +444,7 @@ public final class WebRtcWalkieTalkieClient {
         roomRef.child(key).setValue(values)
                 .addOnSuccessListener(unused -> {
                     if (!closed) {
+                        Log.i(TAG, "Published " + key + " SDP to Firebase for room " + roomCode);
                         if (!isOffer) {
                             answerPublished = true;
                             publishQueuedLocalCandidates();
@@ -430,6 +466,7 @@ public final class WebRtcWalkieTalkieClient {
                 }
                 if (!snapshot.exists()) {
                     if (remoteDescriptionSet) {
+                        Log.i(TAG, "Remote participant removed the answer for room " + roomCode);
                         listener.onRoomEnded("The other participant left the room.");
                     }
                     return;
@@ -451,6 +488,7 @@ public final class WebRtcWalkieTalkieClient {
                 peerConnection.setRemoteDescription(setDescriptionObserver(
                         () -> {
                             remoteDescriptionSet = true;
+                            logPeerConnectionState("Remote answer applied");
                             addQueuedRemoteCandidates();
                         },
                         error -> reportError("Could not read the WebRTC answer: " + error)
@@ -475,6 +513,7 @@ public final class WebRtcWalkieTalkieClient {
                 String declinedBy = snapshot.getValue(String.class);
                 if (declinedBy != null && !localUid.equals(declinedBy)) {
                     declinedCallHandled = true;
+                    Log.i(TAG, "Room " + roomCode + " was declined by " + declinedBy);
                     listener.onRoomEnded("FCM_sender declined the call.");
                 }
             }
@@ -523,8 +562,16 @@ public final class WebRtcWalkieTalkieClient {
                 }
                 Number lineIndex = (Number) lineValue;
                 IceCandidate candidate = new IceCandidate(sdpMid, lineIndex.intValue(), candidateText);
+                remoteCandidateCount++;
+                Log.d(TAG, "Received remote ICE candidate #" + remoteCandidateCount
+                        + " (mid=" + sdpMid
+                        + ", mLine=" + lineIndex.intValue()
+                        + ", remoteDescriptionSet=" + remoteDescriptionSet
+                        + ") for room " + roomCode);
                 if (remoteDescriptionSet) {
                     if (!peerConnection.addIceCandidate(candidate)) {
+                        Log.w(TAG, "WebRTC rejected remote ICE candidate #" + remoteCandidateCount
+                                + " for room " + roomCode);
                         reportError("Could not apply a remote ICE candidate.");
                     }
                 } else {
@@ -557,6 +604,7 @@ public final class WebRtcWalkieTalkieClient {
             @Override
             public void onDataChange(DataSnapshot snapshot) {
                 if (!closed && !snapshot.exists()) {
+                    Log.i(TAG, "Room owner removed room " + roomCode);
                     setTransmitting(false);
                     listener.onRoomEnded("The room owner ended the call.");
                 }
@@ -597,6 +645,10 @@ public final class WebRtcWalkieTalkieClient {
         values.put("sdpMid", candidate.sdpMid);
         values.put("sdpMLineIndex", candidate.sdpMLineIndex);
         roomRef.child("candidates").child(localUid).push().setValue(values)
+                .addOnSuccessListener(unused -> Log.d(TAG,
+                        "Published local ICE candidate (mid=" + candidate.sdpMid
+                                + ", mLine=" + candidate.sdpMLineIndex
+                                + ") for room " + roomCode))
                 .addOnFailureListener(this::reportFirebaseError);
     }
 
@@ -606,10 +658,88 @@ public final class WebRtcWalkieTalkieClient {
         }
         for (IceCandidate candidate : queuedRemoteCandidates) {
             if (!peerConnection.addIceCandidate(candidate)) {
+                Log.w(TAG, "WebRTC rejected a queued remote ICE candidate for room " + roomCode);
                 reportError("Could not apply a remote ICE candidate.");
             }
         }
+        if (!queuedRemoteCandidates.isEmpty()) {
+            Log.i(TAG, "Applied " + queuedRemoteCandidates.size()
+                    + " queued remote ICE candidate(s) for room " + roomCode);
+        }
         queuedRemoteCandidates.clear();
+    }
+
+    private void logPeerConnectionState(String event) {
+        PeerConnection connection = peerConnection;
+        if (connection == null) {
+            Log.i(TAG, event + " (room=" + roomCode + ", role="
+                    + (host ? "host" : "receiver") + ", peerConnection=unavailable)");
+            return;
+        }
+        Log.i(TAG, event + " (room=" + roomCode
+                + ", role=" + (host ? "host" : "receiver")
+                + ", signaling=" + connection.signalingState()
+                + ", ice=" + connection.iceConnectionState()
+                + ", connection=" + connection.connectionState()
+                + ", gathering=" + connection.iceGatheringState()
+                + ", localCandidates=" + localCandidateCount
+                + ", remoteCandidates=" + remoteCandidateCount
+                + ", queuedRemoteCandidates=" + queuedRemoteCandidates.size()
+                + ")");
+    }
+
+    private void logConnectionStats(PeerConnection connection, String reason) {
+        if (connection == null) {
+            return;
+        }
+        connection.getStats(report -> {
+            if (peerConnection != connection) {
+                return;
+            }
+            Map<String, RTCStats> statsMap = report.getStatsMap();
+            boolean foundCandidatePair = false;
+            for (RTCStats stats : statsMap.values()) {
+                if (!"candidate-pair".equals(stats.getType())) {
+                    continue;
+                }
+                Map<String, Object> members = stats.getMembers();
+                String state = String.valueOf(members.get("state"));
+                boolean selected = Boolean.TRUE.equals(members.get("selected"));
+                boolean nominated = Boolean.TRUE.equals(members.get("nominated"));
+                if (!selected && !nominated && !"succeeded".equals(state)
+                        && !"failed".equals(state)) {
+                    continue;
+                }
+                foundCandidatePair = true;
+                Log.w(TAG, "ICE stats after " + reason + " (room=" + roomCode
+                        + ", pairState=" + state
+                        + ", selected=" + selected
+                        + ", nominated=" + nominated
+                        + ", local=" + describeCandidate(statsMap,
+                        String.valueOf(members.get("localCandidateId")))
+                        + ", remote=" + describeCandidate(statsMap,
+                        String.valueOf(members.get("remoteCandidateId")))
+                        + ", rtt=" + members.get("currentRoundTripTime")
+                        + ", bytesSent=" + members.get("bytesSent")
+                        + ", bytesReceived=" + members.get("bytesReceived")
+                        + ")");
+            }
+            if (!foundCandidatePair) {
+                Log.w(TAG, "ICE stats after " + reason
+                        + " contain no selected/succeeded/failed candidate pair (room="
+                        + roomCode + ", statsCount=" + statsMap.size() + ")");
+            }
+        });
+    }
+
+    private String describeCandidate(Map<String, RTCStats> statsMap, String candidateId) {
+        RTCStats candidate = statsMap.get(candidateId);
+        if (candidate == null) {
+            return "unavailable";
+        }
+        Map<String, Object> members = candidate.getMembers();
+        return "type=" + members.get("candidateType")
+                + ",protocol=" + members.get("protocol");
     }
 
     private MediaConstraints createAudioSdpConstraints() {
@@ -700,12 +830,13 @@ public final class WebRtcWalkieTalkieClient {
     }
 
     private void reportFirebaseError(Exception error) {
-        Log.e(TAG, "Firebase walkie-talkie operation failed", error);
+        Log.e(TAG, "Firebase signaling operation failed for room " + roomCode, error);
         reportError("Firebase signaling failed: " + error.getLocalizedMessage());
     }
 
     private void reportError(String message) {
         if (!closed) {
+            Log.e(TAG, message);
             listener.onError(message);
         }
     }

@@ -279,7 +279,6 @@ public class WalkieTalkieActivity extends AppCompatActivity
     @Override
     protected void onStop() {
         if (callService != null) {
-            callService.setTransmitting(false);
             talkButton.setText("HOLD TO TALK");
         }
         if (serviceBound) {
