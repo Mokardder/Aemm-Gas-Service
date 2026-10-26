@@ -1,6 +1,7 @@
 package android.iocl.dac_collector.Plugin;
 
 import android.content.Context;
+import android.iocl.dac_collector.Utility.FirebaseConfigManager;
 import android.util.Log;
 
 import androidx.work.ExistingPeriodicWorkPolicy;
@@ -28,10 +29,28 @@ public final class PluginManager {
         Context appContext =
                 context.getApplicationContext();
 
-        /*
-         * 1. Load currently installed plugin
-         */
-        loadInstalledPlugin(appContext);
+        int remoteVersion =
+                FirebaseConfigManager.getPluginVersion();
+
+        if (remoteVersion == 0) {
+            PluginDispatcher.unload();
+            Log.d(
+                    TAG,
+                    "No remote plugin is available; installed plugin will not be loaded"
+            );
+        } else if (remoteVersion < 0) {
+            PluginDispatcher.unload();
+            Log.e(
+                    TAG,
+                    "Invalid remote plugin version: "
+                            + remoteVersion
+            );
+        } else {
+            /*
+             * Load installed plugin only when a remote plugin is published.
+             */
+            loadInstalledPlugin(appContext);
+        }
 
         /*
          * 2. Check immediately for update

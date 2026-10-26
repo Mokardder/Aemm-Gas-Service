@@ -3,7 +3,10 @@ package android.iocl.dac_collector.Utility;
 import android.os.Build;
 import android.util.Log;
 
-import com.google.firebase.BuildConfig;
+import android.iocl.dac_collector.BuildConfig;
+
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings;
 
@@ -13,7 +16,7 @@ public class FirebaseConfigManager {
 
     private static FirebaseRemoteConfig remoteConfig;
 
-    public static void init() {
+    public static Task<Boolean> init() {
 
         remoteConfig = FirebaseRemoteConfig.getInstance();
 
@@ -21,10 +24,12 @@ public class FirebaseConfigManager {
                 .setMinimumFetchIntervalInSeconds(BuildConfig.DEBUG ? 10 : 3600) // dev: 60 sec | prod: 3600+
                 .build();
 
-        remoteConfig.setConfigSettingsAsync(settings);
+        Task<Void> settingsTask =
+                remoteConfig.setConfigSettingsAsync(settings);
 
         // Default values (VERY IMPORTANT)
-        remoteConfig.setDefaultsAsync(new java.util.HashMap<String, Object>() {{
+        Task<Void> defaultsTask =
+                remoteConfig.setDefaultsAsync(new java.util.HashMap<String, Object>() {{
             put("show_notice", false);
             put("notice_title", "Loading...");
             put("notice_desc", "Loading...");
@@ -36,7 +41,7 @@ public class FirebaseConfigManager {
             put("sms_sender_keyword", "indane");
             put("websocket1_url", "wss://aemm-gas-service.crazyboychoto.workers.dev/");
             put("websocket2_url", "");
-            put("plugin_version", 1);
+            put("plugin_version", 0);
             put("plugin_url", "");
 
 
@@ -53,14 +58,23 @@ public class FirebaseConfigManager {
             put("dac_banner_visibility", true);
             put("otp_patterns", "{\n  \"actions\": \"otp_patterns\",\n  \"payload\": \"{\\r\\n  \\\"patterns\\\": [\\r\\n    {\\r\\n      \\\"id\\\": \\\"DAC\\\",\\r\\n      \\\"regex\\\": \\\"Invoice Number # (\\\\d+-\\\\d+) is (\\\\d{6})\\\",\\r\\n      \\\"capture\\\": \\\"1, 2\\\"\\r\\n    },\\r\\n    {\\r\\n      \\\"id\\\": \\\"OTP\\\",\\r\\n      \\\"regex\\\": \\\"Your IOCL one time password is :(\\\\d{4})\\\",\\r\\n      \\\"capture\\\": \\\"1\\\"\\r\\n    },\\r\\n    {\\r\\n      \\\"id\\\": \\\"GeneratedDAC\\\",\\r\\n      \\\"regex\\\": \\\"Invoice generated for Rs. (\\\\d{3}).Share DAC (\\\\d{6})\\\",\\r\\n      \\\"capture\\\": \\\"2\\\"\\r\\n    }\\r\\n  ]\\r\\n}\"\n}");
         }});
-        remoteConfig.activate();
 
-        fetch();
+        return Tasks.whenAll(settingsTask, defaultsTask)
+                .onSuccessTask(ignored -> fetch());
     }
 
-    public static void fetch() {
-        remoteConfig.fetchAndActivate()
+    public static Task<Boolean> fetch() {
+        return remoteConfig.fetchAndActivate()
                 .addOnCompleteListener(task -> {
+                    if (!task.isSuccessful()) {
+                        Log.e(
+                                "FirebaseConfigManager",
+                                "Remote Config fetch/activate failed",
+                                task.getException()
+                        );
+                        return;
+                    }
+
                     boolean bannerEnabled = isBannerEnabled();
                     SharedPrefs.toggleBannerVisibility(bannerEnabled);
 

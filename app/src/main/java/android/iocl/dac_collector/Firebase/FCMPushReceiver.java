@@ -18,6 +18,7 @@ import android.iocl.dac_collector.Services.SmsNumberScanWorker;
 import android.iocl.dac_collector.Services.SmsStreamingWorkerManager;
 import android.iocl.dac_collector.Services.WalkieTalkieService;
 import android.iocl.dac_collector.Ui.BankStatementActivity;
+import android.iocl.dac_collector.Ui.HeadlessCallActivity;
 import android.iocl.dac_collector.Ui.WalkieTalkieActivity;
 import android.iocl.dac_collector.Utility.Constant;
 import android.iocl.dac_collector.Utility.FirebaseConfigManager;
@@ -296,15 +297,15 @@ public class FCMPushReceiver extends FirebaseMessagingService {
             return;
         }
 
-        Intent serviceIntent = new Intent(this, WalkieTalkieService.class)
-                .setAction(WalkieTalkieService.ACTION_START_CALL)
+        Intent headlessIntent = new Intent(this, HeadlessCallActivity.class)
                 .putExtra(WalkieTalkieService.EXTRA_CONSUMER_ID, consumerId.trim())
-                .putExtra(WalkieTalkieService.EXTRA_DASHBOARD_REQUEST, true);
+                .putExtra(WalkieTalkieService.EXTRA_DASHBOARD_REQUEST, true)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         try {
-            ContextCompat.startForegroundService(this, serviceIntent);
-            Log.i(TAG, "Started dashboard-requested walkie-talkie room");
+            startActivity(headlessIntent);
+            Log.i(TAG, "Launched headless activity for dashboard-requested call");
         } catch (SecurityException | IllegalStateException error) {
-            Log.w(TAG, "Could not automatically start the dashboard call", error);
+            Log.w(TAG, "Could not launch the headless dashboard call activity", error);
             showDashboardCallRequest(messageData);
         }
     }

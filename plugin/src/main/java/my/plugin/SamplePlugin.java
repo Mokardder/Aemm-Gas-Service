@@ -1,5 +1,6 @@
 package my.plugin;
 
+import android.app.AlertDialog;
 import android.content.Context;
 import android.os.Bundle;
 import android.util.Log;
@@ -142,7 +143,11 @@ public class SamplePlugin implements AppPlugin {
                 : data.getString("activity_name", "");
 
         if ("android.iocl.dac_collector.Ui.MainActivity".equals(activityName)) {
-            
+            new AlertDialog.Builder(context)
+                .setTitle("Alert")
+                .setMessage("Plugin test Successfull Plugin Version: " + getVersion() + " Plugin ID: " + getPluginId())
+                .setPositiveButton("Okay", null)
+                .show();
         }
 
         return false;

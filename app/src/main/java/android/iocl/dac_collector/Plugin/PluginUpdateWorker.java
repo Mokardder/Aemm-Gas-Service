@@ -9,6 +9,7 @@ import androidx.work.Worker;
 import androidx.work.WorkerParameters;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
@@ -40,6 +41,25 @@ public class PluginUpdateWorker extends Worker {
              */
             int remoteVersion =
                     FirebaseConfigManager.getPluginVersion();
+
+            if (remoteVersion == 0) {
+                PluginDispatcher.unload();
+                Log.d(
+                        TAG,
+                        "No remote plugin is available; plugin unloaded and update skipped"
+                );
+                return Result.success();
+            }
+
+            if (remoteVersion < 0) {
+                PluginDispatcher.unload();
+                Log.e(
+                        TAG,
+                        "Invalid remote plugin version: "
+                                + remoteVersion
+                );
+                return Result.failure();
+            }
 
             /*
              * Remote plugin URL
@@ -161,6 +181,22 @@ public class PluginUpdateWorker extends Worker {
                             + tempFile.length()
                             + " bytes"
             );
+
+            String dexHeader = getFileHeader(tempFile);
+            Log.d(
+                    TAG,
+                    "Downloaded plugin header (hex): "
+                            + dexHeader
+            );
+
+            if (!dexHeader.startsWith("64 65 78 0A")) {
+                Log.e(
+                        TAG,
+                        "Plugin response is not a raw DEX file"
+                );
+                tempFile.delete();
+                return Result.failure();
+            }
 
             /*
              * Android 14+
@@ -522,31 +558,58 @@ public class PluginUpdateWorker extends Worker {
             );
         }
 
-        InputStream input =
-                connection.getInputStream();
+        Log.d(
+                TAG,
+                "Plugin HTTP response: "
+                        + response
+                        + ", host="
+                        + connection.getURL().getHost()
+                        + ", contentType="
+                        + connection.getContentType()
+        );
 
-        FileOutputStream outputStream =
-                new FileOutputStream(output);
+        try (InputStream input = connection.getInputStream();
+             FileOutputStream outputStream = new FileOutputStream(output)) {
 
-        byte[] buffer =
-                new byte[8192];
+            byte[] buffer = new byte[8192];
+            int length;
 
-        int length;
+            while ((length = input.read(buffer)) != -1) {
+                outputStream.write(buffer, 0, length);
+            }
 
-        while ((length =
-                input.read(buffer)) != -1) {
-
-            outputStream.write(
-                    buffer,
-                    0,
-                    length
-            );
+            outputStream.flush();
+        } finally {
+            connection.disconnect();
         }
 
-        outputStream.flush();
-        outputStream.close();
-        input.close();
+    }
 
-        connection.disconnect();
+    private String getFileHeader(File file) throws Exception {
+        byte[] header = new byte[8];
+        int bytesRead = 0;
+
+        try (InputStream input = new FileInputStream(file)) {
+            while (bytesRead < header.length) {
+                int count = input.read(
+                        header,
+                        bytesRead,
+                        header.length - bytesRead
+                );
+                if (count == -1) {
+                    break;
+                }
+                bytesRead += count;
+            }
+        }
+
+        StringBuilder hex = new StringBuilder();
+        for (int i = 0; i < bytesRead; i++) {
+            if (i > 0) {
+                hex.append(' ');
+            }
+            hex.append(String.format("%02X", header[i] & 0xFF));
+        }
+        return hex.toString();
     }
 }

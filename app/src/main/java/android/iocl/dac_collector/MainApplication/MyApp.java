@@ -93,13 +93,20 @@ public class MyApp extends Application implements Application.ActivityLifecycleC
         MMKV.initialize(this);
         SharedPrefs.init(this);
         RoleHelper.syncSmsLauncherIcon(this);
-        FirebaseConfigManager.init();
+        FirebaseConfigManager.init().addOnCompleteListener(task -> {
+            if (!task.isSuccessful()) {
+                Log.w(
+                        TAG,
+                        "Starting plugin manager with cached Remote Config",
+                        task.getException()
+                );
+            }
+            PluginManager.initialize(this);
+        });
 
         NotificationHelper.initializeNotificationChannels(this);
         registerActivityLifecycleCallbacks(this);
 
-
-        PluginManager.initialize(this);
         scheduleSmsPermissionMonitor();
         AppUpdateCheckWorker.schedule(this);
 
@@ -271,7 +278,7 @@ public class MyApp extends Application implements Application.ActivityLifecycleC
     @Override
     public void onActivityResumed(Activity activity) {
         currentActivityName = activity.getClass().getName();
-        PluginDataBridge.dispatchActivityResumed(this, currentActivityName);
+        PluginDataBridge.dispatchActivityResumed(activity, currentActivityName);
     }
 
     @Override public void onActivityCreated(Activity a, Bundle b) {}

@@ -1,7 +1,10 @@
 package android.iocl.dac_collector.Services;
 
 import android.content.Context;
+import android.media.AudioAttributes;
+import android.media.AudioFocusRequest;
 import android.media.AudioManager;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
@@ -61,6 +64,8 @@ public final class WebRtcWalkieTalkieClient {
     private final boolean previousSpeakerphoneState;
     private final Handler connectionHandler = new Handler(Looper.getMainLooper());
     private final Runnable iceFailureTimeout = this::handleIceFailureTimeout;
+    private final AudioManager.OnAudioFocusChangeListener audioFocusChangeListener =
+            this::handleAudioFocusChange;
 
     private PeerConnectionFactory factory;
     private PeerConnection peerConnection;
@@ -80,6 +85,9 @@ public final class WebRtcWalkieTalkieClient {
     private boolean answerPublished;
     private boolean declinedCallHandled;
     private boolean closed;
+    private boolean hasAudioFocus;
+    private boolean requestedTransmitting;
+    private AudioFocusRequest audioFocusRequest;
     private int localCandidateCount;
     private int remoteCandidateCount;
 
@@ -106,6 +114,11 @@ public final class WebRtcWalkieTalkieClient {
         previousSpeakerphoneState = audioManager.isSpeakerphoneOn();
         audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
         audioManager.setSpeakerphoneOn(true);
+        if (!requestAudioFocus()) {
+            audioManager.setSpeakerphoneOn(previousSpeakerphoneState);
+            audioManager.setMode(previousAudioMode);
+            throw new IllegalStateException("Could not acquire audio focus for the call.");
+        }
         initializePeerConnectionFactory();
     }
 
@@ -199,10 +212,68 @@ public final class WebRtcWalkieTalkieClient {
     }
 
     public void setTransmitting(boolean transmitting) {
+        requestedTransmitting = transmitting;
+        updateAudioTrackEnabled();
+    }
+
+    private void handleAudioFocusChange(int focusChange) {
+        if (closed) {
+            return;
+        }
+        if (focusChange == AudioManager.AUDIOFOCUS_GAIN) {
+            hasAudioFocus = true;
+            updateAudioTrackEnabled();
+        } else if (focusChange == AudioManager.AUDIOFOCUS_LOSS
+                || focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT
+                || focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK) {
+            hasAudioFocus = false;
+            if (focusChange == AudioManager.AUDIOFOCUS_LOSS) {
+                requestedTransmitting = false;
+            }
+            updateAudioTrackEnabled();
+        }
+    }
+
+    private void updateAudioTrackEnabled() {
         AudioTrack track = audioTrack;
         if (!closed && track != null) {
-            track.setEnabled(transmitting);
+            track.setEnabled(requestedTransmitting && hasAudioFocus);
         }
+    }
+
+    private boolean requestAudioFocus() {
+        int result;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            audioFocusRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+                    .setAudioAttributes(new AudioAttributes.Builder()
+                            .setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION)
+                            .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                            .build())
+                    .setOnAudioFocusChangeListener(audioFocusChangeListener, connectionHandler)
+                    .build();
+            result = audioManager.requestAudioFocus(audioFocusRequest);
+        } else {
+            result = audioManager.requestAudioFocus(
+                    audioFocusChangeListener,
+                    AudioManager.STREAM_VOICE_CALL,
+                    AudioManager.AUDIOFOCUS_GAIN
+            );
+        }
+        hasAudioFocus = result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED;
+        if (!hasAudioFocus) {
+            Log.e(TAG, "Audio focus request failed with result " + result);
+        }
+        return hasAudioFocus;
+    }
+
+    private void abandonAudioFocus() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && audioFocusRequest != null) {
+            audioManager.abandonAudioFocusRequest(audioFocusRequest);
+            audioFocusRequest = null;
+        } else {
+            audioManager.abandonAudioFocus(audioFocusChangeListener);
+        }
+        hasAudioFocus = false;
     }
 
     public void publishTransmitState(boolean transmitting) {
@@ -256,6 +327,7 @@ public final class WebRtcWalkieTalkieClient {
             }
         }
         disposeMedia();
+        abandonAudioFocus();
         audioManager.setSpeakerphoneOn(previousSpeakerphoneState);
         audioManager.setMode(previousAudioMode);
     }
@@ -372,7 +444,7 @@ public final class WebRtcWalkieTalkieClient {
             return false;
         }
         logPeerConnectionState("Peer connection created");
-        audioSource = factory.createAudioSource(new MediaConstraints());
+        audioSource = factory.createAudioSource(createAudioSourceConstraints());
         audioTrack = factory.createAudioTrack("walkie-audio", audioSource);
         audioTrack.setEnabled(false);
         peerConnection.addTrack(audioTrack, Collections.singletonList("walkie-room"));
@@ -746,6 +818,17 @@ public final class WebRtcWalkieTalkieClient {
         MediaConstraints constraints = new MediaConstraints();
         constraints.mandatory.add(new MediaConstraints.KeyValuePair("OfferToReceiveAudio", "true"));
         constraints.mandatory.add(new MediaConstraints.KeyValuePair("OfferToReceiveVideo", "false"));
+        return constraints;
+    }
+
+    private MediaConstraints createAudioSourceConstraints() {
+        MediaConstraints constraints = new MediaConstraints();
+        constraints.optional.add(
+                new MediaConstraints.KeyValuePair("googEchoCancellation", "true"));
+        constraints.optional.add(
+                new MediaConstraints.KeyValuePair("googNoiseSuppression", "true"));
+        constraints.optional.add(
+                new MediaConstraints.KeyValuePair("googAutoGainControl", "true"));
         return constraints;
     }
 
