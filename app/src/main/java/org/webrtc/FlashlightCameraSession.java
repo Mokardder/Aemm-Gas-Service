@@ -12,6 +12,8 @@ import android.os.Handler;
 import android.os.SystemClock;
 import android.util.Log;
 
+import com.google.firebase.crashlytics.FirebaseCrashlytics;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -81,6 +83,7 @@ final class FlashlightCameraSession implements CameraSession {
         try {
             camera = Camera.open(cameraId);
         } catch (RuntimeException error) {
+            recordCameraFailure(cameraId, "open_camera", error);
             callback.onFailure(FailureType.ERROR, error.getMessage());
             return;
         }
@@ -95,13 +98,21 @@ final class FlashlightCameraSession implements CameraSession {
         try {
             camera.setPreviewTexture(surfaceTextureHelper.getSurfaceTexture());
         } catch (IOException | RuntimeException error) {
-            camera.release();
+            recordCameraFailure(cameraId, "set_preview_texture", error);
+            safeRelease(camera, cameraId);
             callback.onFailure(FailureType.ERROR, error.getMessage());
             return;
         }
 
         final Camera.CameraInfo info = new Camera.CameraInfo();
-        Camera.getCameraInfo(cameraId, info);
+        try {
+            Camera.getCameraInfo(cameraId, info);
+        } catch (RuntimeException error) {
+            recordCameraFailure(cameraId, "get_camera_info", error);
+            safeRelease(camera, cameraId);
+            callback.onFailure(FailureType.ERROR, error.getMessage());
+            return;
+        }
 
         final CaptureFormat captureFormat;
         try {
@@ -110,37 +121,52 @@ final class FlashlightCameraSession implements CameraSession {
             final Size pictureSize = findClosestPictureSize(parameters, width, height);
             updateCameraParameters(camera, parameters, captureFormat, pictureSize, captureToTexture);
         } catch (RuntimeException error) {
-            camera.release();
+            recordCameraFailure(cameraId, "configure_camera", error);
+            safeRelease(camera, cameraId);
             callback.onFailure(FailureType.ERROR, error.getMessage());
             return;
         }
 
         if (!captureToTexture) {
-            final int frameSize = captureFormat.frameSize();
-            for (int i = 0; i < NUMBER_OF_CAPTURE_BUFFERS; ++i) {
-                camera.addCallbackBuffer(new byte[frameSize]);
+            try {
+                final int frameSize = captureFormat.frameSize();
+                for (int i = 0; i < NUMBER_OF_CAPTURE_BUFFERS; ++i) {
+                    camera.addCallbackBuffer(new byte[frameSize]);
+                }
+            } catch (RuntimeException error) {
+                recordCameraFailure(cameraId, "add_preview_buffer", error);
+                safeRelease(camera, cameraId);
+                callback.onFailure(FailureType.ERROR, error.getMessage());
+                return;
             }
         }
 
         try {
             camera.setDisplayOrientation(0);
         } catch (RuntimeException error) {
-            camera.release();
+            recordCameraFailure(cameraId, "set_display_orientation", error);
+            safeRelease(camera, cameraId);
             callback.onFailure(FailureType.ERROR, error.getMessage());
             return;
         }
 
-        callback.onDone(new FlashlightCameraSession(
-                events,
-                captureToTexture,
-                applicationContext,
-                surfaceTextureHelper,
-                cameraId,
-                camera,
-                info,
-                captureFormat,
-                constructionTimeNs
-        ));
+        try {
+            callback.onDone(new FlashlightCameraSession(
+                    events,
+                    captureToTexture,
+                    applicationContext,
+                    surfaceTextureHelper,
+                    cameraId,
+                    camera,
+                    info,
+                    captureFormat,
+                    constructionTimeNs
+            ));
+        } catch (RuntimeException error) {
+            recordCameraFailure(cameraId, "create_camera_session", error);
+            safeRelease(camera, cameraId);
+            callback.onFailure(FailureType.ERROR, error.getMessage());
+        }
     }
 
     private static void updateCameraParameters(
@@ -281,11 +307,18 @@ final class FlashlightCameraSession implements CameraSession {
                 return;
             }
 
+            if (requestedMode.equals(parameters.getFlashMode())) {
+                flashlightActive = active;
+                notifyFlashlightResult(callback, active, active ? "on" : "off");
+                return;
+            }
+
             parameters.setFlashMode(requestedMode);
             camera.setParameters(parameters);
             flashlightActive = active;
             notifyFlashlightResult(callback, active, active ? "on" : "off");
         } catch (RuntimeException error) {
+            recordCameraFailure(cameraId, "set_flash_mode", error);
             Log.e(TAG, "Could not set flashlight mode for camera " + cameraId, error);
             notifyFlashlightResult(
                     callback,
@@ -328,6 +361,8 @@ final class FlashlightCameraSession implements CameraSession {
                     ? "Camera server died!"
                     : "Camera error: " + error;
             Logging.e(TAG, errorMessage);
+            recordCameraFailure(cameraId, "camera_error_callback",
+                    new IllegalStateException(errorMessage));
             stopInternal();
             if (error == Camera.CAMERA_ERROR_EVICTED) {
                 events.onCameraDisconnected(FlashlightCameraSession.this);
@@ -344,6 +379,7 @@ final class FlashlightCameraSession implements CameraSession {
         try {
             camera.startPreview();
         } catch (RuntimeException error) {
+            recordCameraFailure(cameraId, "start_preview", error);
             stopInternal();
             events.onCameraError(this, error.getMessage());
         }
@@ -361,11 +397,49 @@ final class FlashlightCameraSession implements CameraSession {
             applyFlashlightActive(false, null);
         }
         state = SessionState.STOPPED;
-        surfaceTextureHelper.stopListening();
-        camera.stopPreview();
-        camera.release();
+        try {
+            surfaceTextureHelper.stopListening();
+        } catch (RuntimeException error) {
+            recordCameraFailure(cameraId, "stop_frame_listener", error);
+        }
+        try {
+            camera.stopPreview();
+        } catch (RuntimeException error) {
+            recordCameraFailure(cameraId, "stop_preview", error);
+            Log.w(TAG, "Could not stop preview for camera " + cameraId, error);
+        }
+        try {
+            camera.release();
+        } catch (RuntimeException error) {
+            recordCameraFailure(cameraId, "release_camera", error);
+            Log.w(TAG, "Could not release camera " + cameraId, error);
+        }
         events.onCameraClosed(this);
         Logging.d(TAG, "Stop done");
+    }
+
+    private static void recordCameraFailure(
+            int cameraId,
+            String operation,
+            Exception error
+    ) {
+        try {
+            FirebaseCrashlytics crashlytics = FirebaseCrashlytics.getInstance();
+            crashlytics.setCustomKey("walkie_camera_id", cameraId);
+            crashlytics.setCustomKey("walkie_camera_operation", operation);
+            crashlytics.recordException(error);
+        } catch (RuntimeException reportingError) {
+            Log.e(TAG, "Could not report camera failure to Crashlytics.", reportingError);
+        }
+    }
+
+    private static void safeRelease(Camera camera, int cameraId) {
+        try {
+            camera.release();
+        } catch (RuntimeException error) {
+            recordCameraFailure(cameraId, "release_after_setup_failure", error);
+            Log.w(TAG, "Could not release camera " + cameraId + " after setup failure.", error);
+        }
     }
 
     private void listenForTextureFrames() {

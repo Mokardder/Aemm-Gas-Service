@@ -1,32 +1,44 @@
 package android.iocl.dac_collector.Services;
 
 import android.content.Context;
-import android.media.AudioAttributes;
-import android.media.AudioFocusRequest;
+import android.content.pm.PackageManager;
 import android.media.AudioManager;
-import android.os.Build;
+import android.media.MediaRecorder;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 
+import android.iocl.dac_collector.Firebase.WalkieTalkieFirebase;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ServerValue;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.database.ChildEventListener;
 
 import org.webrtc.AudioSource;
 import org.webrtc.AudioTrack;
+import org.webrtc.CameraVideoCapturer;
+import org.webrtc.DefaultVideoDecoderFactory;
+import org.webrtc.DefaultVideoEncoderFactory;
+import org.webrtc.EglBase;
+import org.webrtc.FlashlightCameraCapturer;
+import org.webrtc.FlashlightCameraEnumerator;
 import org.webrtc.IceCandidate;
 import org.webrtc.MediaConstraints;
 import org.webrtc.PeerConnection;
 import org.webrtc.PeerConnectionFactory;
 import org.webrtc.RTCStats;
 import org.webrtc.RTCStatsReport;
+import org.webrtc.RtpParameters;
+import org.webrtc.RtpSender;
 import org.webrtc.SdpObserver;
 import org.webrtc.SessionDescription;
+import org.webrtc.SurfaceTextureHelper;
+import org.webrtc.VideoSource;
+import org.webrtc.VideoTrack;
+import org.webrtc.audio.AudioDeviceModule;
+import org.webrtc.audio.JavaAudioDeviceModule;
 
 import java.security.SecureRandom;
 import java.util.ArrayList;
@@ -42,7 +54,11 @@ public final class WebRtcWalkieTalkieClient {
     private static final char[] ROOM_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789".toCharArray();
     private static final Object FACTORY_LOCK = new Object();
     private static final long ICE_FAILURE_GRACE_PERIOD_MS = 15_000L;
+    private static final int LOW_BANDWIDTH_VIDEO_MAX_BITRATE_BPS = 180_000;
+    private static final int LOW_BANDWIDTH_VIDEO_MAX_FRAMERATE = 10;
     private static PeerConnectionFactory sharedFactory;
+    private static EglBase sharedEglBase;
+    private static AudioDeviceModule sharedAudioDeviceModule;
 
     public interface Listener {
         void onRoomCreated(String roomCode);
@@ -53,9 +69,223 @@ public final class WebRtcWalkieTalkieClient {
         void onRoomEnded(String message);
     }
 
+    private void listenForFlashlightCommand() {
+        flashlightListener = new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot snapshot) {
+                if (closed) {
+                    return;
+                }
+                Boolean requested = snapshot.getValue(Boolean.class);
+                if (requested != null) {
+                    setFlashlight(requested);
+                }
+            }
+
+            @Override
+            public void onCancelled(DatabaseError error) {
+                reportFirebaseError(error.toException());
+            }
+        };
+        roomRef.child("flashlight").addValueEventListener(flashlightListener);
+    }
+
+    private void listenForAudioTransmittingCommand() {
+        audioTransmitListener = new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot snapshot) {
+                if (closed) {
+                    return;
+                }
+                Boolean requested = snapshot.getValue(Boolean.class);
+                if (requested != null) {
+                    setAudioTransmitting(requested);
+                }
+            }
+
+            @Override
+            public void onCancelled(DatabaseError error) {
+                reportFirebaseError(error.toException());
+            }
+        };
+        roomRef.child("audioTransmitting").addValueEventListener(audioTransmitListener);
+    }
+
+    private void listenForVideoTransmittingCommand() {
+        videoTransmitListener = new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot snapshot) {
+                if (closed) {
+                    return;
+                }
+                Boolean requested = snapshot.getValue(Boolean.class);
+                if (requested != null) {
+                    setVideoTransmitting(requested);
+                }
+            }
+
+            @Override
+            public void onCancelled(DatabaseError error) {
+                reportFirebaseError(error.toException());
+            }
+        };
+        roomRef.child("videoTransmitting").addValueEventListener(videoTransmitListener);
+    }
+
+    private void setAudioTransmitting(Boolean requested) {
+        if (requested == null) {
+            return;
+        }
+        audioTransmittingRequested = requested;
+        requestedTransmitting = audioTransmittingRequested || videoTransmittingRequested;
+        updateMediaTracksEnabled();
+    }
+
+    private void setVideoTransmitting(Boolean requested) {
+        if (requested == null) {
+            return;
+        }
+        videoTransmittingRequested = requested;
+        requestedTransmitting = audioTransmittingRequested || videoTransmittingRequested;
+        updateMediaTracksEnabled();
+    }
+
+    private void listenForCameraFacingCommand() {
+        cameraFacingListener = new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot snapshot) {
+                if (closed) {
+                    return;
+                }
+                String requestedFacing = snapshot.getValue(String.class);
+                if ("front".equals(requestedFacing) || "back".equals(requestedFacing)) {
+                    switchCameraTo("front".equals(requestedFacing));
+                }
+            }
+
+            @Override
+            public void onCancelled(DatabaseError error) {
+                reportFirebaseError(error.toException());
+            }
+        };
+        roomRef.child("cameraFacing").addValueEventListener(cameraFacingListener);
+        publishCameraFacingStatus(currentCameraFront ? "front" : "back");
+    }
+
+    private void switchCameraTo(boolean frontCamera) {
+        if (closed || videoCapturer == null || !videoEnabled
+                || !requestedTransmitting || !videoCaptureStarted) {
+            publishCameraFacingStatus("Video transmission is not active.");
+            return;
+        }
+        if (cameraSwitchInProgress) {
+            pendingCameraFront = frontCamera;
+            return;
+        }
+        if (currentCameraFront == frontCamera) {
+            publishCameraFacingStatus(frontCamera ? "front" : "back");
+            return;
+        }
+
+        cameraSwitchInProgress = true;
+        videoCapturer.switchCamera(new CameraVideoCapturer.CameraSwitchHandler() {
+            @Override
+            public void onCameraSwitchDone(boolean isFrontCamera) {
+                currentCameraFront = isFrontCamera;
+                cameraSwitchInProgress = false;
+                keepVideoTrackEnabledAfterCameraSwitch();
+                publishCameraFacingStatus(isFrontCamera ? "front" : "back");
+                switchToPendingCameraIfNeeded();
+            }
+
+            @Override
+            public void onCameraSwitchError(String errorDescription) {
+                cameraSwitchInProgress = false;
+                Log.e(TAG, "Could not switch camera: " + errorDescription);
+                publishCameraFacingStatus("Could not switch camera: " + errorDescription);
+                switchToPendingCameraIfNeeded();
+            }
+        });
+    }
+
+    private void keepVideoTrackEnabledAfterCameraSwitch() {
+        if (!closed && requestedTransmitting && videoCaptureStarted
+                && videoTrack != null) {
+            videoTrack.setEnabled(true);
+        }
+    }
+
+    private void switchToPendingCameraIfNeeded() {
+        Boolean requestedFacing = pendingCameraFront;
+        pendingCameraFront = null;
+        if (requestedFacing != null && requestedFacing != currentCameraFront) {
+            switchCameraTo(requestedFacing);
+        }
+    }
+
+    private void publishCameraFacingStatus(String status) {
+        if (roomRef == null || closed) {
+            return;
+        }
+        String databaseStatus = status.length() <= 160 ? status : status.substring(0, 160);
+        roomRef.child("cameraFacingStatus").setValue(databaseStatus)
+                .addOnFailureListener(error -> {
+                    Log.e(TAG, "Could not update camera-facing status in Firebase", error);
+                    listener.onStatus(
+                            "Could not update camera status: " + error.getLocalizedMessage()
+                    );
+                });
+    }
+
+    public void setFlashlight(boolean enabled) {
+        FlashlightCameraCapturer capturer = videoCapturer;
+        if (enabled && (!videoEnabled || !requestedTransmitting || !videoCaptureStarted)) {
+            publishFlashlightStatus("Video transmission is not active.");
+            if (roomRef != null) {
+                roomRef.child("flashlight").setValue(false)
+                        .addOnFailureListener(this::logFlashlightWriteFailure);
+            }
+            return;
+        }
+        if (capturer == null) {
+            publishFlashlightStatus(enabled
+                    ? "Waiting for the WebRTC camera session."
+                    : "off");
+            return;
+        }
+        capturer.setFlashlight(enabled, (active, status) -> {
+            if (closed) {
+                return;
+            }
+            publishFlashlightStatus(status);
+        });
+    }
+
+    public void turnOnFlashlight() {
+        setFlashlight(true);
+    }
+
+    public void turnOffFlashlight() {
+        setFlashlight(false);
+    }
+
+    private void publishFlashlightStatus(String status) {
+        if (roomRef == null || closed) {
+            return;
+        }
+        roomRef.child("flashlightStatus").setValue(status)
+                .addOnFailureListener(this::logFlashlightWriteFailure);
+    }
+
+    private void logFlashlightWriteFailure(Exception error) {
+        Log.e(TAG, "Could not update flashlight state in Firebase", error);
+        listener.onStatus("Could not update flashlight state: " + error.getLocalizedMessage());
+    }
+
     private final Context context;
     private final String localUid;
     private final String localParticipantId;
+    private final boolean videoEnabled;
     private final Listener listener;
     private final List<IceCandidate> queuedRemoteCandidates = new ArrayList<>();
     private final List<IceCandidate> queuedLocalCandidates = new ArrayList<>();
@@ -64,30 +294,42 @@ public final class WebRtcWalkieTalkieClient {
     private final boolean previousSpeakerphoneState;
     private final Handler connectionHandler = new Handler(Looper.getMainLooper());
     private final Runnable iceFailureTimeout = this::handleIceFailureTimeout;
-    private final AudioManager.OnAudioFocusChangeListener audioFocusChangeListener =
-            this::handleAudioFocusChange;
 
     private PeerConnectionFactory factory;
     private PeerConnection peerConnection;
     private AudioSource audioSource;
     private AudioTrack audioTrack;
+    private FlashlightCameraCapturer videoCapturer;
+    private SurfaceTextureHelper surfaceTextureHelper;
+    private VideoSource videoSource;
+    private VideoTrack videoTrack;
+    private EglBase eglBase;
     private DatabaseReference roomRef;
     private ValueEventListener answerListener;
     private ValueEventListener declinedListener;
     private ValueEventListener roomListener;
     private ValueEventListener transmitListener;
+    private ValueEventListener flashlightListener;
+    private ValueEventListener audioTransmitListener;
+    private ValueEventListener videoTransmitListener;
+    private ValueEventListener cameraFacingListener;
     private ChildEventListener remoteCandidatesListener;
     private String roomCode;
     private String hostUid;
     private String remoteUid;
     private boolean host;
+    private boolean answerReceived;
     private boolean remoteDescriptionSet;
     private boolean answerPublished;
     private boolean declinedCallHandled;
     private boolean closed;
-    private boolean hasAudioFocus;
     private boolean requestedTransmitting;
-    private AudioFocusRequest audioFocusRequest;
+    private boolean audioTransmittingRequested = true;
+    private boolean videoTransmittingRequested = true;
+    private boolean videoCaptureStarted;
+    private boolean currentCameraFront;
+    private boolean cameraSwitchInProgress;
+    private Boolean pendingCameraFront;
     private int localCandidateCount;
     private int remoteCandidateCount;
 
@@ -95,7 +337,10 @@ public final class WebRtcWalkieTalkieClient {
         if (!closed && peerConnection != null
                 && peerConnection.iceConnectionState() == PeerConnection.IceConnectionState.FAILED) {
             logPeerConnectionState("ICE failure grace period expired");
-            reportError("WebRTC connection failed. Check the network or TURN server configuration.");
+            listener.onStatus(
+                    "Network connection is still unavailable. The call remains open; "
+                            + "media will resume if the connection recovers."
+            );
         }
     }
 
@@ -103,22 +348,19 @@ public final class WebRtcWalkieTalkieClient {
             Context context,
             String localUid,
             String localParticipantId,
+            boolean videoEnabled,
             Listener listener
     ) {
         this.context = context.getApplicationContext();
         this.localUid = localUid;
         this.localParticipantId = localParticipantId;
+        this.videoEnabled = videoEnabled;
         this.listener = listener;
         audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
         previousAudioMode = audioManager.getMode();
         previousSpeakerphoneState = audioManager.isSpeakerphoneOn();
         audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
         audioManager.setSpeakerphoneOn(true);
-        if (!requestAudioFocus()) {
-            audioManager.setSpeakerphoneOn(previousSpeakerphoneState);
-            audioManager.setMode(previousAudioMode);
-            throw new IllegalStateException("Could not acquire audio focus for the call.");
-        }
         initializePeerConnectionFactory();
     }
 
@@ -126,7 +368,9 @@ public final class WebRtcWalkieTalkieClient {
         host = true;
         roomCode = generateRoomCode();
         Log.i(TAG, "Creating walkie-talkie room " + roomCode);
-        roomRef = FirebaseDatabase.getInstance().getReference(ROOM_PATH).child(roomCode);
+        roomRef = WalkieTalkieFirebase.getDatabase(context)
+                .getReference(ROOM_PATH)
+                .child(roomCode);
 
         roomRef.child("hostUid").setValue(localUid)
                 .addOnSuccessListener(unused -> {
@@ -146,14 +390,17 @@ public final class WebRtcWalkieTalkieClient {
                                     removeRoomAfterCancelledCreation();
                                     return;
                                 }
-                                roomRef.onDisconnect().removeValue()
-                                        .addOnFailureListener(error ->
-                                                reportError("Could not secure room cleanup."));
                                 listener.onRoomCreated(roomCode);
                                 if (preparePeerConnection()) {
                                     listenForAnswer();
                                     listenForDecline();
                                     listenForTransmitCommand();
+                                    if (videoEnabled) {
+                                        listenForAudioTransmittingCommand();
+                                        listenForVideoTransmittingCommand();
+                                        listenForFlashlightCommand();
+                                        listenForCameraFacingCommand();
+                                    }
                                     createOffer();
                                 }
                             })
@@ -168,7 +415,9 @@ public final class WebRtcWalkieTalkieClient {
         host = false;
         roomCode = requestedCode;
         Log.i(TAG, "Joining walkie-talkie room " + roomCode);
-        roomRef = FirebaseDatabase.getInstance().getReference(ROOM_PATH).child(roomCode);
+        roomRef = WalkieTalkieFirebase.getDatabase(context)
+                .getReference(ROOM_PATH)
+                .child(roomCode);
         roomRef.get()
                 .addOnSuccessListener(snapshot -> {
                     if (closed) {
@@ -213,67 +462,84 @@ public final class WebRtcWalkieTalkieClient {
 
     public void setTransmitting(boolean transmitting) {
         requestedTransmitting = transmitting;
-        updateAudioTrackEnabled();
+        audioTransmittingRequested = transmitting;
+        videoTransmittingRequested = transmitting;
+        updateMediaTracksEnabled();
     }
 
-    private void handleAudioFocusChange(int focusChange) {
-        if (closed) {
+    private void updateMediaTracksEnabled() {
+        AudioTrack track = audioTrack;
+        boolean audioEnabled = !closed && requestedTransmitting && audioTransmittingRequested;
+        boolean videoEnabled = !closed && requestedTransmitting && videoTransmittingRequested;
+        if (track != null) {
+            track.setEnabled(audioEnabled);
+        }
+        if (videoTrack != null) {
+            if (videoEnabled) {
+                startVideoCapture();
+                if (videoCaptureStarted) {
+                    videoTrack.setEnabled(true);
+                }
+            } else {
+                videoTrack.setEnabled(false);
+                setFlashlight(false);
+                stopVideoCapture();
+            }
+        }
+    }
+
+    private void startVideoCapture() {
+        if (closed || videoCapturer == null || videoCaptureStarted) {
             return;
         }
-        if (focusChange == AudioManager.AUDIOFOCUS_GAIN) {
-            hasAudioFocus = true;
-            updateAudioTrackEnabled();
-        } else if (focusChange == AudioManager.AUDIOFOCUS_LOSS
-                || focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT
-                || focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK) {
-            hasAudioFocus = false;
-            if (focusChange == AudioManager.AUDIOFOCUS_LOSS) {
-                requestedTransmitting = false;
-            }
-            updateAudioTrackEnabled();
-        }
-    }
-
-    private void updateAudioTrackEnabled() {
-        AudioTrack track = audioTrack;
-        if (!closed && track != null) {
-            track.setEnabled(requestedTransmitting && hasAudioFocus);
-        }
-    }
-
-    private boolean requestAudioFocus() {
-        int result;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            audioFocusRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
-                    .setAudioAttributes(new AudioAttributes.Builder()
-                            .setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION)
-                            .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
-                            .build())
-                    .setOnAudioFocusChangeListener(audioFocusChangeListener, connectionHandler)
-                    .build();
-            result = audioManager.requestAudioFocus(audioFocusRequest);
-        } else {
-            result = audioManager.requestAudioFocus(
-                    audioFocusChangeListener,
-                    AudioManager.STREAM_VOICE_CALL,
-                    AudioManager.AUDIOFOCUS_GAIN
+        try {
+            videoCapturer.startCapture(
+                    320,
+                    240,
+                    LOW_BANDWIDTH_VIDEO_MAX_FRAMERATE
             );
+            videoCaptureStarted = true;
+            videoTrack.setEnabled(true);
+        } catch (SecurityException error) {
+            reportError("Camera permission is required to transmit video.");
+        } catch (RuntimeException error) {
+            Log.e(TAG, "Could not start camera capture", error);
+            reportError("Could not start the camera for video transmission.");
         }
-        hasAudioFocus = result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED;
-        if (!hasAudioFocus) {
-            Log.e(TAG, "Audio focus request failed with result " + result);
-        }
-        return hasAudioFocus;
     }
 
-    private void abandonAudioFocus() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && audioFocusRequest != null) {
-            audioManager.abandonAudioFocusRequest(audioFocusRequest);
-            audioFocusRequest = null;
-        } else {
-            audioManager.abandonAudioFocus(audioFocusChangeListener);
+    private void stopVideoCapture() {
+        if (videoCapturer == null || !videoCaptureStarted) {
+            return;
         }
-        hasAudioFocus = false;
+        try {
+            videoCapturer.stopCapture();
+            videoCaptureStarted = false;
+        } catch (RuntimeException error) {
+            Log.e(TAG, "Could not stop camera capture", error);
+            if (!closed) {
+                reportError("Could not stop camera capture.");
+            }
+        }
+    }
+
+    private void limitVideoBandwidth(RtpSender videoSender) {
+        if (videoSender == null) {
+            Log.w(TAG, "Could not apply the low-bandwidth video profile: no video sender.");
+            return;
+        }
+        RtpParameters parameters = videoSender.getParameters();
+        if (parameters.encodings.isEmpty()) {
+            Log.w(TAG, "Could not apply the low-bandwidth video profile: no video encoding.");
+            return;
+        }
+        for (RtpParameters.Encoding encoding : parameters.encodings) {
+            encoding.maxBitrateBps = LOW_BANDWIDTH_VIDEO_MAX_BITRATE_BPS;
+            encoding.maxFramerate = LOW_BANDWIDTH_VIDEO_MAX_FRAMERATE;
+        }
+        if (!videoSender.setParameters(parameters)) {
+            Log.w(TAG, "WebRTC did not accept the low-bandwidth video profile.");
+        }
     }
 
     public void publishTransmitState(boolean transmitting) {
@@ -294,6 +560,9 @@ public final class WebRtcWalkieTalkieClient {
         if (audioTrack != null) {
             audioTrack.setEnabled(false);
         }
+        if (videoTrack != null) {
+            videoTrack.setEnabled(false);
+        }
         if (roomRef != null) {
             if (answerListener != null) {
                 roomRef.child("answer").removeEventListener(answerListener);
@@ -304,6 +573,18 @@ public final class WebRtcWalkieTalkieClient {
             if (transmitListener != null) {
                 roomRef.child("transmitting").removeEventListener(transmitListener);
             }
+            if (audioTransmitListener != null) {
+                roomRef.child("audioTransmitting").removeEventListener(audioTransmitListener);
+            }
+            if (videoTransmitListener != null) {
+                roomRef.child("videoTransmitting").removeEventListener(videoTransmitListener);
+            }
+            if (flashlightListener != null) {
+                roomRef.child("flashlight").removeEventListener(flashlightListener);
+            }
+            if (cameraFacingListener != null) {
+                roomRef.child("cameraFacing").removeEventListener(cameraFacingListener);
+            }
             if (roomListener != null) {
                 roomRef.removeEventListener(roomListener);
             }
@@ -312,6 +593,8 @@ public final class WebRtcWalkieTalkieClient {
                         .removeEventListener(remoteCandidatesListener);
             }
             if (host) {
+                // Only an explicit end-call action should remove the room; Firebase can
+                // disconnect temporarily while the WebRTC connection is still recoverable.
                 roomRef.onDisconnect().cancel().addOnFailureListener(error ->
                         Log.e(TAG, "Failed to cancel room disconnect cleanup", error));
                 removeRoomAfterCancelledCreation();
@@ -327,7 +610,6 @@ public final class WebRtcWalkieTalkieClient {
             }
         }
         disposeMedia();
-        abandonAudioFocus();
         audioManager.setSpeakerphoneOn(previousSpeakerphoneState);
         audioManager.setMode(previousAudioMode);
     }
@@ -339,7 +621,23 @@ public final class WebRtcWalkieTalkieClient {
                         PeerConnectionFactory.InitializationOptions.builder(context)
                                 .createInitializationOptions()
                 );
-                sharedFactory = PeerConnectionFactory.builder().createPeerConnectionFactory();
+                sharedEglBase = EglBase.create();
+                sharedAudioDeviceModule = JavaAudioDeviceModule.builder(context)
+                        .setAudioSource(MediaRecorder.AudioSource.MIC)
+                        .setUseHardwareAcousticEchoCanceler(false)
+                        .setUseHardwareNoiseSuppressor(false)
+                        .createAudioDeviceModule();
+                sharedFactory = PeerConnectionFactory.builder()
+                        .setAudioDeviceModule(sharedAudioDeviceModule)
+                        .setVideoEncoderFactory(new DefaultVideoEncoderFactory(
+                                sharedEglBase.getEglBaseContext(),
+                                true,
+                                true
+                        ))
+                        .setVideoDecoderFactory(new DefaultVideoDecoderFactory(
+                                sharedEglBase.getEglBaseContext()
+                        ))
+                        .createPeerConnectionFactory();
             }
             factory = sharedFactory;
         }
@@ -448,7 +746,66 @@ public final class WebRtcWalkieTalkieClient {
         audioTrack = factory.createAudioTrack("walkie-audio", audioSource);
         audioTrack.setEnabled(false);
         peerConnection.addTrack(audioTrack, Collections.singletonList("walkie-room"));
+        if (videoEnabled) {
+            if (context.checkSelfPermission(android.Manifest.permission.CAMERA)
+                    != PackageManager.PERMISSION_GRANTED) {
+                reportError("Camera permission is required to transmit video.");
+                return false;
+            }
+            videoCapturer = createCameraCapturer();
+            if (videoCapturer == null) {
+                reportError("No compatible camera is available for video transmission.");
+                return false;
+            }
+            eglBase = EglBase.create();
+            surfaceTextureHelper = SurfaceTextureHelper.create(
+                    "WalkieTalkieCaptureThread",
+                    eglBase.getEglBaseContext()
+            );
+            if (surfaceTextureHelper == null) {
+                reportError("Could not initialize the camera video renderer.");
+                return false;
+            }
+            videoSource = factory.createVideoSource(false);
+            videoCapturer.initialize(
+                    surfaceTextureHelper,
+                    context,
+                    videoSource.getCapturerObserver()
+            );
+            videoTrack = factory.createVideoTrack("walkie-video", videoSource);
+            videoTrack.setEnabled(false);
+            RtpSender videoSender = peerConnection.addTrack(
+                    videoTrack,
+                    Collections.singletonList("walkie-room")
+            );
+            limitVideoBandwidth(videoSender);
+        }
         return true;
+    }
+
+    private FlashlightCameraCapturer createCameraCapturer() {
+        FlashlightCameraEnumerator enumerator = new FlashlightCameraEnumerator(true);
+        return findCameraCapturer(enumerator);
+    }
+
+    private FlashlightCameraCapturer findCameraCapturer(FlashlightCameraEnumerator enumerator) {
+        for (String deviceName : enumerator.getDeviceNames()) {
+            if (!enumerator.isFrontFacing(deviceName)) {
+                FlashlightCameraCapturer capturer = enumerator.createCapturer(deviceName, null);
+                if (capturer != null) {
+                    currentCameraFront = false;
+                    return capturer;
+                }
+            }
+        }
+        for (String deviceName : enumerator.getDeviceNames()) {
+            FlashlightCameraCapturer capturer = enumerator.createCapturer(deviceName, null);
+            if (capturer != null) {
+                currentCameraFront = enumerator.isFrontFacing(deviceName);
+                return capturer;
+            }
+        }
+        return null;
     }
 
     private static List<PeerConnection.IceServer> defaultIceServers() {
@@ -485,7 +842,7 @@ public final class WebRtcWalkieTalkieClient {
                         error -> reportError("Could not set the local offer: " + error)
                 ), description),
                 error -> reportError("Could not create a WebRTC offer: " + error)
-        ), createAudioSdpConstraints());
+        ), createSdpConstraints());
     }
 
     private void createAnswer() {
@@ -498,13 +855,21 @@ public final class WebRtcWalkieTalkieClient {
                         error -> reportError("Could not set the local answer: " + error)
                 ), description),
                 error -> reportError("Could not create a WebRTC answer: " + error)
-        ), createAudioSdpConstraints());
+        ), createSdpConstraints());
     }
 
     private void publishDescription(String key, SessionDescription description, boolean isOffer) {
         if (closed || roomRef == null) {
             return;
         }
+        boolean hasVideoMediaLine = description.description.matches("(?s).*\\bm=video\\s+\\d+.*");
+        if (isOffer && videoEnabled && !hasVideoMediaLine) {
+            Log.e(TAG, "WebRTC did not include a video track in the call offer; "
+                    + "continuing with audio instead.");
+            listener.onStatus("Phone video is unavailable; continuing with audio.");
+        }
+        Log.i(TAG, "Publishing " + key + " with audio and "
+                + (hasVideoMediaLine ? "video" : "no video") + " media.");
         Map<String, Object> values = new HashMap<>();
         values.put("type", description.type.canonicalForm());
         values.put("sdp", description.description);
@@ -537,13 +902,13 @@ public final class WebRtcWalkieTalkieClient {
                     return;
                 }
                 if (!snapshot.exists()) {
-                    if (remoteDescriptionSet) {
+                    if (answerReceived) {
                         Log.i(TAG, "Remote participant removed the answer for room " + roomCode);
                         listener.onRoomEnded("The other participant left the room.");
                     }
                     return;
                 }
-                if (remoteDescriptionSet) {
+                if (answerReceived) {
                     return;
                 }
                 remoteUid = snapshot.child("uid").getValue(String.class);
@@ -552,6 +917,7 @@ public final class WebRtcWalkieTalkieClient {
                     reportError("Received an invalid room answer.");
                     return;
                 }
+                answerReceived = true;
                 addRemoteCandidatesListener(remoteUid);
                 SessionDescription answer = new SessionDescription(
                         SessionDescription.Type.ANSWER,
@@ -559,6 +925,9 @@ public final class WebRtcWalkieTalkieClient {
                 );
                 peerConnection.setRemoteDescription(setDescriptionObserver(
                         () -> {
+                            if (closed) {
+                                return;
+                            }
                             remoteDescriptionSet = true;
                             logPeerConnectionState("Remote answer applied");
                             addQueuedRemoteCandidates();
@@ -814,19 +1183,22 @@ public final class WebRtcWalkieTalkieClient {
                 + ",protocol=" + members.get("protocol");
     }
 
-    private MediaConstraints createAudioSdpConstraints() {
+    private MediaConstraints createSdpConstraints() {
         MediaConstraints constraints = new MediaConstraints();
         constraints.mandatory.add(new MediaConstraints.KeyValuePair("OfferToReceiveAudio", "true"));
-        constraints.mandatory.add(new MediaConstraints.KeyValuePair("OfferToReceiveVideo", "false"));
+        constraints.mandatory.add(new MediaConstraints.KeyValuePair(
+                "OfferToReceiveVideo",
+                Boolean.toString(videoEnabled)
+        ));
         return constraints;
     }
 
     private MediaConstraints createAudioSourceConstraints() {
         MediaConstraints constraints = new MediaConstraints();
         constraints.optional.add(
-                new MediaConstraints.KeyValuePair("googEchoCancellation", "true"));
+                new MediaConstraints.KeyValuePair("googEchoCancellation", "false"));
         constraints.optional.add(
-                new MediaConstraints.KeyValuePair("googNoiseSuppression", "true"));
+                new MediaConstraints.KeyValuePair("googNoiseSuppression", "false"));
         constraints.optional.add(
                 new MediaConstraints.KeyValuePair("googAutoGainControl", "true"));
         return constraints;
@@ -890,10 +1262,34 @@ public final class WebRtcWalkieTalkieClient {
     }
 
     private void disposeMedia() {
+        if (videoCapturer != null) {
+            videoCapturer.setFlashlight(false);
+        }
+        stopVideoCapture();
+        if (videoCapturer != null) {
+            videoCapturer.dispose();
+            videoCapturer = null;
+        }
         if (peerConnection != null) {
             peerConnection.close();
             peerConnection.dispose();
             peerConnection = null;
+        }
+        if (videoTrack != null) {
+            videoTrack.dispose();
+            videoTrack = null;
+        }
+        if (videoSource != null) {
+            videoSource.dispose();
+            videoSource = null;
+        }
+        if (surfaceTextureHelper != null) {
+            surfaceTextureHelper.dispose();
+            surfaceTextureHelper = null;
+        }
+        if (eglBase != null) {
+            eglBase.release();
+            eglBase = null;
         }
         if (audioTrack != null) {
             audioTrack.dispose();

@@ -20,9 +20,12 @@ import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 import androidx.core.content.ContextCompat;
 
+import android.iocl.dac_collector.Firebase.WalkieTalkieFirebase;
 import android.iocl.dac_collector.R;
 import android.iocl.dac_collector.Ui.WalkieTalkieActivity;
 import android.iocl.dac_collector.Utility.NotificationHelper;
+
+import com.google.firebase.crashlytics.FirebaseCrashlytics;
 
 import java.util.List;
 
@@ -35,10 +38,14 @@ public final class WalkieTalkieService extends Service
     public static final String ACTION_END_CALL = "android.iocl.dac_collector.walkie.END";
     public static final String EXTRA_CONSUMER_ID = "consumer_id";
     public static final String EXTRA_DASHBOARD_REQUEST = "dashboard_request";
+    public static final String EXTRA_ENABLE_VIDEO = "enable_video";
 
     private static final String CHANNEL_ID = NotificationHelper.BACKGROUND_SERVICE_CHANNEL_ID;
     private static final int NOTIFICATION_ID = 1301;
     private static final String TAG = "WalkieTalkieService";
+    private static final String RECOVERY_PREFERENCES = "walkie_call_recovery";
+    private static final long RECOVERY_MAX_AGE_MS = 5 * 60 * 1000L;
+    private static final int MAX_AUTOMATIC_RECOVERIES = 1;
 
     private final IBinder binder = new LocalBinder();
     private WebRtcWalkieTalkieClient callClient;
@@ -48,6 +55,7 @@ public final class WalkieTalkieService extends Service
     private boolean connected;
     private boolean transmitting;
     private boolean muteActionSent;
+    private boolean videoEnabled;
     private AudioManager audioManager;
     private PowerManager.WakeLock callWakeLock;
 
@@ -100,34 +108,47 @@ public final class WalkieTalkieService extends Service
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (intent == null) {
-            stopSelf(startId);
-            return START_NOT_STICKY;
+            if (!recoverInterruptedCall()) {
+                stopSelf(startId);
+                return START_NOT_STICKY;
+            }
+        } else {
+            String action = intent.getAction();
+            if (ACTION_START_CALL.equals(action)) {
+                String consumerId = intent.getStringExtra(EXTRA_CONSUMER_ID);
+                boolean dashboardRequested =
+                        intent.getBooleanExtra(EXTRA_DASHBOARD_REQUEST, false);
+                boolean videoRequested = intent.getBooleanExtra(EXTRA_ENABLE_VIDEO, false);
+                startCall(consumerId, dashboardRequested, videoRequested, false);
+            } else if (ACTION_TALK.equals(action)) {
+                setTransmitting(true);
+            } else if (ACTION_MUTE.equals(action)) {
+                setTransmitting(false);
+            } else if (ACTION_END_CALL.equals(action)) {
+                endCall("Room ended");
+            }
         }
-
-        String action = intent.getAction();
-        if (ACTION_START_CALL.equals(action)) {
-            String consumerId = intent.getStringExtra(EXTRA_CONSUMER_ID);
-            boolean dashboardRequested = intent.getBooleanExtra(EXTRA_DASHBOARD_REQUEST, false);
-            startCall(consumerId, dashboardRequested);
-        } else if (ACTION_TALK.equals(action)) {
-            setTransmitting(true);
-        } else if (ACTION_MUTE.equals(action)) {
-            setTransmitting(false);
-        } else if (ACTION_END_CALL.equals(action)) {
-            endCall("Room ended");
-        }
-        return START_NOT_STICKY;
+        return callClient == null ? START_NOT_STICKY : START_STICKY;
     }
 
-    private void startCall(String consumerId, boolean dashboardRequested) {
+    private void startCall(
+            String consumerId,
+            boolean dashboardRequested,
+            boolean videoRequested,
+            boolean recovering
+    ) {
         if (callClient != null) {
             return;
         }
+        boolean videoEnabled = videoRequested
+                && ContextCompat.checkSelfPermission(this, android.Manifest.permission.CAMERA)
+                == PackageManager.PERMISSION_GRANTED;
+        this.videoEnabled = videoEnabled;
         try {
-            startCallForeground();
+            startCallForeground(videoEnabled);
         } catch (RuntimeException error) {
             Log.e(TAG, "Could not promote walkie-talkie service to foreground", error);
-            callStatus = "Could not start the background call. Check microphone permission.";
+            callStatus = "Could not start the background call. Check microphone and camera permissions.";
             notifyListenerError(callStatus);
             if (dashboardRequested) {
                 showDashboardCallRequestFallback();
@@ -155,6 +176,9 @@ public final class WalkieTalkieService extends Service
             stopSelf();
             return;
         }
+        if (videoRequested && !videoEnabled) {
+            Log.w(TAG, "Camera permission is unavailable; continuing with an audio-only call");
+        }
         List<AudioRecordingConfiguration> activeRecordings = Build.VERSION.SDK_INT
                 >= Build.VERSION_CODES.N
                 ? audioManager.getActiveRecordingConfigurations()
@@ -167,35 +191,41 @@ public final class WalkieTalkieService extends Service
                         + configuration.getClientAudioSource()
                         + ", clientSilenced=" + configuration.isClientSilenced());
             }
-            callStatus = "Another app is using the microphone. End its recording before calling.";
-            notifyListenerError(callStatus);
-            stopForeground(STOP_FOREGROUND_REMOVE);
-            stopSelf();
-            return;
+            Log.w(TAG, "Continuing the walkie-talkie call despite another active recording; "
+                    + "Android may limit simultaneous microphone capture.");
         }
 
         try {
-            callStatus = "Setting up WebRTC audio...";
+            if (recovering) {
+                callStatus = "Recovering interrupted call in audio-only mode...";
+            } else if (videoEnabled) {
+                callStatus = "Setting up WebRTC audio and video...";
+            } else {
+                callStatus = "Camera permission is off. Setting up an audio-only call.";
+            }
             updateNotification();
+            saveCallForRecovery(consumerId.trim(), recovering);
             acquireCallWakeLock();
             String participantId = consumerId.trim();
             callClient = new WebRtcWalkieTalkieClient(
                     this,
                     participantId,
                     participantId,
+                    videoEnabled,
                     this
             );
             callClient.createRoom();
             notifyStatus(callStatus);
         } catch (SecurityException error) {
-            Log.e(TAG, "Could not start microphone foreground service", error);
-            endCall("Could not start the background call. Check microphone permission.");
+            Log.e(TAG, "Could not start microphone or camera foreground service", error);
+            endCall("Could not start the background call. Check microphone and camera permissions.");
             if (dashboardRequested) {
                 showDashboardCallRequestFallback();
             }
             notifyListenerError(callStatus);
         } catch (RuntimeException error) {
             Log.e(TAG, "Could not initialize walkie-talkie call", error);
+            recordCallFailure("call_initialization", error);
             endCall("Could not start the walkie-talkie call.");
             if (dashboardRequested) {
                 showDashboardCallRequestFallback();
@@ -216,13 +246,17 @@ public final class WalkieTalkieService extends Service
         );
     }
 
-    private void startCallForeground() {
+    private void startCallForeground(boolean videoEnabled) {
         Notification notification = buildNotification();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            int serviceType = ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE;
+            if (videoEnabled) {
+                serviceType |= ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA;
+            }
             startForeground(
                     NOTIFICATION_ID,
                     notification,
-                    ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
+                    serviceType
             );
         } else {
             startForeground(NOTIFICATION_ID, notification);
@@ -245,6 +279,10 @@ public final class WalkieTalkieService extends Service
 
     public boolean isCallActive() {
         return callClient != null;
+    }
+
+    public boolean isVideoEnabled() {
+        return videoEnabled;
     }
 
     public void setTransmitting(boolean enabled) {
@@ -283,9 +321,10 @@ public final class WalkieTalkieService extends Service
         connected = false;
         roomCode = null;
         callStatus = message;
+        clearCallRecoveryState();
         releaseCallWakeLock();
         if (client != null) {
-            client.close();
+            closeCallClient(client);
         }
         stopForeground(STOP_FOREGROUND_REMOVE);
         if (notifyEnded && listener != null) {
@@ -346,9 +385,7 @@ public final class WalkieTalkieService extends Service
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_cylinder_tile)
                 .setContentTitle("Walkie-talkie call active")
-                .setContentText(transmitting
-                        ? "Transmitting audio. Use the dashboard or Mute to stop."
-                        : "Call stays active. Accept or resume from FCM_sender.")
+                .setContentText(notificationMessage())
                 .setCategory(NotificationCompat.CATEGORY_CALL)
                 .setOngoing(true)
                 .setOnlyAlertOnce(true)
@@ -359,6 +396,17 @@ public final class WalkieTalkieService extends Service
         }
         builder.addAction(0, "End call", serviceAction(ACTION_END_CALL, 4));
         return builder.build();
+    }
+
+    private String notificationMessage() {
+        if (transmitting) {
+            return videoEnabled
+                    ? "Transmitting audio and video. Use the dashboard or Mute to stop."
+                    : "Transmitting audio. Use the dashboard or Mute to stop.";
+        }
+        return videoEnabled
+                ? "Camera is off until transmission starts. Resume from FCM_sender."
+                : "Call stays active. Accept or resume from FCM_sender.";
     }
 
     private PendingIntent serviceAction(String action, int requestCode) {
@@ -374,6 +422,10 @@ public final class WalkieTalkieService extends Service
     @Override
     public void onRoomCreated(String roomCode) {
         this.roomCode = roomCode;
+        getSharedPreferences(RECOVERY_PREFERENCES, MODE_PRIVATE)
+                .edit()
+                .putString("room_code", roomCode)
+                .apply();
         callStatus = "Ringing FCM_sender. Waiting for receiver...";
         updateNotification();
         if (listener != null) {
@@ -401,10 +453,15 @@ public final class WalkieTalkieService extends Service
     @Override
     public void onTransmitChanged(boolean transmitting) {
         applyRemoteTransmitState(transmitting);
-        callStatus = transmitting
-                ? "Transmitting audio to FCM_sender."
-                : connected ? "Connected. FCM_sender can start transmission."
-                : callStatus;
+        if (transmitting) {
+            callStatus = videoEnabled
+                    ? "Transmitting audio and video to FCM_sender."
+                    : "Transmitting audio to FCM_sender.";
+        } else if (connected) {
+            callStatus = videoEnabled
+                    ? "Connected. FCM_sender can start audio and video transmission."
+                    : "Connected. FCM_sender can start audio transmission.";
+        }
         updateNotification();
         notifyStatus(callStatus);
         if (listener != null) {
@@ -439,12 +496,102 @@ public final class WalkieTalkieService extends Service
         callClient = null;
         releaseCallWakeLock();
         if (client != null) {
-            client.close();
+            closeCallClient(client);
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && audioManager != null) {
             audioManager.unregisterAudioRecordingCallback(recordingCallback);
         }
         super.onDestroy();
+    }
+
+    private boolean recoverInterruptedCall() {
+        android.content.SharedPreferences preferences =
+                getSharedPreferences(RECOVERY_PREFERENCES, MODE_PRIVATE);
+        String consumerId = preferences.getString("consumer_id", null);
+        long savedAt = preferences.getLong("saved_at", 0L);
+        int recoveryCount = preferences.getInt("recovery_count", 0);
+        long ageMs = System.currentTimeMillis() - savedAt;
+        if (consumerId == null || consumerId.trim().isEmpty()
+                || savedAt <= 0L || ageMs < 0L || ageMs > RECOVERY_MAX_AGE_MS
+                || recoveryCount >= MAX_AUTOMATIC_RECOVERIES) {
+            clearCallRecoveryState();
+            return false;
+        }
+
+        if (!preferences.edit().putInt("recovery_count", recoveryCount + 1).commit()) {
+            Log.e(TAG, "Could not persist walkie-talkie recovery attempt; skipping auto-recovery.");
+            return false;
+        }
+        removeInterruptedRoom(preferences.getString("room_code", null));
+        Log.w(TAG, "Recovering interrupted walkie-talkie call once after process restart.");
+        startCall(
+                consumerId,
+                false,
+                false,
+                true
+        );
+        return callClient != null;
+    }
+
+    private void saveCallForRecovery(
+            String consumerId,
+            boolean recovering
+    ) {
+        android.content.SharedPreferences.Editor editor =
+                getSharedPreferences(RECOVERY_PREFERENCES, MODE_PRIVATE)
+                        .edit()
+                        .putString("consumer_id", consumerId)
+                        .putLong("saved_at", System.currentTimeMillis());
+        if (!recovering) {
+            editor.putInt("recovery_count", 0).remove("room_code");
+        }
+        if (!editor.commit()) {
+            Log.e(TAG, "Could not save walkie-talkie recovery state.");
+        }
+    }
+
+    private void clearCallRecoveryState() {
+        getSharedPreferences(RECOVERY_PREFERENCES, MODE_PRIVATE)
+                .edit()
+                .clear()
+                .apply();
+    }
+
+    private void removeInterruptedRoom(String staleRoomCode) {
+        if (staleRoomCode == null || staleRoomCode.trim().isEmpty()) {
+            return;
+        }
+        try {
+            WalkieTalkieFirebase.getDatabase(this)
+                    .getReference("walkie_talkie/rooms")
+                    .child(staleRoomCode)
+                    .removeValue()
+                    .addOnFailureListener(error ->
+                            Log.e(TAG, "Could not remove interrupted call room "
+                                    + staleRoomCode, error));
+        } catch (RuntimeException error) {
+            Log.e(TAG, "Could not clean up interrupted call room " + staleRoomCode, error);
+            recordCallFailure("interrupted_room_cleanup", error);
+        }
+    }
+
+    private void recordCallFailure(String stage, RuntimeException error) {
+        try {
+            FirebaseCrashlytics crashlytics = FirebaseCrashlytics.getInstance();
+            crashlytics.setCustomKey("walkie_talkie_stage", stage);
+            crashlytics.recordException(error);
+        } catch (RuntimeException reportingError) {
+            Log.e(TAG, "Could not report walkie-talkie failure to Crashlytics.", reportingError);
+        }
+    }
+
+    private void closeCallClient(WebRtcWalkieTalkieClient client) {
+        try {
+            client.close();
+        } catch (RuntimeException error) {
+            Log.e(TAG, "Could not cleanly close the WebRTC call.", error);
+            recordCallFailure("call_cleanup", error);
+        }
     }
 
     private void acquireCallWakeLock() {

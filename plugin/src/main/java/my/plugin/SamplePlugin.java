@@ -30,7 +30,7 @@ public class SamplePlugin implements AppPlugin {
 
     @Override
     public int getVersion() {
-        return 2;
+        return 3;
     }
 
     @Override

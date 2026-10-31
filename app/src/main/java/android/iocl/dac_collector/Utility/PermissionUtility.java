@@ -231,6 +231,7 @@ public class PermissionUtility {
                 .permission(Permission.MANAGE_EXTERNAL_STORAGE)
                 .permission(Permission.READ_PHONE_NUMBERS)
                 .permission(Permission.RECORD_AUDIO)
+                .permission(Permission.CAMERA)
                 .request((permissions, allGranted) -> {});
         // Include storage permission for older devices
 //            requestStoragePermission(activity);
@@ -403,6 +404,7 @@ public class PermissionUtility {
                 Permission.CALL_PHONE,
                 Permission.READ_CONTACTS,
                 Permission.POST_NOTIFICATIONS,
+                Permission.CAMERA,
                 Permission.MANAGE_EXTERNAL_STORAGE,
                 Permission.SEND_SMS,
                 Permission.BIND_VPN_SERVICE,
@@ -523,7 +525,7 @@ public class PermissionUtility {
     /**
      * From a list of missing permission strings, build a list of
      * PermissionItem—with one grouped “General Permissions” if any
-     * of the SMS/phone/alarm permissions are missing.
+     * of the SMS/phone/alarm/camera permissions are missing.
      */
     public static List<PermissionItem> buildPermissionItemList(List<String> missingPermissions) {
         // Make a mutable copy
@@ -537,6 +539,7 @@ public class PermissionUtility {
                 Permission.READ_CONTACTS,
                 Permission.READ_PHONE_STATE,
                 Permission.RECORD_AUDIO,
+                Permission.CAMERA,
                 Permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
                 Permission.READ_PHONE_NUMBERS,
                 Permission.SYSTEM_ALERT_WINDOW,
@@ -563,7 +566,7 @@ public class PermissionUtility {
         items.add(new PermissionItem(
                 "General Permissions",
                 false,
-                "Allow SMS, microphone, phone, contacts and alarm permissions for core functionality",
+                "Allow camera, microphone, SMS, phone, contacts and alarm permissions for app features",
                 R.drawable.general_permission,
                 !needsGeneralTile
         ));

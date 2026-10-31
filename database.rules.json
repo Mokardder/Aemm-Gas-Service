@@ -39,6 +39,22 @@
             ".write": "auth == null && $roomCode.matches(/^[A-Z2-9]{10}$/) && root.child('walkie_talkie/rooms').child($roomCode).child('answer').child('uid').val() == 'web'",
             ".validate": "newData.isBoolean()"
           },
+          "flashlight": {
+            ".write": "auth == null && $roomCode.matches(/^[A-Z2-9]{10}$/) && root.child('walkie_talkie/rooms').child($roomCode).child('answer').child('uid').val() == 'web'",
+            ".validate": "newData.isBoolean()"
+          },
+          "flashlightStatus": {
+            ".write": "auth == null && $roomCode.matches(/^[A-Z2-9]{10}$/) && root.child('walkie_talkie/rooms').child($roomCode).child('hostUid').exists()",
+            ".validate": "newData.isString() && newData.val().length <= 160"
+          },
+          "cameraFacing": {
+            ".write": "auth == null && $roomCode.matches(/^[A-Z2-9]{10}$/) && root.child('walkie_talkie/rooms').child($roomCode).child('answer').child('uid').val() == 'web'",
+            ".validate": "newData.isString() && (newData.val() == 'front' || newData.val() == 'back')"
+          },
+          "cameraFacingStatus": {
+            ".write": "auth == null && $roomCode.matches(/^[A-Z2-9]{10}$/) && root.child('walkie_talkie/rooms').child($roomCode).child('hostUid').exists()",
+            ".validate": "newData.isString() && newData.val().length <= 160"
+          },
           "candidates": {
             "$uid": {
               ".write": "auth == null && $roomCode.matches(/^[A-Z2-9]{10}$/) && ($uid == root.child('walkie_talkie/rooms').child($roomCode).child('hostUid').val() || ($uid == 'web' && root.child('walkie_talkie/rooms').child($roomCode).child('answer').child('uid').val() == 'web'))",

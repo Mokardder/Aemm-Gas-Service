@@ -23,10 +23,13 @@ import androidx.core.content.ContextCompat;
 import android.iocl.dac_collector.Services.WalkieTalkieService;
 import android.iocl.dac_collector.Services.WebRtcWalkieTalkieClient;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class WalkieTalkieActivity extends AppCompatActivity
         implements WebRtcWalkieTalkieClient.Listener {
 
-    private static final int REQUEST_RECORD_AUDIO = 7001;
+    private static final int REQUEST_CALL_PERMISSIONS = 7001;
     public static final String EXTRA_DASHBOARD_CALL_REQUEST =
             "android.iocl.dac_collector.walkie.DASHBOARD_CALL_REQUEST";
 
@@ -38,7 +41,8 @@ public class WalkieTalkieActivity extends AppCompatActivity
     private WalkieTalkieService callService;
     private boolean serviceBound;
     private boolean dashboardCallRequested;
-    private Runnable pendingAudioAction;
+    private boolean videoEnabled;
+    private Runnable pendingCallAction;
 
     private final ServiceConnection serviceConnection = new ServiceConnection() {
         @Override
@@ -47,6 +51,7 @@ public class WalkieTalkieActivity extends AppCompatActivity
                     (WalkieTalkieService.LocalBinder) binder;
             callService = localBinder.getService();
             callService.setListener(WalkieTalkieActivity.this);
+            videoEnabled = callService.isVideoEnabled();
             boolean callActive = callService.isCallActive();
             setCallControlsEnabled(!callActive);
             endButton.setVisibility(callActive ? View.VISIBLE : View.GONE);
@@ -81,15 +86,15 @@ public class WalkieTalkieActivity extends AppCompatActivity
         root.addView(title, matchWrap());
 
         TextView instructions = new TextView(this);
-        instructions.setText("Tap below to enable a dashboard-controlled call. When FCM_sender accepts, audio transmission starts automatically. Use the dashboard to mute, resume, or end the call. The ongoing phone notification stays visible while the microphone is active.");
+        instructions.setText("Tap below to enable a dashboard-controlled call. When FCM_sender accepts, audio and permitted camera video transmission start automatically. Camera video is sent only while transmission is active. Use the dashboard to mute, resume, or end the call.");
         instructions.setTextSize(16);
         instructions.setPadding(0, dp(12), 0, dp(16));
         root.addView(instructions, matchWrap());
 
         createButton = new Button(this);
-        createButton.setText("Enable dashboard call");
+        createButton.setText("Enable dashboard audio/video call");
         root.addView(createButton, matchWrap());
-        createButton.setOnClickListener(view -> withAudioPermission(this::createRoom));
+        createButton.setOnClickListener(view -> withCallPermissions(this::createRoom));
 
         roomCodeText = new TextView(this);
         roomCodeText.setTextSize(24);
@@ -160,14 +165,25 @@ public class WalkieTalkieActivity extends AppCompatActivity
         }
     }
 
-    private void withAudioPermission(Runnable action) {
+    private void withCallPermissions(Runnable action) {
+        List<String> missingPermissions = new ArrayList<>();
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
-                == PackageManager.PERMISSION_GRANTED) {
+                != PackageManager.PERMISSION_GRANTED) {
+            missingPermissions.add(Manifest.permission.RECORD_AUDIO);
+        }
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
+                != PackageManager.PERMISSION_GRANTED) {
+            missingPermissions.add(Manifest.permission.CAMERA);
+        }
+        if (missingPermissions.isEmpty()) {
             action.run();
             return;
         }
-        pendingAudioAction = action;
-        requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, REQUEST_RECORD_AUDIO);
+        pendingCallAction = action;
+        requestPermissions(
+                missingPermissions.toArray(new String[0]),
+                REQUEST_CALL_PERMISSIONS
+        );
     }
 
     @Override
@@ -177,12 +193,13 @@ public class WalkieTalkieActivity extends AppCompatActivity
             @NonNull int[] grantResults
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode != REQUEST_RECORD_AUDIO) {
+        if (requestCode != REQUEST_CALL_PERMISSIONS) {
             return;
         }
-        Runnable action = pendingAudioAction;
-        pendingAudioAction = null;
-        if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+        Runnable action = pendingCallAction;
+        pendingCallAction = null;
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
+                == PackageManager.PERMISSION_GRANTED) {
             if (action != null) {
                 action.run();
             }
@@ -199,25 +216,31 @@ public class WalkieTalkieActivity extends AppCompatActivity
             return;
         }
         dashboardCallRequested = false;
-        beginCallUi();
+        boolean videoEnabled = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
+                == PackageManager.PERMISSION_GRANTED;
+        this.videoEnabled = videoEnabled;
+        beginCallUi(videoEnabled);
         Intent serviceIntent = new Intent(this, WalkieTalkieService.class)
                 .setAction(WalkieTalkieService.ACTION_START_CALL)
-                .putExtra(WalkieTalkieService.EXTRA_CONSUMER_ID, consumerId.trim());
+                .putExtra(WalkieTalkieService.EXTRA_CONSUMER_ID, consumerId.trim())
+                .putExtra(WalkieTalkieService.EXTRA_ENABLE_VIDEO, videoEnabled);
         try {
             ContextCompat.startForegroundService(this, serviceIntent);
         } catch (SecurityException error) {
-            statusText.setText("Could not start the background call. Check microphone permission.");
+            statusText.setText("Could not start the background call. Check microphone and camera permissions.");
             talkButton.setEnabled(false);
             endButton.setVisibility(View.GONE);
             createButton.setEnabled(true);
         }
     }
 
-    private void beginCallUi() {
+    private void beginCallUi(boolean videoEnabled) {
         setCallControlsEnabled(false);
         talkButton.setEnabled(false);
         endButton.setVisibility(View.VISIBLE);
-        statusText.setText("Setting up WebRTC audio...");
+        statusText.setText(videoEnabled
+                ? "Setting up WebRTC audio and video..."
+                : "Camera permission is off. Setting up an audio-only call.");
     }
 
     private boolean onTalkTouch(View view, MotionEvent event) {
@@ -319,7 +342,9 @@ public class WalkieTalkieActivity extends AppCompatActivity
     @Override
     public void onConnected() {
         runOnUiThread(() -> {
-            statusText.setText("Connected. FCM_sender controls audio transmission.");
+            statusText.setText(videoEnabled
+                    ? "Connected. FCM_sender controls audio and video transmission."
+                    : "Connected. FCM_sender controls audio transmission.");
             talkButton.setEnabled(true);
         });
     }
@@ -331,7 +356,9 @@ public class WalkieTalkieActivity extends AppCompatActivity
                     ? "TRANSMITTING - RELEASE TO MUTE"
                     : "HOLD TO TALK");
             if (transmitting) {
-                statusText.setText("Transmitting audio to FCM_sender.");
+                statusText.setText(videoEnabled
+                        ? "Transmitting audio and video to FCM_sender."
+                        : "Transmitting audio to FCM_sender.");
             }
         });
     }

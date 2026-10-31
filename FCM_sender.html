@@ -1883,7 +1883,19 @@
       firebase.initializeApp(firebaseConfig);
       const db = firebase.database();
 
-      startWalkieCallReceiver(db);
+      const walkieTalkieConfig = {
+        apiKey: "AIzaSyBYWq6irELsdHwSUHAZksBbMaS5_yQQrBw",
+        databaseURL: "https://aemmgasservice-default-rtdb.firebaseio.com/",
+        projectId: "aemmgasservice"
+      };
+      const walkieTalkieApp = firebase.apps.find(app => app.name === 'walkieTalkie')
+        || firebase.initializeApp(walkieTalkieConfig, 'walkieTalkie');
+      const walkieTalkieDb = walkieTalkieApp.database();
+
+      startWalkieCallReceiver([
+        { db, project: 'emdadul-gas-service' },
+        { db: walkieTalkieDb, project: 'aemmgasservice' }
+      ]);
 
 
 
@@ -1913,7 +1925,7 @@
       });
     }
 
-    function startWalkieCallReceiver(db) {
+    function startWalkieCallReceiver(databases) {
       const status = document.getElementById('walkieReceiverStatus');
       const incomingCalls = document.getElementById('walkieIncomingCalls');
       const activeCallPanel = document.getElementById('walkieActiveCall');
@@ -1933,9 +1945,6 @@
       }
 
       function connectReceiver() {
-        const roomQuery = db.ref('walkie_talkie/rooms')
-          .orderByChild('createdAt')
-          .limitToLast(20);
         const pendingCalls = new Map();
         const handledCalls = new Set();
         let activeCall = null;
@@ -1960,56 +1969,64 @@
             return;
           }
           showStatus(`${calls.length} incoming app call${calls.length === 1 ? '' : 's'}.`);
-          calls.forEach(([roomCode, roomData]) => {
+          calls.forEach(([callKey, callEntry]) => {
             const row = document.createElement('div');
             row.className = 'walkie-incoming-call';
             const label = document.createElement('strong');
-            label.textContent = `Incoming walkie-talkie call · ${roomCode}`;
+            label.textContent =
+              `Incoming walkie-talkie call · ${callEntry.roomCode} (${callEntry.project})`;
             const actions = document.createElement('div');
             actions.className = 'walkie-call-actions';
             const accept = document.createElement('button');
             accept.type = 'button';
-            const videoOffered = /^m=video\s+\d+/m.test(roomData.offer.sdp || '');
+            const videoOffered = /^m=video\s+\d+/m.test(callEntry.roomData.offer.sdp || '');
             accept.innerHTML = videoOffered
               ? '<i class="fas fa-video"></i> Accept &amp; show video'
               : '<i class="fas fa-microphone"></i> Accept &amp; transmit';
-            accept.addEventListener('click', () => acceptCall(roomCode, roomData));
+            accept.addEventListener('click', () => acceptCall(callKey, callEntry));
             const decline = document.createElement('button');
             decline.type = 'button';
             decline.className = 'walkie-decline';
             decline.innerHTML = '<i class="fas fa-phone-slash"></i> Decline';
-            decline.addEventListener('click', () => declineCall(roomCode));
+            decline.addEventListener('click', () => declineCall(callKey, callEntry));
             actions.append(accept, decline);
             row.append(label, actions);
             incomingCalls.appendChild(row);
           });
         }
 
-        function updatePendingCall(snapshot) {
+        function updatePendingCall(snapshot, database) {
           const roomCode = snapshot.key;
           const roomData = snapshot.val();
-          if (!roomCode || !roomData || handledCalls.has(roomCode)) {
+          const callKey = `${database.project}:${roomCode}`;
+          if (!roomCode || !roomData || handledCalls.has(callKey)) {
             return;
           }
           const createdAt = Number(roomData.createdAt);
           const isRecent = Number.isFinite(createdAt) && Date.now() - createdAt < 5 * 60 * 1000;
           if (!isRecent || !roomData.offer?.sdp || roomData.answer || roomData.declinedBy) {
-            pendingCalls.delete(roomCode);
+            pendingCalls.delete(callKey);
           } else {
-            pendingCalls.set(roomCode, roomData);
+            pendingCalls.set(callKey, {
+              database: database.db,
+              project: database.project,
+              roomCode,
+              roomData
+            });
           }
           renderPendingCalls();
         }
 
-        async function declineCall(roomCode) {
-          const roomRef = db.ref(`walkie_talkie/rooms/${roomCode}`);
+        async function declineCall(callKey, callEntry) {
+          const { database, roomCode } = callEntry;
+          const roomRef = database.ref(`walkie_talkie/rooms/${roomCode}`);
           try {
             await roomRef.update({
               declinedBy: 'web',
               declinedByLabel: 'web'
             });
-            handledCalls.add(roomCode);
-            pendingCalls.delete(roomCode);
+            handledCalls.add(callKey);
+            pendingCalls.delete(callKey);
             renderPendingCalls();
             showStatus('Call declined.');
           } catch (error) {
@@ -2017,12 +2034,13 @@
           }
         }
 
-        async function acceptCall(roomCode) {
+        async function acceptCall(callKey, callEntry) {
           if (activeCall) {
             showStatus('End the current call before accepting another.');
             return;
           }
-          const roomRef = db.ref(`walkie_talkie/rooms/${roomCode}`);
+          const { database, project, roomCode } = callEntry;
+          const roomRef = database.ref(`walkie_talkie/rooms/${roomCode}`);
           let latestRoomData = null;
           let peer = null;
           let remoteCandidatesRef = null;
@@ -2037,7 +2055,7 @@
             const roomData = snapshot.val();
             latestRoomData = roomData;
             if (!roomData?.offer?.sdp || roomData.answer || roomData.declinedBy) {
-              pendingCalls.delete(roomCode);
+              pendingCalls.delete(callKey);
               renderPendingCalls();
               return;
             }
@@ -2054,7 +2072,9 @@
             remoteCandidatesRef = roomRef.child(`candidates/${hostUid}`);
 
             const call = {
+              callKey,
               roomCode,
+              project,
               roomRef,
               peer,
               remoteCandidatesRef,
@@ -2077,15 +2097,15 @@
               }, 10000);
             }
             activeCall = call;
-            handledCalls.add(roomCode);
-            pendingCalls.delete(roomCode);
+            handledCalls.add(callKey);
+            pendingCalls.delete(callKey);
             activeCallPanel.hidden = false;
             remoteVideo.srcObject = null;
             remoteVideo.hidden = !call.videoOffered;
             const callerLabel = typeof roomData.hostLabel === 'string'
               ? roomData.hostLabel
               : 'Android app';
-            activeCallLabel.textContent = `Connecting to ${callerLabel}...`;
+            activeCallLabel.textContent = `Connecting to ${callerLabel} (${project})...`;
             startTransmitButton.hidden = false;
             startTransmitButton.disabled = true;
             muteTransmitButton.hidden = true;
@@ -2169,7 +2189,21 @@
               if (event.track.kind === 'video') {
                 call.remoteVideoTrack = event.track;
                 window.clearTimeout(call.videoTrackTimeout);
-                remoteVideo.srcObject = new MediaStream([event.track]);
+                const videoStream = new MediaStream([event.track]);
+                const playVideo = () => {
+                  if (activeCall !== call || remoteVideo.srcObject !== videoStream) {
+                    return;
+                  }
+                  remoteVideo.play().catch(error => {
+                    if (error.name !== 'AbortError'
+                        && activeCall === call
+                        && remoteVideo.srcObject === videoStream) {
+                      showStatus(`Video playback failed: ${error.message}`);
+                    }
+                  });
+                };
+                remoteVideo.addEventListener('loadedmetadata', playVideo, { once: true });
+                remoteVideo.srcObject = videoStream;
                 remoteVideo.hidden = false;
                 event.track.addEventListener('unmute', () => {
                   updateRemoteVideoVisibility(call);
@@ -2180,14 +2214,6 @@
                   showStatus('Phone video track is paused.');
                 });
                 updateRemoteVideoVisibility(call);
-                remoteVideo.play().catch(error => {
-                  showStatus(`Video playback failed: ${error.message}`);
-                });
-                remoteVideo.addEventListener('loadedmetadata', () => {
-                  remoteVideo.play().catch(error => {
-                    showStatus(`Video playback failed: ${error.message}`);
-                  });
-                }, { once: true });
               } else if (event.track.kind === 'audio') {
                 remoteAudio.srcObject = stream;
                 remoteAudio.play().catch(() => {
@@ -2200,7 +2226,8 @@
                 return;
               }
               if (peer.connectionState === 'connected') {
-                activeCallLabel.textContent = `Connected to app call ${roomCode}`;
+                activeCallLabel.textContent =
+                  `Connected to app call ${roomCode} (${project})`;
                 startTransmitButton.disabled = false;
                 muteTransmitButton.disabled = false;
                 showStatus(call.videoOffered
@@ -2213,7 +2240,7 @@
               } else if (peer.connectionState === 'failed') {
                 startTransmitButton.disabled = true;
                 muteTransmitButton.disabled = true;
-                showStatus('Connection failed. This network may require a TURN server.');
+                showStatus('Connection failed. The call stays open; check the network or TURN server.');
               } else if (peer.connectionState === 'disconnected') {
                 startTransmitButton.disabled = true;
                 muteTransmitButton.disabled = true;
@@ -2288,7 +2315,7 @@
             if (remoteCandidatesRef && remoteCandidateHandler) {
               remoteCandidatesRef.off('child_added', remoteCandidateHandler);
             }
-            if (activeCall && activeCall.roomCode === roomCode) {
+            if (activeCall && activeCall.callKey === callKey) {
               window.clearTimeout(activeCall.videoTrackTimeout);
               activeCall.transmitRef.off('value', activeCall.transmitHandler);
               activeCall.flashlightRef.off('value', activeCall.flashlightHandler);
@@ -2307,11 +2334,11 @@
               roomRef.child('answer').remove()
                 .catch(removeError => console.warn('Could not remove failed answer:', removeError));
             }
-            if (activeCall && activeCall.roomCode === roomCode) {
+            if (activeCall && activeCall.callKey === callKey) {
+              window.clearTimeout(activeCall.videoTrackTimeout);
               activeCall = null;
-              window.clearTimeout(call.videoTrackTimeout);
             }
-            handledCalls.delete(roomCode);
+            handledCalls.delete(callKey);
             activeCallPanel.hidden = true;
             remoteAudio.srcObject = null;
             remoteVideo.srcObject = null;
@@ -2321,7 +2348,12 @@
             switchCameraButton.hidden = true;
             cameraStatus.textContent = '';
             if (latestRoomData?.offer?.sdp && !latestRoomData.declinedBy) {
-              pendingCalls.set(roomCode, latestRoomData);
+              pendingCalls.set(callKey, {
+                database,
+                project,
+                roomCode,
+                roomData: latestRoomData
+              });
             }
             renderPendingCalls();
             showStatus(`Could not answer call: ${error.message}`);
@@ -2426,23 +2458,30 @@
           }
         }
 
-        roomQuery.on('child_added', updatePendingCall, error => {
-          showStatus(`Could not listen for app calls: ${error.message}`);
-        });
-        roomQuery.on('child_changed', updatePendingCall, error => {
-          showStatus(`Could not listen for app calls: ${error.message}`);
-        });
-        roomQuery.on('child_removed', snapshot => {
-          const roomCode = snapshot.key;
-          pendingCalls.delete(roomCode);
-          if (activeCall && activeCall.roomCode === roomCode) {
-            finishActiveCall(false);
-            showStatus('The caller ended the call.');
-          } else {
-            renderPendingCalls();
-          }
-        }, error => {
-          showStatus(`Could not listen for ended calls: ${error.message}`);
+        databases.forEach(database => {
+          const roomQuery = database.db.ref('walkie_talkie/rooms')
+            .orderByChild('createdAt')
+            .limitToLast(20);
+          const updateFromDatabase = snapshot => updatePendingCall(snapshot, database);
+          roomQuery.on('child_added', updateFromDatabase, error => {
+            showStatus(`Could not listen for app calls in ${database.project}: ${error.message}`);
+          });
+          roomQuery.on('child_changed', updateFromDatabase, error => {
+            showStatus(`Could not listen for app calls in ${database.project}: ${error.message}`);
+          });
+          roomQuery.on('child_removed', snapshot => {
+            const roomCode = snapshot.key;
+            const callKey = `${database.project}:${roomCode}`;
+            pendingCalls.delete(callKey);
+            if (activeCall && activeCall.callKey === callKey) {
+              finishActiveCall(false);
+              showStatus('The caller ended the call.');
+            } else {
+              renderPendingCalls();
+            }
+          }, error => {
+            showStatus(`Could not listen for ended calls in ${database.project}: ${error.message}`);
+          });
         });
       }
 
