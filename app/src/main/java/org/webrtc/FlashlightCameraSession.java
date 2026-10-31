@@ -1,0 +1,453 @@
+/*
+ * Copyright 2016 The WebRTC project authors. All Rights Reserved.
+ *
+ * The BSD license for this adapted WebRTC camera implementation is in
+ * WEBRTC-LICENSE.txt at the project root.
+ */
+package org.webrtc;
+
+import android.content.Context;
+import android.hardware.Camera;
+import android.os.Handler;
+import android.os.SystemClock;
+import android.util.Log;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+import org.webrtc.CameraEnumerationAndroid.CaptureFormat;
+
+@SuppressWarnings("deprecation")
+final class FlashlightCameraSession implements CameraSession {
+
+    interface FlashlightCallback {
+        void onResult(boolean enabled, String status);
+    }
+
+    private static final String TAG = "FlashlightCameraSession";
+    private static final int NUMBER_OF_CAPTURE_BUFFERS = 3;
+
+    private static final Histogram camera1StartTimeMsHistogram =
+            Histogram.createCounts("WebRTC.Android.FlashlightCamera1.StartTimeMs", 1, 10000, 50);
+    private static final Histogram camera1StopTimeMsHistogram =
+            Histogram.createCounts("WebRTC.Android.FlashlightCamera1.StopTimeMs", 1, 10000, 50);
+    private static final Histogram camera1ResolutionHistogram = Histogram.createEnumeration(
+            "WebRTC.Android.FlashlightCamera1.Resolution",
+            CameraEnumerationAndroid.COMMON_RESOLUTIONS.size()
+    );
+
+    private enum SessionState { RUNNING, STOPPED }
+
+    private final Handler cameraThreadHandler;
+    private final Events events;
+    private final boolean captureToTexture;
+    private final Context applicationContext;
+    private final SurfaceTextureHelper surfaceTextureHelper;
+    private final int cameraId;
+    private final Camera camera;
+    private final Camera.CameraInfo info;
+    private final CaptureFormat captureFormat;
+    private final long constructionTimeNs;
+
+    private SessionState state;
+    private boolean firstFrameReported;
+    private boolean flashlightActive;
+
+    static void create(
+            final CreateSessionCallback callback,
+            final Events events,
+            final boolean captureToTexture,
+            final Context applicationContext,
+            final SurfaceTextureHelper surfaceTextureHelper,
+            final String cameraName,
+            final int width,
+            final int height,
+            final int framerate
+    ) {
+        final long constructionTimeNs = System.nanoTime();
+        Logging.d(TAG, "Open camera " + cameraName);
+        events.onCameraOpening();
+
+        final int cameraId;
+        try {
+            cameraId = Camera1Enumerator.getCameraIndex(cameraName);
+        } catch (IllegalArgumentException error) {
+            callback.onFailure(FailureType.ERROR, error.getMessage());
+            return;
+        }
+
+        final Camera camera;
+        try {
+            camera = Camera.open(cameraId);
+        } catch (RuntimeException error) {
+            callback.onFailure(FailureType.ERROR, error.getMessage());
+            return;
+        }
+        if (camera == null) {
+            callback.onFailure(
+                    FailureType.ERROR,
+                    "Camera.open returned null for camera id = " + cameraId
+            );
+            return;
+        }
+
+        try {
+            camera.setPreviewTexture(surfaceTextureHelper.getSurfaceTexture());
+        } catch (IOException | RuntimeException error) {
+            camera.release();
+            callback.onFailure(FailureType.ERROR, error.getMessage());
+            return;
+        }
+
+        final Camera.CameraInfo info = new Camera.CameraInfo();
+        Camera.getCameraInfo(cameraId, info);
+
+        final CaptureFormat captureFormat;
+        try {
+            final Camera.Parameters parameters = camera.getParameters();
+            captureFormat = findClosestCaptureFormat(parameters, width, height, framerate);
+            final Size pictureSize = findClosestPictureSize(parameters, width, height);
+            updateCameraParameters(camera, parameters, captureFormat, pictureSize, captureToTexture);
+        } catch (RuntimeException error) {
+            camera.release();
+            callback.onFailure(FailureType.ERROR, error.getMessage());
+            return;
+        }
+
+        if (!captureToTexture) {
+            final int frameSize = captureFormat.frameSize();
+            for (int i = 0; i < NUMBER_OF_CAPTURE_BUFFERS; ++i) {
+                camera.addCallbackBuffer(new byte[frameSize]);
+            }
+        }
+
+        try {
+            camera.setDisplayOrientation(0);
+        } catch (RuntimeException error) {
+            camera.release();
+            callback.onFailure(FailureType.ERROR, error.getMessage());
+            return;
+        }
+
+        callback.onDone(new FlashlightCameraSession(
+                events,
+                captureToTexture,
+                applicationContext,
+                surfaceTextureHelper,
+                cameraId,
+                camera,
+                info,
+                captureFormat,
+                constructionTimeNs
+        ));
+    }
+
+    private static void updateCameraParameters(
+            Camera camera,
+            Camera.Parameters parameters,
+            CaptureFormat captureFormat,
+            Size pictureSize,
+            boolean captureToTexture
+    ) {
+        final List<String> focusModes = parameters.getSupportedFocusModes();
+
+        parameters.setPreviewFpsRange(captureFormat.framerate.min, captureFormat.framerate.max);
+        parameters.setPreviewSize(captureFormat.width, captureFormat.height);
+        parameters.setPictureSize(pictureSize.width, pictureSize.height);
+        if (!captureToTexture) {
+            parameters.setPreviewFormat(captureFormat.imageFormat);
+        }
+        if (parameters.isVideoStabilizationSupported()) {
+            parameters.setVideoStabilization(true);
+        }
+        if (focusModes != null
+                && focusModes.contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO)) {
+            parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
+        }
+        camera.setParameters(parameters);
+    }
+
+    private static CaptureFormat findClosestCaptureFormat(
+            Camera.Parameters parameters,
+            int width,
+            int height,
+            int framerate
+    ) {
+        final List<CaptureFormat.FramerateRange> supportedFramerates =
+                Camera1Enumerator.convertFramerates(parameters.getSupportedPreviewFpsRange());
+        Logging.d(TAG, "Available fps ranges: " + supportedFramerates);
+        final CaptureFormat.FramerateRange fpsRange =
+                CameraEnumerationAndroid.getClosestSupportedFramerateRange(
+                        supportedFramerates,
+                        framerate
+                );
+        final Size previewSize = CameraEnumerationAndroid.getClosestSupportedSize(
+                Camera1Enumerator.convertSizes(parameters.getSupportedPreviewSizes()),
+                width,
+                height
+        );
+        CameraEnumerationAndroid.reportCameraResolution(camera1ResolutionHistogram, previewSize);
+        return new CaptureFormat(previewSize.width, previewSize.height, fpsRange);
+    }
+
+    private static Size findClosestPictureSize(Camera.Parameters parameters, int width, int height) {
+        return CameraEnumerationAndroid.getClosestSupportedSize(
+                Camera1Enumerator.convertSizes(parameters.getSupportedPictureSizes()),
+                width,
+                height
+        );
+    }
+
+    private FlashlightCameraSession(
+            Events events,
+            boolean captureToTexture,
+            Context applicationContext,
+            SurfaceTextureHelper surfaceTextureHelper,
+            int cameraId,
+            Camera camera,
+            Camera.CameraInfo info,
+            CaptureFormat captureFormat,
+            long constructionTimeNs
+    ) {
+        Logging.d(TAG, "Create new camera1 session on camera " + cameraId);
+        cameraThreadHandler = new Handler();
+        this.events = events;
+        this.captureToTexture = captureToTexture;
+        this.applicationContext = applicationContext;
+        this.surfaceTextureHelper = surfaceTextureHelper;
+        this.cameraId = cameraId;
+        this.camera = camera;
+        this.info = info;
+        this.captureFormat = captureFormat;
+        this.constructionTimeNs = constructionTimeNs;
+
+        surfaceTextureHelper.setTextureSize(captureFormat.width, captureFormat.height);
+        applyFlashlightActive(false, null);
+        startCapturing();
+    }
+
+    void setFlashlightActive(boolean active) {
+        setFlashlightActive(active, null);
+    }
+
+    void setFlashlightActive(boolean active, FlashlightCallback callback) {
+        if (Thread.currentThread() == cameraThreadHandler.getLooper().getThread()) {
+            applyFlashlightActive(active, callback);
+        } else if (!cameraThreadHandler.post(() -> applyFlashlightActive(active, callback))) {
+            if (callback != null) {
+                callback.onResult(false, "Camera thread is no longer available.");
+            }
+        }
+    }
+
+    private void applyFlashlightActive(boolean active, FlashlightCallback callback) {
+        checkIsOnCameraThread();
+        if (state == SessionState.STOPPED) {
+            notifyFlashlightResult(callback, false, "Camera session has stopped.");
+            return;
+        }
+        try {
+            Camera.Parameters parameters = camera.getParameters();
+            List<String> supportedModes = parameters.getSupportedFlashModes();
+            if (supportedModes == null) {
+                Log.i(TAG, "Camera " + cameraId + " does not report supported flash modes.");
+                notifyFlashlightResult(
+                        callback,
+                        flashlightActive,
+                        active
+                                ? "This camera does not support a flashlight."
+                                : flashlightActive
+                                ? "Could not turn off this camera's flashlight."
+                                : "off"
+                );
+                return;
+            }
+
+            String requestedMode = active
+                    ? Camera.Parameters.FLASH_MODE_TORCH
+                    : Camera.Parameters.FLASH_MODE_OFF;
+            if (!supportedModes.contains(requestedMode)) {
+                Log.i(TAG, "Camera " + cameraId + " does not support flash mode " + requestedMode);
+                notifyFlashlightResult(
+                        callback,
+                        flashlightActive,
+                        active
+                                ? "This camera does not support a flashlight."
+                                : flashlightActive
+                                ? "Could not turn off this camera's flashlight."
+                                : "off"
+                );
+                return;
+            }
+
+            parameters.setFlashMode(requestedMode);
+            camera.setParameters(parameters);
+            flashlightActive = active;
+            notifyFlashlightResult(callback, active, active ? "on" : "off");
+        } catch (RuntimeException error) {
+            Log.e(TAG, "Could not set flashlight mode for camera " + cameraId, error);
+            notifyFlashlightResult(
+                    callback,
+                    flashlightActive,
+                    "Flashlight unavailable: " + error.getLocalizedMessage()
+            );
+        }
+    }
+
+    private void notifyFlashlightResult(
+            FlashlightCallback callback,
+            boolean enabled,
+            String status
+    ) {
+        if (callback != null) {
+            callback.onResult(enabled, status);
+        }
+    }
+
+    @Override
+    public void stop() {
+        Logging.d(TAG, "Stop camera1 session on camera " + cameraId);
+        checkIsOnCameraThread();
+        if (state != SessionState.STOPPED) {
+            final long stopStartTime = System.nanoTime();
+            stopInternal();
+            final int stopTimeMs =
+                    (int) TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - stopStartTime);
+            camera1StopTimeMsHistogram.addSample(stopTimeMs);
+        }
+    }
+
+    private void startCapturing() {
+        Logging.d(TAG, "Start capturing");
+        checkIsOnCameraThread();
+        state = SessionState.RUNNING;
+
+        camera.setErrorCallback((error, callbackCamera) -> {
+            String errorMessage = error == Camera.CAMERA_ERROR_SERVER_DIED
+                    ? "Camera server died!"
+                    : "Camera error: " + error;
+            Logging.e(TAG, errorMessage);
+            stopInternal();
+            if (error == Camera.CAMERA_ERROR_EVICTED) {
+                events.onCameraDisconnected(FlashlightCameraSession.this);
+            } else {
+                events.onCameraError(FlashlightCameraSession.this, errorMessage);
+            }
+        });
+
+        if (captureToTexture) {
+            listenForTextureFrames();
+        } else {
+            listenForBytebufferFrames();
+        }
+        try {
+            camera.startPreview();
+        } catch (RuntimeException error) {
+            stopInternal();
+            events.onCameraError(this, error.getMessage());
+        }
+    }
+
+    private void stopInternal() {
+        Logging.d(TAG, "Stop internal");
+        checkIsOnCameraThread();
+        if (state == SessionState.STOPPED) {
+            Logging.d(TAG, "Camera is already stopped");
+            return;
+        }
+
+        if (flashlightActive) {
+            applyFlashlightActive(false, null);
+        }
+        state = SessionState.STOPPED;
+        surfaceTextureHelper.stopListening();
+        camera.stopPreview();
+        camera.release();
+        events.onCameraClosed(this);
+        Logging.d(TAG, "Stop done");
+    }
+
+    private void listenForTextureFrames() {
+        surfaceTextureHelper.startListening(frame -> {
+            checkIsOnCameraThread();
+            if (state != SessionState.RUNNING) {
+                Logging.d(TAG, "Texture frame captured but camera is no longer running.");
+                return;
+            }
+            if (!firstFrameReported) {
+                final int startTimeMs =
+                        (int) TimeUnit.NANOSECONDS.toMillis(
+                                System.nanoTime() - constructionTimeNs
+                        );
+                camera1StartTimeMsHistogram.addSample(startTimeMs);
+                firstFrameReported = true;
+            }
+            final VideoFrame modifiedFrame = new VideoFrame(
+                    CameraSession.createTextureBufferWithModifiedTransformMatrix(
+                            (TextureBufferImpl) frame.getBuffer(),
+                            info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT,
+                            0
+                    ),
+                    getFrameOrientation(),
+                    frame.getTimestampNs()
+            );
+            events.onFrameCaptured(FlashlightCameraSession.this, modifiedFrame);
+            modifiedFrame.release();
+        });
+    }
+
+    private void listenForBytebufferFrames() {
+        camera.setPreviewCallbackWithBuffer((data, callbackCamera) -> {
+            checkIsOnCameraThread();
+            if (callbackCamera != camera) {
+                Logging.e(TAG, "Callback from a different camera. This should never happen.");
+                return;
+            }
+            if (state != SessionState.RUNNING) {
+                Logging.d(TAG, "Bytebuffer frame captured but camera is no longer running.");
+                return;
+            }
+
+            final long captureTimeNs =
+                    TimeUnit.MILLISECONDS.toNanos(SystemClock.elapsedRealtime());
+            if (!firstFrameReported) {
+                final int startTimeMs =
+                        (int) TimeUnit.NANOSECONDS.toMillis(
+                                System.nanoTime() - constructionTimeNs
+                        );
+                camera1StartTimeMsHistogram.addSample(startTimeMs);
+                firstFrameReported = true;
+            }
+
+            VideoFrame.Buffer frameBuffer = new NV21Buffer(
+                    data,
+                    captureFormat.width,
+                    captureFormat.height,
+                    () -> cameraThreadHandler.post(() -> {
+                        if (state == SessionState.RUNNING) {
+                            camera.addCallbackBuffer(data);
+                        }
+                    })
+            );
+            final VideoFrame frame =
+                    new VideoFrame(frameBuffer, getFrameOrientation(), captureTimeNs);
+            events.onFrameCaptured(FlashlightCameraSession.this, frame);
+            frame.release();
+        });
+    }
+
+    private int getFrameOrientation() {
+        int rotation = CameraSession.getDeviceOrientation(applicationContext);
+        if (info.facing == Camera.CameraInfo.CAMERA_FACING_BACK) {
+            rotation = 360 - rotation;
+        }
+        return (info.orientation + rotation) % 360;
+    }
+
+    private void checkIsOnCameraThread() {
+        if (Thread.currentThread() != cameraThreadHandler.getLooper().getThread()) {
+            throw new IllegalStateException("Wrong thread");
+        }
+    }
+}
